@@ -1,10 +1,14 @@
-# robopi
+# RoboPi
 
-An Electron application with Solid and TypeScript
+> **English** · [中文](./README.cn.md)
+
+A desktop application built on Pi Agent that integrates conversational AI, task automation, and knowledge base construction into a unified interface.
 
 ## Recommended IDE Setup
 
-- [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+- [VSCode](https://code.visualstudio.com/) + [Biome](https://biomejs.dev/)
+
+  Install the [Biome VSCode extension](https://marketplace.visualstudio.com/items?itemName=biomejs.biome) and enable **format on save** to automatically format your code with Biome.
 
 ## Project Setup
 
@@ -23,12 +27,20 @@ $ npm run dev
 ### Build
 
 ```bash
-# For windows
+# Windows
 $ npm run build:win
 
-# For macOS
+# macOS
 $ npm run build:mac
 
-# For Linux
+# Linux
 $ npm run build:linux
+```
+
+### Lint & Format
+
+```bash
+$ npm run check    # Check & auto-fix
+$ npm run lint     # Lint only
+$ npm run format   # Format only
 ```
