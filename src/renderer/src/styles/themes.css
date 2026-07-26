@@ -1,0 +1,101 @@
+/* ═══════════════════════════════════════════════════
+   Themes
+   ═══════════════════════════════════════════════════ */
+
+/* ── Together AI (default) ── */
+/* 定义在 variables.css 的 :root 中，此处仅做兜底重置 */
+
+/* ── OpenCode ── */
+/* Terminal-inspired monospaced theme from DESIGN.md */
+.theme-opencode {
+	/* Brand & Accent */
+	--color-primary: #201d1d;
+	--color-on-primary: #fdfcfc;
+	--color-ink: #201d1d;
+	--color-ink-deep: #0f0000;
+	--color-charcoal: #302c2c;
+	--color-body: #424245;
+	--color-mute: #646262;
+	--color-stone: #6e6e73;
+	--color-ash: #9a9898;
+	--color-canvas: #fdfcfc;
+	--color-canvas-dark: #201d1d;
+	--color-surface-soft: #f8f7f7;
+	--color-surface-card: #f1eeee;
+	--color-surface-dark-soft: #302c2c;
+	--color-surface-dark-elevated: #302c2c;
+	--color-on-dark: #fdfcfc;
+	--color-on-dark-mute: #9a9898;
+	--color-hairline: rgba(15, 0, 0, 0.12);
+	--color-hairline-strong: #646262;
+
+	--color-accent: #007aff;
+	--color-accent-hover: #0056b3;
+	--color-accent-active: #004085;
+	--color-warning: #ff9f0a;
+	--color-danger: #ff3b30;
+	--color-success: #30d158;
+
+	/* Map accent → periwinkle/mint for component compatibility */
+	--color-accent-periwinkle: var(--color-accent);
+	--color-accent-mint: var(--color-success);
+	--color-accent-orange: var(--color-warning);
+	--color-accent-magenta: var(--color-danger);
+
+	/* Typography families — single monospaced face */
+	/* Berkeley Mono is commercial; JetBrains Mono is the loaded substitute */
+	--font-display: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, 'SF Mono',
+		Menlo, monospace;
+	--font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, 'SF Mono',
+		Menlo, monospace;
+
+	/* Typography sizes — OpenCode scale */
+	--text-display-xxl: 38px;
+	--text-display-xl: 38px;
+	--text-display-lg: 28px;
+	--text-display-md: 16px;
+	--text-body-lg: 16px;
+	--text-body-md: 16px;
+	--text-caption: 14px;
+	--text-mono-button: 16px;
+	--text-mono-eyebrow: 11px;
+	--text-mono-label: 11px;
+	--text-mono-caption: 14px;
+
+	/* Border radius — 4px only */
+	--rounded-xs: 4px;
+	--rounded-sm: 4px;
+	--rounded-md: 4px;
+
+	/* Spacing — 8px base */
+	--space-xxs: 1px;
+	--space-xs: 4px;
+	--space-sm: 8px;
+	--space-md: 12px;
+	--space-lg: 16px;
+	--space-xl: 24px;
+	--space-2xl: 32px;
+	--space-3xl: 32px;
+	--space-4xl: 44px;
+	--space-5xl: 48px;
+	--space-6xl: 55.2px;
+	--space-section: 96px;
+
+	/* App surface mappings */
+	--sidebar-bg: var(--color-canvas);
+	--sidebar-border: var(--color-hairline);
+	--sidebar-header-border: var(--color-hairline);
+	--sidebar-text: var(--color-ink);
+	--sidebar-hover-bg: var(--color-surface-card);
+	--sidebar-active-bg: var(--color-hairline);
+
+	--main-bg: var(--color-canvas);
+	--main-text: var(--color-ink);
+
+	--resizer-color: transparent;
+	--resizer-hover-color: var(--color-accent);
+
+	--sidebar-width-min: 180px;
+	--sidebar-width-max: 600px;
+	--sidebar-width-default: 260px;
+}

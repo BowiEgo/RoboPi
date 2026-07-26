@@ -1,1 +1,56 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+
+/* ── Design Tokens → Tailwind v4 Theme ── */
+@theme {
+	/* Colors */
+	--color-primary: #000000;
+	--color-on-primary: #ffffff;
+	--color-ink: #000000;
+	--color-body: #999999;
+	--color-hairline: #ebebeb;
+	--color-canvas: #ffffff;
+	--color-canvas-dark: #010120;
+	--color-surface-dark-soft: #313641;
+	--color-on-dark: #ffffff;
+
+	--color-accent-orange: #fc4c02;
+	--color-accent-magenta: #ef2cc1;
+	--color-accent-periwinkle: #bdbbff;
+	--color-accent-mint: #c8f6f9;
+
+	/* Font families */
+	--font-display: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+	--font-mono: 'JetBrains Mono', 'Geist Mono', ui-monospace, 'SF Mono',
+		Menlo, monospace;
+
+	/* Font sizes mapped to design tokens */
+	--text-display-xxl: 64px;
+	--text-display-xl: 40px;
+	--text-display-lg: 28px;
+	--text-display-md: 22px;
+	--text-body-lg: 18px;
+	--text-body-md: 16px;
+	--text-caption: 14px;
+	--text-mono-button: 16px;
+	--text-mono-eyebrow: 11px;
+	--text-mono-label: 11px;
+	--text-mono-caption: 10px;
+
+	/* Border radius */
+	--radius-xs: 3.25px;
+	--radius-sm: 4px;
+	--radius-md: 8px;
+
+	/* Spacing */
+	--spacing-xxs: 2px;
+	--spacing-xs: 4px;
+	--spacing-sm: 8px;
+	--spacing-md: 12px;
+	--spacing-lg: 16px;
+	--spacing-xl: 20px;
+	--spacing-2xl: 24px;
+	--spacing-3xl: 32px;
+	--spacing-4xl: 44px;
+	--spacing-5xl: 48px;
+	--spacing-6xl: 55.2px;
+}

@@ -15,7 +15,8 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"preset": "recommended"
+			"preset": "recommended",
+            "style": {}
 		}
 	},
 	"javascript": {
@@ -23,6 +24,11 @@
 			"quoteStyle": "double"
 		}
 	},
+    "css": {
+        "formatter": {
+            "quoteStyle": "single"
+        }
+    },
 	"assist": {
 		"enabled": true,
 		"actions": {

@@ -1,0 +1,83 @@
+:root {
+	/* ── Brand & Accent Colors ── */
+	--color-primary: #000000;
+	--color-on-primary: #ffffff;
+	--color-ink: #000000;
+	--color-body: #999999;
+	--color-hairline: #ebebeb;
+	--color-canvas: #ffffff;
+	--color-canvas-dark: #010120;
+	--color-surface-dark-soft: #313641;
+	--color-on-dark: #ffffff;
+
+	--color-accent-orange: #fc4c02;
+	--color-accent-magenta: #ef2cc1;
+	--color-accent-periwinkle: #bdbbff;
+	--color-accent-mint: #c8f6f9;
+
+	/* ── Brand Gradient (orange → magenta → periwinkle) ── */
+	--gradient-brand: linear-gradient(135deg, #fc4c02, #ef2cc1, #bdbbff);
+
+	/* ── Typography Families ── */
+	/*  Display sans substitute: Inter (closest open-source match)  */
+	--font-display: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+	/*  Mono substitute: JetBrains Mono  */
+	--font-mono:
+		'JetBrains Mono', 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+	/* ── Typography: Display Sizes ── */
+	--text-display-xxl: 64px;
+	--text-display-xl: 40px;
+	--text-display-lg: 28px;
+	--text-display-md: 22px;
+
+	/* ── Typography: Body Sizes ── */
+	--text-body-lg: 18px;
+	--text-body-md: 16px;
+	--text-caption: 14px;
+
+	/* ── Typography: Mono Sizes ── */
+	--text-mono-button: 16px;
+	--text-mono-eyebrow: 11px;
+	--text-mono-label: 11px;
+	--text-mono-caption: 10px;
+
+	/* ── Border Radius ── */
+	--rounded-none: 0px;
+	--rounded-xs: 3.25px;
+	--rounded-sm: 4px;
+	--rounded-md: 8px;
+	--rounded-full: 9999px;
+
+	/* ── Spacing (4 px base) ── */
+	--space-xxs: 2px;
+	--space-xs: 4px;
+	--space-sm: 8px;
+	--space-md: 12px;
+	--space-lg: 16px;
+	--space-xl: 20px;
+	--space-2xl: 24px;
+	--space-3xl: 32px;
+	--space-4xl: 44px;
+	--space-5xl: 48px;
+	--space-6xl: 55.2px;
+	--space-section: 80px;
+
+	/* ── App Surface Mappings ── */
+	--sidebar-bg: var(--color-surface-dark-soft);
+	--sidebar-border: var(--color-canvas-dark);
+	--sidebar-header-border: var(--color-canvas-dark);
+	--sidebar-text: var(--color-on-dark);
+	--sidebar-hover-bg: var(--color-canvas-dark);
+	--sidebar-active-bg: var(--color-canvas-dark);
+
+	--main-bg: var(--color-canvas-dark);
+	--main-text: var(--color-on-dark);
+
+	--resizer-color: transparent;
+	--resizer-hover-color: var(--color-accent-periwinkle);
+
+	--sidebar-width-min: 180px;
+	--sidebar-width-max: 600px;
+	--sidebar-width-default: 260px;
+}

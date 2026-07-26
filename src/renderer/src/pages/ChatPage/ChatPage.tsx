@@ -1,0 +1,121 @@
+import {
+	type Component,
+	createEffect,
+	createSignal,
+	type JSX,
+	onCleanup,
+} from "solid-js";
+import ChatPanel from "./ChatPanel";
+import styles from "./ChatPage.module.css";
+
+interface ChatPageProps {
+	/** 侧边栏头部内容 */
+	sidebarHeader?: JSX.Element;
+	/** 侧边栏主体内容 */
+	sidebarContent: JSX.Element;
+	/** 侧边栏底部内容 */
+	sidebarBottom?: JSX.Element;
+	/** 对话区标题 */
+	chatHeader?: JSX.Element;
+	/** 对话区输入框 */
+	chatInput?: JSX.Element;
+	/** 对话区消息内容 */
+	children: JSX.Element;
+	/** 侧边栏初始宽度（默认 260px） */
+	defaultWidth?: number;
+	/** 侧边栏最小宽度（默认 180px） */
+	minWidth?: number;
+	/** 侧边栏最大宽度（默认 600px） */
+	maxWidth?: number;
+}
+
+const ChatPage: Component<ChatPageProps> = (props) => {
+	const minW = () => props.minWidth ?? 180;
+	const maxW = () => props.maxWidth ?? 600;
+
+	const [drawerWidth, setDrawerWidth] = createSignal(
+		props.defaultWidth ?? 260,
+	);
+	const [isResizing, setIsResizing] = createSignal(false);
+
+	const clamp = (w: number) => Math.max(minW(), Math.min(maxW(), w));
+
+	/* ---- 鼠标拖拽 ---- */
+	const handleMouseDown = (e: MouseEvent) => {
+		e.preventDefault();
+		setIsResizing(true);
+	};
+
+	const handleMouseMove = (e: MouseEvent) => {
+		if (!isResizing()) return;
+		setDrawerWidth(clamp(e.clientX));
+	};
+
+	const handleMouseUp = () => {
+		setIsResizing(false);
+	};
+
+	createEffect(() => {
+		if (isResizing()) {
+			document.addEventListener("mousemove", handleMouseMove);
+			document.addEventListener("mouseup", handleMouseUp);
+		}
+		onCleanup(() => {
+			document.removeEventListener("mousemove", handleMouseMove);
+			document.removeEventListener("mouseup", handleMouseUp);
+		});
+	});
+
+	/* ---- 键盘 ---- */
+	const handleKeyDown = (e: KeyboardEvent) => {
+		if (e.key === "ArrowLeft") {
+			e.preventDefault();
+			setDrawerWidth((prev) => clamp(prev - 20));
+		} else if (e.key === "ArrowRight") {
+			e.preventDefault();
+			setDrawerWidth((prev) => clamp(prev + 20));
+		}
+	};
+
+	return (
+		<div class={styles.layout}>
+			{/* 左侧可拖拽面板 */}
+			<aside
+				class={styles.drawer}
+				style={{ width: `${drawerWidth()}px` }}
+				role="region"
+				aria-label="对话侧边栏"
+			>
+				{props.sidebarHeader && (
+					<div class={styles.drawerHeader}>{props.sidebarHeader}</div>
+				)}
+				<div class={styles.drawerContent}>{props.sidebarContent}</div>
+				{props.sidebarBottom && (
+					<div class={styles.drawerBottom}>{props.sidebarBottom}</div>
+				)}
+
+				{/* 拖拽分隔条 */}
+				<div
+					class={`${styles.resizer} ${isResizing() ? styles.resizerActive : ""}`}
+					role="separator"
+					tabindex={0}
+					aria-valuenow={drawerWidth()}
+					aria-valuemin={minW()}
+					aria-valuemax={maxW()}
+					aria-label="调整面板宽度"
+					onMouseDown={handleMouseDown}
+					onKeyDown={handleKeyDown}
+				/>
+			</aside>
+
+			{/* 右侧对话主区域 */}
+			<main class={styles.main} role="region" aria-label="对话内容">
+				<ChatPanel header={props.chatHeader} input={props.chatInput}>
+					{props.children}
+				</ChatPanel>
+			</main>
+		</div>
+	);
+};
+
+export default ChatPage;

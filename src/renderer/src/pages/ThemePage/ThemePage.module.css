@@ -1,0 +1,304 @@
+.page {
+	padding: var(--space-3xl);
+	overflow-y: auto;
+	height: 100%;
+}
+
+.pageTitle {
+	font-family: var(--font-display);
+	font-size: var(--text-display-lg);
+	font-weight: 500;
+	line-height: 1.15;
+	letter-spacing: -0.42px;
+	color: var(--color-on-dark);
+	margin-bottom: var(--space-sm);
+}
+
+.pageDesc {
+	font-family: var(--font-display);
+	font-size: var(--text-body-md);
+	color: var(--color-body);
+	margin-bottom: var(--space-3xl);
+}
+
+.pageDesc code {
+	font-family: var(--font-mono);
+	font-size: var(--text-mono-label);
+}
+
+/* ── Sections ── */
+.section {
+	margin-bottom: var(--space-4xl);
+}
+
+.sectionEyebrow {
+	font-family: var(--font-mono);
+	font-size: var(--text-mono-eyebrow);
+	font-weight: 500;
+	line-height: 1;
+	letter-spacing: 0.55px;
+	text-transform: uppercase;
+	color: var(--color-body);
+	margin-bottom: var(--space-lg);
+}
+
+/* ── Color Swatches ── */
+.swatchGrid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+	gap: var(--space-md);
+}
+
+.swatchCard {
+	display: flex;
+	flex-direction: column;
+	border-radius: var(--rounded-sm);
+	overflow: hidden;
+	border: 1px solid var(--color-surface-dark-soft);
+}
+
+.swatch {
+	height: 64px;
+}
+
+.swatchInfo {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xxs);
+	padding: var(--space-sm);
+	background-color: var(--color-surface-dark-soft);
+}
+
+.swatchName {
+	font-family: var(--font-display);
+	font-size: var(--text-body-md);
+	font-weight: 500;
+	color: var(--color-on-dark);
+}
+
+.swatchValue {
+	font-family: var(--font-mono);
+	font-size: var(--text-mono-caption);
+	color: var(--color-body);
+}
+
+.swatchVar {
+	font-family: var(--font-mono);
+	font-size: var(--text-mono-caption);
+	color: var(--color-body);
+	opacity: 0.6;
+}
+
+/* ── Gradient ── */
+.gradientTogether {
+	height: 48px;
+	border-radius: var(--rounded-sm);
+	background: linear-gradient(135deg, #fc4c02, #ef2cc1, #bdbbff);
+	margin-bottom: var(--space-sm);
+}
+
+.gradientOpenCode {
+	height: 48px;
+	border-radius: var(--rounded-sm);
+	background: linear-gradient(135deg, #201d1d, #302c2c, #646262);
+	margin-bottom: var(--space-sm);
+}
+
+/* ── Typography ── */
+.typeList {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-md);
+}
+
+.typeRow {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xxs);
+}
+
+.typeLabel {
+	font-family: var(--font-mono);
+	font-size: var(--text-mono-caption);
+	color: var(--color-body);
+	text-transform: uppercase;
+	letter-spacing: 0.05px;
+}
+
+.displayXxl {
+	font-family: var(--font-display);
+	font-size: var(--text-display-xxl);
+	font-weight: 500;
+	line-height: 1.1;
+	letter-spacing: -1.92px;
+	color: var(--color-on-dark);
+}
+
+.displayXl {
+	font-family: var(--font-display);
+	font-size: var(--text-display-xl);
+	font-weight: 500;
+	line-height: 1.2;
+	letter-spacing: -0.8px;
+	color: var(--color-on-dark);
+}
+
+.displayLg {
+	font-family: var(--font-display);
+	font-size: var(--text-display-lg);
+	font-weight: 500;
+	line-height: 1.15;
+	letter-spacing: -0.42px;
+	color: var(--color-on-dark);
+}
+
+.displayMd {
+	font-family: var(--font-display);
+	font-size: var(--text-display-md);
+	font-weight: 500;
+	line-height: 1.15;
+	letter-spacing: -0.22px;
+	color: var(--color-on-dark);
+}
+
+.bodyLg {
+	font-family: var(--font-display);
+	font-size: var(--text-body-lg);
+	font-weight: 400;
+	line-height: 1.3;
+	letter-spacing: -0.18px;
+	color: var(--color-on-dark);
+}
+
+.bodyMd {
+	font-family: var(--font-display);
+	font-size: var(--text-body-md);
+	font-weight: 400;
+	line-height: 1.3;
+	letter-spacing: -0.16px;
+	color: var(--color-on-dark);
+}
+
+.caption {
+	font-family: var(--font-display);
+	font-size: var(--text-caption);
+	font-weight: 400;
+	line-height: 1.4;
+	color: var(--color-body);
+}
+
+.monoButton {
+	font-family: var(--font-mono);
+	font-size: var(--text-mono-button);
+	font-weight: 500;
+	line-height: 1;
+	letter-spacing: 0.08px;
+	text-transform: uppercase;
+	color: var(--color-on-dark);
+}
+
+.monoEyebrow {
+	font-family: var(--font-mono);
+	font-size: var(--text-mono-eyebrow);
+	font-weight: 500;
+	line-height: 1;
+	letter-spacing: 0.55px;
+	text-transform: uppercase;
+	color: var(--color-body);
+}
+
+/* ── Spacing ── */
+.spacingList {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-sm);
+}
+
+.spacingRow {
+	display: flex;
+	align-items: center;
+	gap: var(--space-md);
+}
+
+.spacingName {
+	font-family: var(--font-mono);
+	font-size: var(--text-mono-label);
+	color: var(--color-on-dark);
+	width: 40px;
+}
+
+.spacingValue {
+	font-family: var(--font-mono);
+	font-size: var(--text-mono-caption);
+	color: var(--color-body);
+	width: 48px;
+}
+
+.spacingBar {
+	height: 8px;
+	border-radius: var(--rounded-xs);
+	background-color: var(--color-accent-periwinkle);
+	opacity: 0.5;
+}
+
+/* ── Border Radius ── */
+.radiusRow {
+	display: flex;
+	gap: var(--space-lg);
+}
+
+.radiusBox {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 64px;
+	height: 64px;
+	background-color: var(--color-surface-dark-soft);
+	border: 1px solid var(--color-body);
+	font-family: var(--font-mono);
+	font-size: var(--text-mono-caption);
+	color: var(--color-on-dark);
+}
+
+/* ── Theme Switcher ── */
+.themeGrid {
+	display: flex;
+	gap: var(--space-md);
+}
+
+.themeCard {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-xs);
+	padding: var(--space-lg);
+	border: 1px solid var(--color-surface-dark-soft);
+	border-radius: var(--rounded-sm);
+	background-color: transparent;
+	cursor: pointer;
+	text-align: left;
+	transition: border-color 0.15s ease, background-color 0.15s ease;
+	flex: 1;
+}
+
+.themeCard:hover {
+	border-color: var(--color-accent-periwinkle);
+	background-color: var(--color-surface-dark-soft);
+}
+
+.themeCardActive {
+	border-color: var(--color-accent-periwinkle);
+	background-color: var(--color-surface-dark-soft);
+}
+
+.themeName {
+	font-family: var(--font-display);
+	font-size: var(--text-body-md);
+	font-weight: 500;
+	color: var(--color-on-dark);
+}
+
+.themeDesc {
+	font-family: var(--font-display);
+	font-size: var(--text-caption);
+	color: var(--color-body);
+}

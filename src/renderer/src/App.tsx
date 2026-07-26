@@ -1,47 +1,53 @@
-import type { Component } from "solid-js";
+import { type Component, createSignal } from "solid-js";
 import electronLogo from "./assets/electron.svg";
-import Versions from "./components/Versions";
+import chatIcon from "./assets/chat.svg?raw";
+import paletteIcon from "./assets/palette.svg?raw";
+import settingsIcon from "./assets/settings.svg?raw";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import MainLayout, { type NavItem } from "./layouts/MainLayout/MainLayout";
+import ChatPage from "./pages/ChatPage/ChatPage";
+import ThemePage from "./pages/ThemePage/ThemePage";
+import SettingsPage from "./pages/SettingsPage/SettingsPage";
+import Icon from "./components/Icon";
+
+const TOP_NAV: NavItem[] = [
+	{ id: "chat", icon: <Icon raw={chatIcon} />, label: "Chat" },
+	{ id: "theme", icon: <Icon raw={paletteIcon} />, label: "Theme" },
+];
+
+const BOTTOM_NAV: NavItem[] = [
+	{ id: "settings", icon: <Icon raw={settingsIcon} />, label: "Settings" },
+];
 
 const App: Component = () => {
-	const ipcHandle = (): void => window.electron.ipcRenderer.send("ping");
+	const [activeNav, setActiveNav] = createSignal("chat");
 
 	return (
-		<>
+		<ThemeProvider>
 			<div class="app">
-				<img alt="logo" class="logo" src={electronLogo} />
-				<div class="creator">Powered by electron-vite</div>
-				<div class="text">
-					Build an Electron app with <span class="solid">Solid</span>
-					&nbsp;and <span class="ts">TypeScript</span>
-				</div>
-				<p class="tip">
-					Please try pressing <code>F12</code> to open the devTool
-				</p>
-				<div class="actions">
-					<div class="action">
-						<a
-							href="https://electron-vite.org/"
-							target="_blank"
-							rel="noreferrer"
-							class="inline-block cursor-pointer rounded-full border border-transparent px-5 py-2 text-sm font-semibold leading-[38px] no-underline transition-colors duration-300"
+				<MainLayout
+					topNavItems={TOP_NAV}
+					bottomNavItems={BOTTOM_NAV}
+					activeNav={activeNav()}
+					onNavSelect={setActiveNav}
+					navTop={<img alt="logo" src={electronLogo} class="h-5 w-5" />}
+				>
+					{activeNav() === "chat" && (
+						<ChatPage
+							sidebarHeader={<span>Chat</span>}
+							sidebarContent={<div />}
+							sidebarBottom={<div class="h-12" />}
+							chatHeader={<span>对话</span>}
+							chatInput={<div class="h-12" />}
 						>
-							Documentation
-						</a>
-					</div>
-					<div class="action">
-						<a
-							target="_blank"
-							rel="noreferrer"
-							onClick={ipcHandle}
-							class="inline-block cursor-pointer rounded-full border border-transparent px-5 py-2 text-sm font-semibold leading-[38px] no-underline transition-colors duration-300"
-						>
-							Send IPC
-						</a>
-					</div>
-				</div>
+							<div>对话消息区域</div>
+						</ChatPage>
+					)}
+					{activeNav() === "theme" && <ThemePage />}
+					{activeNav() === "settings" && <SettingsPage />}
+				</MainLayout>
 			</div>
-			<Versions />
-		</>
+		</ThemeProvider>
 	);
 };
 

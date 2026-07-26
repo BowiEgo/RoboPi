@@ -1,0 +1,17 @@
+.page {
+	padding: var(--space-3xl);
+}
+
+.title {
+	font-family: var(--font-display);
+	font-size: var(--text-display-lg);
+	font-weight: 500;
+	color: var(--color-on-dark);
+	margin-bottom: var(--space-sm);
+}
+
+.desc {
+	font-family: var(--font-display);
+	font-size: var(--text-body-md);
+	color: var(--color-body);
+}

@@ -1,0 +1,158 @@
+.layout {
+	display: flex;
+	width: 100vw;
+	height: 100vh;
+	overflow: hidden;
+}
+
+/* ══════════════════════════════════════════
+   左侧导航栏
+   ══════════════════════════════════════════ */
+.navBar {
+	display: flex;
+	flex-direction: column;
+	width: 72px;
+	flex-shrink: 0;
+	background-color: var(--sidebar-bg);
+	border-right: 1px solid var(--sidebar-border);
+	padding: var(--space-md) 0;
+	align-items: center;
+	user-select: none;
+}
+
+/* ── 顶部 Logo ── */
+.navTop {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 72px;
+	height: 52px;
+	flex-shrink: 0;
+	margin-bottom: var(--space-sm);
+}
+
+.navTop img {
+	width: 24px;
+	height: 24px;
+	opacity: 0.7;
+	transition: opacity 0.15s ease;
+}
+
+.navTop:hover img {
+	opacity: 1;
+}
+
+/* ── 导航按钮组 ── */
+.navSection {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--space-xxs);
+	flex: 1;
+	padding: 0 var(--space-sm);
+}
+
+/* ── 底部导航按钮组 ── */
+.navSectionBottom {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--space-xxs);
+	padding: var(--space-sm) var(--space-sm) var(--space-md);
+}
+
+/* ── 分隔线 ── */
+.navDivider {
+	width: 24px;
+	height: 1px;
+	background-color: var(--sidebar-border);
+	margin-bottom: var(--space-xs);
+	opacity: 0.5;
+}
+
+/* ── 单个导航按钮 ── */
+.navBtn {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 52px;
+	height: 52px;
+	padding: 0;
+	border: none;
+	border-radius: var(--rounded-sm);
+	background-color: transparent;
+	color: var(--sidebar-text);
+	opacity: 0.5;
+	cursor: pointer;
+	transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.navBtn:hover {
+	opacity: 1;
+	background-color: var(--sidebar-hover-bg);
+	color: var(--sidebar-text);
+}
+
+.navBtnActive {
+	opacity: 1;
+	background-color: var(--sidebar-active-bg);
+	color: var(--color-accent-periwinkle);
+}
+
+/* ── 按钮图标 ── */
+.navIcon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 18px;
+	height: 18px;
+}
+
+.navIcon svg {
+	width: 100%;
+	height: 100%;
+	stroke-width: 1.8;
+}
+
+/* ── Tooltip ── */
+.navBtn::after {
+	content: attr(data-tooltip);
+	position: absolute;
+	left: calc(100% + 12px);
+	top: 50%;
+	transform: translateY(-50%);
+	white-space: nowrap;
+	padding: 5px 10px;
+	border-radius: 5px;
+	background-color: var(--color-canvas-dark);
+	color: var(--color-on-dark);
+	font-family: var(--font-mono);
+	font-size: 11px;
+	font-weight: 400;
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
+	pointer-events: none;
+	opacity: 0;
+	transform: translateY(-50%) translateX(-4px);
+	transition: opacity 0.12s ease, transform 0.12s ease;
+	z-index: 100;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.navBtn:hover::after {
+	opacity: 1;
+	transform: translateY(-50%) translateX(0);
+}
+
+/* ══════════════════════════════════════════
+   右侧页面区
+   ══════════════════════════════════════════ */
+.pageArea {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	background-color: var(--main-bg);
+	color: var(--main-text);
+}
