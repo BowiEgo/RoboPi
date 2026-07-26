@@ -54,3 +54,38 @@
 	--spacing-5xl: 48px;
 	--spacing-6xl: 55.2px;
 }
+
+/* ── Scrollbar Utilities ── */
+@utility scrollbar-theme {
+	&::-webkit-scrollbar {
+		width: 6px;
+		height: 6px;
+	}
+
+	&::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	&::-webkit-scrollbar-thumb {
+		background: var(--color-surface-dark-soft);
+		border-radius: 3px;
+		transition: background 0.15s ease;
+	}
+
+	&::-webkit-scrollbar-thumb:hover {
+		background: var(--color-accent-periwinkle);
+		opacity: 0.6;
+	}
+
+	&::-webkit-scrollbar-corner {
+		background: transparent;
+	}
+}
+
+@utility scrollbar-hidden {
+	&::-webkit-scrollbar {
+		display: none;
+	}
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+}

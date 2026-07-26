@@ -42,7 +42,6 @@ const AppContent: Component = () => {
 						sidebarContent={<div />}
 						sidebarBottom={<div class="h-12" />}
 						chatHeader={<span>{t("chat.header")}</span>}
-						chatInput={<div class="h-12" />}
 					>
 						<div>{t("chat.messages")}</div>
 					</ChatPage>

@@ -1,0 +1,210 @@
+.composer {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	flex-shrink: 0;
+	margin: 4px;
+	border-radius: 4px;
+	border: 1px solid var(--color-mist-700);
+	transition: border-color 0.2s ease;
+}
+
+.composer.focused {
+	border-color: var(--color-accent-periwinkle);
+}
+
+/* ══════════════════════════════════════════
+   Resize Handle
+   ══════════════════════════════════════════ */
+.resizeHandle {
+	position: absolute;
+	top: -4px;
+	left: 0;
+	right: 0;
+	height: 8px;
+	cursor: row-resize;
+	z-index: 10;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.resizeHandle::before {
+	content: '';
+	position: absolute;
+	inset: 3px 0;
+	transition: background-color 0.15s ease;
+}
+
+.resizeHandle:hover::before,
+.resizeHandleActive::before {
+	background-color: var(--color-accent-periwinkle);
+	opacity: 0.4;
+}
+
+.resizeBump {
+	position: relative;
+	z-index: 1;
+	width: 44px;
+	height: 4px;
+	border-radius: 2px;
+	background-color: var(--color-body);
+	opacity: 0.3;
+	transition:
+		opacity 0.2s ease,
+		background-color 0.2s ease,
+		transform 0.2s ease;
+}
+
+.resizeHandle:hover .resizeBump,
+.resizeHandleActive .resizeBump {
+	opacity: 0.9;
+	background-color: var(--color-accent-periwinkle);
+	transform: scaleY(1.25);
+}
+
+/* ══════════════════════════════════════════
+   Toolbar
+   ══════════════════════════════════════════ */
+.toolbar {
+	display: flex;
+	align-items: center;
+	gap: var(--space-xs);
+	padding: var(--space-sm) var(--space-lg);
+	flex-shrink: 0;
+	min-height: 36px;
+}
+
+.toolBtn {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 10px;
+	border: 1px solid transparent;
+	border-radius: 9999px;
+	background-color: transparent;
+	color: var(--color-body);
+	font-family: var(--font-display);
+	font-size: 12px;
+	font-weight: 450;
+	line-height: 1.3;
+	white-space: nowrap;
+	cursor: pointer;
+	transition:
+		color 0.15s ease,
+		background-color 0.15s ease,
+		border-color 0.15s ease;
+}
+
+.toolBtn:hover {
+	color: var(--color-on-dark);
+	background-color: var(--sidebar-hover-bg);
+	border-color: var(--sidebar-border);
+}
+
+.toolBtn:active {
+	background-color: var(--sidebar-active-bg);
+}
+
+.toolSep {
+	width: 1px;
+	height: 16px;
+	background-color: var(--sidebar-border);
+	opacity: 0.25;
+	flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════
+   Input Area
+   ══════════════════════════════════════════ */
+.inputArea {
+	flex: 1;
+	display: flex;
+	margin: 0 var(--space-lg);
+	padding: var(--space-sm) var(--space-md);
+	border-radius: var(--rounded-sm);
+	background-color: var(--color-canvas-dark);
+	border: 1px solid transparent;
+	transition: border-color 0.15s ease;
+	overflow: hidden;
+}
+
+/* input focus highlight is handled by .composer.focused border-top */
+
+.input {
+	width: 100%;
+	min-height: 24px;
+	border: none;
+	outline: none;
+	background: transparent;
+	color: var(--color-on-dark);
+	font-family: var(--font-display);
+	font-size: var(--text-body-md);
+	line-height: 1.6;
+	overflow-y: auto;
+	resize: none;
+}
+
+.input:empty::before {
+	content: attr(data-placeholder);
+	color: var(--color-body);
+	opacity: 0.7;
+	pointer-events: none;
+}
+
+/* ══════════════════════════════════════════
+   Footer
+   ══════════════════════════════════════════ */
+.footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-xs);
+	padding: var(--space-sm) var(--space-lg);
+	flex-shrink: 0;
+	min-height: 36px;
+}
+
+.footerMeta {
+	display: flex;
+	align-items: center;
+	gap: var(--space-sm);
+	color: var(--color-body);
+	font-family: var(--font-display);
+	font-size: 11px;
+	opacity: 0.6;
+}
+
+.sendBtn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 5px 18px;
+	border: none;
+	border-radius: var(--rounded-sm);
+	background-color: var(--color-primary);
+	color: var(--color-on-primary);
+	font-family: var(--font-display);
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1;
+	cursor: pointer;
+	transition:
+		opacity 0.15s ease,
+		transform 0.1s ease;
+}
+
+.sendBtn:hover {
+	opacity: 0.88;
+}
+
+.sendBtn:active {
+	transform: scale(0.97);
+	opacity: 0.8;
+}
+
+.sendIcon {
+	width: 16px;
+	height: 16px;
+	flex-shrink: 0;
+}
