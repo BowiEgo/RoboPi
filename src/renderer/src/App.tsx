@@ -18,12 +18,22 @@ const App: Component = () => {
       </p>
       <div class="actions">
         <div class="action">
-          <a href="https://electron-vite.org/" target="_blank" rel="noreferrer">
+          <a
+            href="https://electron-vite.org/"
+            target="_blank"
+            rel="noreferrer"
+            class="inline-block cursor-pointer rounded-full border border-transparent px-5 py-2 text-sm font-semibold leading-[38px] no-underline transition-colors duration-300"
+          >
             Documentation
           </a>
         </div>
         <div class="action">
-          <a target="_blank" rel="noreferrer" onClick={ipcHandle}>
+          <a
+            target="_blank"
+            rel="noreferrer"
+            onClick={ipcHandle}
+            class="inline-block cursor-pointer rounded-full border border-transparent px-5 py-2 text-sm font-semibold leading-[38px] no-underline transition-colors duration-300"
+          >
             Send IPC
           </a>
         </div>
