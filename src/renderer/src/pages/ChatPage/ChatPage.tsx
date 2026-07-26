@@ -18,8 +18,6 @@ interface ChatPageProps {
 	sidebarBottom?: JSX.Element;
 	/** 对话区标题 */
 	chatHeader?: JSX.Element;
-	/** 对话区输入框 */
-	chatInput?: JSX.Element;
 	/** 对话区消息内容 */
 	children: JSX.Element;
 	/** 侧边栏初始宽度（默认 260px） */
@@ -112,7 +110,7 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 
 			{/* 右侧对话主区域 */}
 			<main class={styles.main} role="region" aria-label={t("chat.contentLabel")}>
-				<ChatPanel header={props.chatHeader} input={props.chatInput}>
+				<ChatPanel header={props.chatHeader}>
 					{props.children}
 				</ChatPanel>
 			</main>

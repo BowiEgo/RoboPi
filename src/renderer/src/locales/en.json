@@ -12,6 +12,13 @@
 	"chat.drawerResize": "Resize panel width",
 	"chat.contentLabel": "Chat content",
 
+	"composer.mode": "Normal mode",
+	"composer.model": "Model: deepseek/DeepSeek V4 Flash",
+	"composer.prompt": "Prompt template",
+	"composer.think": "Thinking: High",
+	"composer.placeholder": "Type a message, Enter to send. /cmd, @file, !shell",
+	"composer.send": "Send",
+
 	"theme.title": "Theme",
 	"theme.desc": "Current theme: {name} — {desc}",
 	"theme.switch": "Switch Theme",
