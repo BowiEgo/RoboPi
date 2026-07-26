@@ -1,0 +1,35 @@
+{
+	"nav.chat": "Chat",
+	"nav.theme": "Theme",
+	"nav.settings": "Settings",
+	"nav.pageNav": "Page navigation",
+	"nav.pageContent": "Page content",
+
+	"chat.sidebar": "Chat sidebar",
+	"chat.header": "Chat",
+	"chat.messages": "Message area",
+	"chat.drawerLabel": "Chat sidebar",
+	"chat.drawerResize": "Resize panel width",
+	"chat.contentLabel": "Chat content",
+
+	"theme.title": "Theme",
+	"theme.desc": "Current theme: {name} — {desc}",
+	"theme.switch": "Switch Theme",
+	"theme.colors": "Colors",
+	"theme.gradient": "Brand Gradient",
+	"theme.typography": "Typography",
+	"theme.spacing": "Spacing",
+	"theme.radius": "Border Radius",
+	"theme.gradientTogether": "orange → magenta → periwinkle",
+	"theme.gradientOpenCode": "Solid accent — single-tone identity",
+	"theme.togetherName": "Together AI",
+	"theme.togetherDesc": "Dark surfaces, periwinkle accent, Inter display sans",
+	"theme.opencodeName": "OpenCode",
+	"theme.opencodeDesc": "Cream canvas, monospaced, terminal-inspired",
+
+	"settings.title": "Settings",
+	"settings.pending": "Application settings (coming soon)",
+	"settings.locale": "Language",
+	"settings.localeEn": "English",
+	"settings.localeZh": "中文"
+}

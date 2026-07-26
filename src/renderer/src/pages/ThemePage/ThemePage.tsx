@@ -1,5 +1,6 @@
 import { type Component, For, createMemo } from "solid-js";
 import { useTheme, THEMES } from "../../contexts/ThemeContext";
+import { useLocale } from "../../contexts/LocaleContext";
 import styles from "./ThemePage.module.css";
 
 interface SwatchDef {
@@ -56,6 +57,7 @@ const SPACING = [
 
 const ThemePage: Component = () => {
 	const { current, setTheme } = useTheme();
+	const { t } = useLocale();
 
 	const swatches = createMemo<SwatchDef[]>(() =>
 		current().id === "opencode" ? OPENCODE_SWATCHES : TOGETHER_SWATCHES,
@@ -67,14 +69,13 @@ const ThemePage: Component = () => {
 
 	return (
 		<div class={styles.page}>
-			<h1 class={styles.pageTitle}>Theme</h1>
+			<h1 class={styles.pageTitle}>{t("theme.title")}</h1>
 			<p class={styles.pageDesc}>
-				当前主题：{current().name} — {current().desc}
+				{t("theme.desc", { name: current().name, desc: current().desc })}
 			</p>
 
-			{/* ── Theme Switcher ── */}
 			<section class={styles.section}>
-				<h2 class={styles.sectionEyebrow}>Switch Theme</h2>
+				<h2 class={styles.sectionEyebrow}>{t("theme.switch")}</h2>
 				<div class={styles.themeGrid}>
 					<For each={THEMES}>
 						{(theme) => (
@@ -90,9 +91,8 @@ const ThemePage: Component = () => {
 				</div>
 			</section>
 
-			{/* ── Colors ── */}
 			<section class={styles.section}>
-				<h2 class={styles.sectionEyebrow}>Colors</h2>
+				<h2 class={styles.sectionEyebrow}>{t("theme.colors")}</h2>
 				<div class={styles.swatchGrid}>
 					<For each={swatches()}>
 						{(s) => (
@@ -112,20 +112,18 @@ const ThemePage: Component = () => {
 				</div>
 			</section>
 
-			{/* ── Brand Gradient ── */}
 			<section class={styles.section}>
-				<h2 class={styles.sectionEyebrow}>Brand Gradient</h2>
+				<h2 class={styles.sectionEyebrow}>{t("theme.gradient")}</h2>
 				<div class={gradientClass()} />
 				<p class={styles.bodyMd}>
 					{current().id === "opencode"
-						? "Solid accent — single-tone identity"
-						: "orange → magenta → periwinkle"}
+						? t("theme.gradientOpenCode")
+						: t("theme.gradientTogether")}
 				</p>
 			</section>
 
-			{/* ── Typography ── */}
 			<section class={styles.section}>
-				<h2 class={styles.sectionEyebrow}>Typography</h2>
+				<h2 class={styles.sectionEyebrow}>{t("theme.typography")}</h2>
 				<div class={styles.typeList}>
 					<For each={TYPOGRAPHY}>
 						{(t) => (
@@ -138,9 +136,8 @@ const ThemePage: Component = () => {
 				</div>
 			</section>
 
-			{/* ── Spacing ── */}
 			<section class={styles.section}>
-				<h2 class={styles.sectionEyebrow}>Spacing</h2>
+				<h2 class={styles.sectionEyebrow}>{t("theme.spacing")}</h2>
 				<div class={styles.spacingList}>
 					<For each={SPACING}>
 						{(s) => (
@@ -157,9 +154,8 @@ const ThemePage: Component = () => {
 				</div>
 			</section>
 
-			{/* ── Border Radius ── */}
 			<section class={styles.section}>
-				<h2 class={styles.sectionEyebrow}>Border Radius</h2>
+				<h2 class={styles.sectionEyebrow}>{t("theme.radius")}</h2>
 				<div class={styles.radiusRow}>
 					<div
 						class={styles.radiusBox}

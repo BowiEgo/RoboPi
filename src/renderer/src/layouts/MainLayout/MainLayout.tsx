@@ -1,4 +1,5 @@
 import { type Component, type JSX, For } from "solid-js";
+import { useLocale } from "../../contexts/LocaleContext";
 import styles from "./MainLayout.module.css";
 
 export interface NavItem {
@@ -8,29 +9,22 @@ export interface NavItem {
 }
 
 interface MainLayoutProps {
-	/** 顶部导航图标列表 */
 	topNavItems: NavItem[];
-	/** 底部导航图标列表 */
 	bottomNavItems: NavItem[];
-	/** 当前激活的页面 ID */
 	activeNav: string;
-	/** 导航切换回调 */
 	onNavSelect: (id: string) => void;
-	/** 顶部 Logo / 品牌区（可选） */
 	navTop?: JSX.Element;
-	/** 页面内容 */
 	children: JSX.Element;
 }
 
 const MainLayout: Component<MainLayoutProps> = (props) => {
+	const { t } = useLocale();
+
 	return (
 		<div class={styles.layout}>
-			{/* 左侧导航栏 */}
-			<nav class={styles.navBar} role="tablist" aria-label="页面切换">
-				{/* 顶部：Logo */}
+			<nav class={styles.navBar} role="tablist" aria-label={t("nav.pageNav")}>
 				{props.navTop && <div class={styles.navTop}>{props.navTop}</div>}
 
-				{/* 中部：主导航 */}
 				<div class={styles.navSection}>
 					<For each={props.topNavItems}>
 						{(item) => (
@@ -48,7 +42,6 @@ const MainLayout: Component<MainLayoutProps> = (props) => {
 					</For>
 				</div>
 
-				{/* 底部：次要导航 */}
 				{props.bottomNavItems.length > 0 && (
 					<div class={styles.navSectionBottom}>
 						<div class={styles.navDivider} />
@@ -70,8 +63,7 @@ const MainLayout: Component<MainLayoutProps> = (props) => {
 				)}
 			</nav>
 
-			{/* 右侧页面区 */}
-			<main class={styles.pageArea} role="region" aria-label="页面内容">
+			<main class={styles.pageArea} role="region" aria-label={t("nav.pageContent")}>
 				{props.children}
 			</main>
 		</div>

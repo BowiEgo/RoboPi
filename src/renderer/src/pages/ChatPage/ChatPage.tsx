@@ -5,6 +5,7 @@ import {
 	type JSX,
 	onCleanup,
 } from "solid-js";
+import { useLocale } from "../../contexts/LocaleContext";
 import ChatPanel from "./ChatPanel";
 import styles from "./ChatPage.module.css";
 
@@ -30,6 +31,7 @@ interface ChatPageProps {
 }
 
 const ChatPage: Component<ChatPageProps> = (props) => {
+	const { t } = useLocale();
 	const minW = () => props.minWidth ?? 180;
 	const maxW = () => props.maxWidth ?? 600;
 
@@ -84,7 +86,7 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 				class={styles.drawer}
 				style={{ width: `${drawerWidth()}px` }}
 				role="region"
-				aria-label="对话侧边栏"
+				aria-label={t("chat.drawerLabel")}
 			>
 				{props.sidebarHeader && (
 					<div class={styles.drawerHeader}>{props.sidebarHeader}</div>
@@ -102,14 +104,14 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 					aria-valuenow={drawerWidth()}
 					aria-valuemin={minW()}
 					aria-valuemax={maxW()}
-					aria-label="调整面板宽度"
+					aria-label={t("chat.drawerResize")}
 					onMouseDown={handleMouseDown}
 					onKeyDown={handleKeyDown}
 				/>
 			</aside>
 
 			{/* 右侧对话主区域 */}
-			<main class={styles.main} role="region" aria-label="对话内容">
+			<main class={styles.main} role="region" aria-label={t("chat.contentLabel")}>
 				<ChatPanel header={props.chatHeader} input={props.chatInput}>
 					{props.children}
 				</ChatPanel>

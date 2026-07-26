@@ -1,0 +1,35 @@
+{
+	"nav.chat": "聊天",
+	"nav.theme": "主题",
+	"nav.settings": "设置",
+	"nav.pageNav": "页面切换",
+	"nav.pageContent": "页面内容",
+
+	"chat.sidebar": "对话侧边栏",
+	"chat.header": "对话",
+	"chat.messages": "对话消息区域",
+	"chat.drawerLabel": "对话侧边栏",
+	"chat.drawerResize": "调整面板宽度",
+	"chat.contentLabel": "对话内容",
+
+	"theme.title": "主题",
+	"theme.desc": "当前主题：{name} — {desc}",
+	"theme.switch": "切换主题",
+	"theme.colors": "颜色",
+	"theme.gradient": "品牌渐变",
+	"theme.typography": "字体",
+	"theme.spacing": "间距",
+	"theme.radius": "圆角",
+	"theme.gradientTogether": "橙色 → 品红 → 淡紫",
+	"theme.gradientOpenCode": "纯色强调 — 单色识别",
+	"theme.togetherName": "Together AI",
+	"theme.togetherDesc": "深色表面，淡紫强调，Inter 无衬线字体",
+	"theme.opencodeName": "OpenCode",
+	"theme.opencodeDesc": "奶油画布，等宽字体，终端风格",
+
+	"settings.title": "设置",
+	"settings.pending": "应用设置（待实现）",
+	"settings.locale": "语言",
+	"settings.localeEn": "English",
+	"settings.localeZh": "中文"
+}
