@@ -1,6 +1,8 @@
-import { type Component, For, createMemo } from "solid-js";
-import { useTheme, THEMES } from "../../contexts/ThemeContext";
-import { useLocale } from "../../contexts/LocaleContext";
+import { type Component, createMemo, For } from "solid-js";
+
+import { useLocale } from "@/contexts/LocaleContext";
+import { THEMES, useTheme } from "@/contexts/ThemeContext";
+
 import styles from "./ThemePage.module.css";
 
 interface SwatchDef {
@@ -12,14 +14,22 @@ interface SwatchDef {
 const TOGETHER_SWATCHES: SwatchDef[] = [
 	{ name: "Primary", var: "--color-primary", value: "#000000" },
 	{ name: "Canvas Dark", var: "--color-canvas-dark", value: "#010120" },
-	{ name: "Surface Dark Soft", var: "--color-surface-dark-soft", value: "#313641" },
+	{
+		name: "Surface Dark Soft",
+		var: "--color-surface-dark-soft",
+		value: "#313641",
+	},
 	{ name: "On Dark", var: "--color-on-dark", value: "#ffffff" },
 	{ name: "Body", var: "--color-body", value: "#999999" },
 	{ name: "Hairline", var: "--color-hairline", value: "#ebebeb" },
 	{ name: "Canvas", var: "--color-canvas", value: "#ffffff" },
 	{ name: "Accent Orange", var: "--color-accent-orange", value: "#fc4c02" },
 	{ name: "Accent Magenta", var: "--color-accent-magenta", value: "#ef2cc1" },
-	{ name: "Accent Periwinkle", var: "--color-accent-periwinkle", value: "#bdbbff" },
+	{
+		name: "Accent Periwinkle",
+		var: "--color-accent-periwinkle",
+		value: "#bdbbff",
+	},
 	{ name: "Accent Mint", var: "--color-accent-mint", value: "#c8f6f9" },
 ];
 
@@ -41,8 +51,16 @@ const OPENCODE_SWATCHES: SwatchDef[] = [
 
 const TYPOGRAPHY = [
 	{ name: "Display XL", class: styles.displayXxl, text: "Build what's next" },
-	{ name: "Body MD", class: styles.bodyMd, text: "Default body paragraph text" },
-	{ name: "Caption", class: styles.caption, text: "Fine print, secondary text" },
+	{
+		name: "Body MD",
+		class: styles.bodyMd,
+		text: "Default body paragraph text",
+	},
+	{
+		name: "Caption",
+		class: styles.caption,
+		text: "Fine print, secondary text",
+	},
 	{ name: "Mono / Button", class: styles.monoButton, text: "GET STARTED" },
 ] as const;
 
@@ -64,7 +82,9 @@ const ThemePage: Component = () => {
 	);
 
 	const gradientClass = createMemo(() =>
-		current().id === "opencode" ? styles.gradientOpenCode : styles.gradientTogether,
+		current().id === "opencode"
+			? styles.gradientOpenCode
+			: styles.gradientTogether,
 	);
 
 	return (
@@ -80,6 +100,7 @@ const ThemePage: Component = () => {
 					<For each={THEMES}>
 						{(theme) => (
 							<button
+								type="button"
 								class={`${styles.themeCard} ${current().id === theme.id ? styles.themeCardActive : ""}`}
 								onClick={() => setTheme(theme.id)}
 							>

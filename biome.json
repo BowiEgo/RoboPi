@@ -33,7 +33,41 @@
 		"enabled": true,
 		"actions": {
 			"source": {
-				"organizeImports": "on"
+				"organizeImports": {
+                    "level": "on",
+                    "options": {
+                        "groups": [
+                            [":NODE:", ":BUN:"],
+                            ":BLANK_LINE:",
+
+                            ":PACKAGE:",
+                            ":BLANK_LINE:",
+
+                            "@/contexts/**",
+                            ":BLANK_LINE:",
+
+                            "@/layouts/**",
+                            "@/pages/**",
+                            "@/components/**",
+                            ":BLANK_LINE:",
+
+                            "@/locales/**",
+                            ":BLANK_LINE:",
+
+                            "@/styles/**",
+                            ":BLANK_LINE:",
+
+                            "@/assets/**",
+                            ":BLANK_LINE:",
+
+                            ["./**/*.css", "../**/*.css"],
+                            ":BLANK_LINE:",
+
+                            ":PATH:",
+                            ":ALIAS:"
+                        ]
+                    }
+                }
 			}
 		}
 	}

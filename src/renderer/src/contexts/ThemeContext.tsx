@@ -1,9 +1,9 @@
 import {
 	type Component,
-	type JSX,
 	createContext,
-	createSignal,
 	createEffect,
+	createSignal,
+	type JSX,
 	useContext,
 } from "solid-js";
 

@@ -5,9 +5,12 @@ import {
 	type JSX,
 	onCleanup,
 } from "solid-js";
-import { useLocale } from "../../contexts/LocaleContext";
-import ChatPanel from "./ChatPanel";
+
+import { useLocale } from "@/contexts/LocaleContext";
+
 import styles from "./ChatPage.module.css";
+
+import ChatPanel from "./ChatPanel";
 
 interface ChatPageProps {
 	/** 侧边栏头部内容 */
@@ -33,9 +36,7 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 	const minW = () => props.minWidth ?? 180;
 	const maxW = () => props.maxWidth ?? 600;
 
-	const [drawerWidth, setDrawerWidth] = createSignal(
-		props.defaultWidth ?? 260,
-	);
+	const [drawerWidth, setDrawerWidth] = createSignal(props.defaultWidth ?? 260);
 	const [isResizing, setIsResizing] = createSignal(false);
 
 	const clamp = (w: number) => Math.max(minW(), Math.min(maxW(), w));
@@ -79,11 +80,10 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 
 	return (
 		<div class={styles.layout}>
-			{/* 左侧可拖拽面板 */}
+			{/* Left side drawer */}
 			<aside
 				class={styles.drawer}
 				style={{ width: `${drawerWidth()}px` }}
-				role="region"
 				aria-label={t("chat.drawerLabel")}
 			>
 				{props.sidebarHeader && (
@@ -94,11 +94,11 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 					<div class={styles.drawerBottom}>{props.sidebarBottom}</div>
 				)}
 
-				{/* 拖拽分隔条 */}
+				{/* Draggable resizer */}
 				<div
 					class={`${styles.resizer} ${isResizing() ? styles.resizerActive : ""}`}
-					role="separator"
-					tabindex={0}
+					role="slider"
+					tabIndex={0}
 					aria-valuenow={drawerWidth()}
 					aria-valuemin={minW()}
 					aria-valuemax={maxW()}
@@ -108,11 +108,9 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 				/>
 			</aside>
 
-			{/* 右侧对话主区域 */}
-			<main class={styles.main} role="region" aria-label={t("chat.contentLabel")}>
-				<ChatPanel header={props.chatHeader}>
-					{props.children}
-				</ChatPanel>
+			{/* Right side main area */}
+			<main class={styles.main} aria-label={t("chat.contentLabel")}>
+				<ChatPanel header={props.chatHeader}>{props.children}</ChatPanel>
 			</main>
 		</div>
 	);

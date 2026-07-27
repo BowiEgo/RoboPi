@@ -1,7 +1,10 @@
 import type { Component } from "solid-js";
-import { useLocale, type LocaleId } from "../../contexts/LocaleContext";
+
+import { type LocaleId, useLocale } from "@/contexts/LocaleContext";
+
+import Versions from "@/components/Versions/Versions";
+
 import styles from "./SettingsPage.module.css";
-import Versions from "../../components/Versions/Versions";
 
 const LOCALES: { id: LocaleId; labelKey: string }[] = [
 	{ id: "en", labelKey: "settings.localeEn" },
@@ -21,6 +24,7 @@ const SettingsPage: Component = () => {
 				<div class={styles.localeRow}>
 					{LOCALES.map((l) => (
 						<button
+							type="button"
 							class={`${styles.localeBtn} ${locale() === l.id ? styles.localeBtnActive : ""}`}
 							onClick={() => setLocale(l.id)}
 						>

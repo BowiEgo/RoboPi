@@ -1,13 +1,14 @@
 import {
 	type Component,
-	type JSX,
 	createContext,
-	createSignal,
 	createEffect,
+	createSignal,
+	type JSX,
 	useContext,
 } from "solid-js";
-import en from "../locales/en.json";
-import zhCN from "../locales/zh-CN.json";
+
+import en from "@/locales/en.json";
+import zhCN from "@/locales/zh-CN.json";
 
 export type LocaleId = "en" | "zh-CN";
 
@@ -29,7 +30,10 @@ interface LocaleContextValue {
 const Ctx = createContext<LocaleContextValue>();
 
 /** 简单插值替换："{name}" → params.name */
-function interpolate(template: string, params?: Record<string, string>): string {
+function interpolate(
+	template: string,
+	params?: Record<string, string>,
+): string {
 	if (!params) return template;
 	return template.replace(/\{(\w+)\}/g, (_, key) => params[key] ?? `{${key}}`);
 }

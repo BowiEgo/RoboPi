@@ -1,15 +1,18 @@
 import { type Component, createSignal } from "solid-js";
-import electronLogo from "./assets/electron.svg";
-import chatIcon from "./assets/chat.svg?raw";
-import paletteIcon from "./assets/palette.svg?raw";
-import settingsIcon from "./assets/settings.svg?raw";
-import { ThemeProvider } from "./contexts/ThemeContext";
-import { LocaleProvider, useLocale } from "./contexts/LocaleContext";
-import MainLayout, { type NavItem } from "./layouts/MainLayout/MainLayout";
-import ChatPage from "./pages/ChatPage/ChatPage";
-import ThemePage from "./pages/ThemePage/ThemePage";
-import SettingsPage from "./pages/SettingsPage/SettingsPage";
-import Icon from "./components/Icon";
+
+import { LocaleProvider, useLocale } from "@/contexts/LocaleContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+
+import MainLayout, { type NavItem } from "@/layouts/MainLayout/MainLayout";
+import ChatPage from "@/pages/ChatPage/ChatPage";
+import SettingsPage from "@/pages/SettingsPage/SettingsPage";
+import ThemePage from "@/pages/ThemePage/ThemePage";
+import Icon from "@/components/Icon";
+
+import chatIcon from "@/assets/chat.svg?raw";
+import electronLogo from "@/assets/electron.svg";
+import paletteIcon from "@/assets/palette.svg?raw";
+import settingsIcon from "@/assets/settings.svg?raw";
 
 const AppContent: Component = () => {
 	const [activeNav, setActiveNav] = createSignal("chat");

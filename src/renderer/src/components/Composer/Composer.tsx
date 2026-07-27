@@ -4,7 +4,13 @@ import {
 	createSignal,
 	onCleanup,
 } from "solid-js";
-import { useLocale } from "../../contexts/LocaleContext";
+
+import { useLocale } from "@/contexts/LocaleContext";
+
+import Icon from "@/components/Icon";
+
+import msgIcon from "@/assets/message.svg?raw";
+
 import styles from "./Composer.module.css";
 
 const Composer: Component = () => {
@@ -54,6 +60,12 @@ const Composer: Component = () => {
 			{/* Resize Handle */}
 			<div
 				class={`${styles.resizeHandle} ${isResizing() ? styles.resizeHandleActive : ""}`}
+				role="slider"
+				tabIndex={0}
+				aria-orientation="horizontal"
+				aria-valuenow={height()}
+				aria-valuemin={80}
+				aria-valuemax={400}
 				onMouseDown={handleMouseDown}
 			>
 				<div class={styles.resizeBump} />
@@ -80,11 +92,11 @@ const Composer: Component = () => {
 
 			{/* Input Area */}
 			<div class={styles.inputArea}>
-				<div
+				<textarea
 					class={styles.input}
-					contentEditable
-					role="textbox"
-					data-placeholder={t("composer.placeholder")}
+					placeholder={t("composer.placeholder")}
+					onFocus={() => setIsFocused(true)}
+					onBlur={() => setIsFocused(false)}
 				/>
 			</div>
 
@@ -92,9 +104,9 @@ const Composer: Component = () => {
 			<div class={styles.footer}>
 				<span class={styles.footerMeta} />
 				<button class={styles.sendBtn} type="button">
-					<svg class={styles.sendIcon} viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<path d="M18 2L11 18l-3-6-6-3 16-7z" />
-					</svg>
+					<span class={styles.sendIcon}>
+						<Icon raw={msgIcon} />
+					</span>
 					{t("composer.send")}
 				</button>
 			</div>
