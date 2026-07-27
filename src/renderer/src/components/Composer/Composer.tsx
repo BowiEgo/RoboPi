@@ -9,7 +9,7 @@ import { useLocale } from "@/contexts/LocaleContext";
 
 import Icon from "@/components/Icon";
 
-import msgIcon from "@/assets/message.svg?raw";
+import msgIcon from "@/assets/icons/message.svg?raw";
 
 import styles from "./Composer.module.css";
 

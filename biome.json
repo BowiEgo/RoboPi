@@ -15,8 +15,7 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"preset": "recommended",
-            "style": {}
+			"preset": "recommended"
 		}
 	},
 	"javascript": {
@@ -24,50 +23,53 @@
 			"quoteStyle": "double"
 		}
 	},
-    "css": {
-        "formatter": {
-            "quoteStyle": "single"
-        }
-    },
+	"css": {
+		"formatter": {
+			"quoteStyle": "single"
+		},
+		"parser": {
+			"tailwindDirectives": true
+		}
+	},
 	"assist": {
 		"enabled": true,
 		"actions": {
 			"source": {
 				"organizeImports": {
-                    "level": "on",
-                    "options": {
-                        "groups": [
-                            [":NODE:", ":BUN:"],
-                            ":BLANK_LINE:",
+					"level": "on",
+					"options": {
+						"groups": [
+							[":NODE:", ":BUN:"],
+							":BLANK_LINE:",
 
-                            ":PACKAGE:",
-                            ":BLANK_LINE:",
+							":PACKAGE:",
+							":BLANK_LINE:",
 
-                            "@/contexts/**",
-                            ":BLANK_LINE:",
+							"@/contexts/**",
+							":BLANK_LINE:",
 
-                            "@/layouts/**",
-                            "@/pages/**",
-                            "@/components/**",
-                            ":BLANK_LINE:",
+							"@/layouts/**",
+							"@/pages/**",
+							"@/components/**",
+							":BLANK_LINE:",
 
-                            "@/locales/**",
-                            ":BLANK_LINE:",
+							"@/locales/**",
+							":BLANK_LINE:",
 
-                            "@/styles/**",
-                            ":BLANK_LINE:",
+							"@/styles/**",
+							":BLANK_LINE:",
 
-                            "@/assets/**",
-                            ":BLANK_LINE:",
+							"@/assets/**",
+							":BLANK_LINE:",
 
-                            ["./**/*.css", "../**/*.css"],
-                            ":BLANK_LINE:",
+							["./**/*.css", "../**/*.css"],
+							":BLANK_LINE:",
 
-                            ":PATH:",
-                            ":ALIAS:"
-                        ]
-                    }
-                }
+							":PATH:",
+							":ALIAS:"
+						]
+					}
+				}
 			}
 		}
 	}

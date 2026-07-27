@@ -9,10 +9,10 @@ import SettingsPage from "@/pages/SettingsPage/SettingsPage";
 import ThemePage from "@/pages/ThemePage/ThemePage";
 import Icon from "@/components/Icon";
 
-import chatIcon from "@/assets/chat.svg?raw";
-import electronLogo from "@/assets/electron.svg";
-import paletteIcon from "@/assets/palette.svg?raw";
-import settingsIcon from "@/assets/settings.svg?raw";
+import chatIcon from "@/assets/icons/chat.svg?raw";
+import electronLogo from "@/assets/icons/electron.svg";
+import paletteIcon from "@/assets/icons/palette.svg?raw";
+import settingsIcon from "@/assets/icons/settings.svg?raw";
 
 const AppContent: Component = () => {
 	const [activeNav, setActiveNav] = createSignal("chat");
