@@ -13,8 +13,8 @@
 	min-width: 180px;
 	max-width: 600px;
 	overflow: hidden;
-	background-color: var(--color-surface-dark-soft);
-	border-right: 1px solid var(--color-canvas-dark);
+	background-color: var(--color-surface-soft);
+	border-right: 1px solid var(--color-hairline);
 	user-select: none;
 }
 
@@ -26,8 +26,8 @@
 	font-size: 15px;
 	font-weight: 500;
 	font-family: var(--font-display);
-	color: var(--color-on-dark);
-	border-bottom: 1px solid var(--color-canvas-dark);
+	color: var(--color-on);
+	border-bottom: 1px solid var(--color-hairline);
 	flex-shrink: 0;
 }
 
@@ -35,13 +35,13 @@
 	flex: 1;
 	overflow-y: auto;
 	padding: var(--space-md);
-	color: var(--color-on-dark);
+	color: var(--color-on);
 }
 
 .drawerBottom {
 	flex-shrink: 0;
-	border-top: 1px solid var(--color-canvas-dark);
-	background-color: var(--color-canvas-dark);
+	border-top: 1px solid var(--color-hairline);
+	background-color: var(--color-surface-soft);
 }
 
 /* ── 拖拽分隔条 ── */
@@ -68,6 +68,6 @@
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
-	background-color: var(--color-canvas-dark);
-	color: var(--color-on-dark);
+	background-color: var(--color-surface-soft);
+	color: var(--color-on);
 }

@@ -5,25 +5,23 @@
 	overflow: hidden;
 }
 
-/* 顶部标题栏 */
 .header {
 	flex-shrink: 0;
 	display: flex;
 	align-items: center;
 	padding: var(--space-lg) var(--space-lg);
-	border-bottom: 1px solid var(--color-canvas-dark);
+	border-bottom: 1px solid var(--color-hairline);
 	font-weight: 500;
 	font-size: var(--text-body-md);
 	font-family: var(--font-display);
-	color: var(--color-on-dark);
-	background-color: var(--color-surface-dark-soft);
+	color: var(--color-on);
+	background-color: var(--color-surface-soft);
 }
 
-/* 中间对话框 */
 .dialog {
 	flex: 1;
 	overflow-y: auto;
 	padding: var(--space-lg);
-	background-color: var(--color-canvas-dark);
-	color: var(--color-on-dark);
+	background-color: var(--color-surface-soft);
+	color: var(--color-on);
 }

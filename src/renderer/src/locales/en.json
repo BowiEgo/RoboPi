@@ -38,5 +38,20 @@
 	"settings.pending": "Application settings (coming soon)",
 	"settings.locale": "Language",
 	"settings.localeEn": "English",
-	"settings.localeZh": "中文"
+	"settings.localeZh": "中文",
+
+	"theme.mode": "Appearance",
+	"theme.modeDark": "Dark",
+	"theme.modeLight": "Light",
+	"theme.modeHint": "Choose dark or light appearance for the current theme",
+	"theme.switchToDark": "Switch to dark mode",
+	"theme.switchToLight": "Switch to light mode",
+
+	"theme.preview": "Preview",
+	"theme.previewSidebar": "Sidebar",
+	"theme.previewChat": "Chat Panel",
+	"theme.previewMessage": "Hello! How can I help you today?",
+	"theme.previewReply": "Can you explain how theme variables work?",
+	"theme.previewInput": "Type a message...",
+	"theme.previewSend": "Send"
 }

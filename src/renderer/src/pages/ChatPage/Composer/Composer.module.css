@@ -5,62 +5,12 @@
 	flex-shrink: 0;
 	margin: 4px;
 	border-radius: 4px;
-	border: 1px solid var(--color-mist-700);
+	border: 1px solid var(--color-hairline);
 	transition: border-color 0.2s ease;
 }
 
 .composer.focused {
 	border-color: var(--color-accent-periwinkle);
-}
-
-/* ══════════════════════════════════════════
-   Resize Handle
-   ══════════════════════════════════════════ */
-.resizeHandle {
-	position: absolute;
-	top: -4px;
-	left: 0;
-	right: 0;
-	height: 8px;
-	cursor: row-resize;
-	z-index: 10;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.resizeHandle::before {
-	content: '';
-	position: absolute;
-	inset: 3px 0;
-	transition: background-color 0.15s ease;
-}
-
-.resizeHandle:hover::before,
-.resizeHandleActive::before {
-	background-color: var(--color-accent-periwinkle);
-	opacity: 0.4;
-}
-
-.resizeBump {
-	position: relative;
-	z-index: 1;
-	width: 44px;
-	height: 4px;
-	border-radius: 2px;
-	background-color: var(--color-body);
-	opacity: 0.3;
-	transition:
-		opacity 0.2s ease,
-		background-color 0.2s ease,
-		transform 0.2s ease;
-}
-
-.resizeHandle:hover .resizeBump,
-.resizeHandleActive .resizeBump {
-	opacity: 0.9;
-	background-color: var(--color-accent-periwinkle);
-	transform: scaleY(1.25);
 }
 
 /* ══════════════════════════════════════════
@@ -97,19 +47,19 @@
 }
 
 .toolBtn:hover {
-	color: var(--color-on-dark);
-	background-color: var(--sidebar-hover-bg);
-	border-color: var(--sidebar-border);
+	color: var(--color-on);
+	background-color: var(--color-surface-dark-soft);
+	border-color: var(--color-hairline);
 }
 
 .toolBtn:active {
-	background-color: var(--sidebar-active-bg);
+	background-color: var(--color-surface-dark-soft);
 }
 
 .toolSep {
 	width: 1px;
 	height: 16px;
-	background-color: var(--sidebar-border);
+	background-color: var(--color-hairline);
 	opacity: 0.25;
 	flex-shrink: 0;
 }
@@ -122,8 +72,8 @@
 	display: flex;
 	margin: 0 var(--space-lg);
 	padding: var(--space-sm) var(--space-md);
-	border-radius: var(--rounded-sm);
-	background-color: var(--color-canvas-dark);
+	border-radius: var(--radius-sm);
+	background-color: var(--color-canvas);
 	border: 1px solid transparent;
 	transition: border-color 0.15s ease;
 	overflow: hidden;
@@ -137,7 +87,7 @@
 	border: none;
 	outline: none;
 	background: transparent;
-	color: var(--color-on-dark);
+	color: var(--color-on);
 	font-family: var(--font-display);
 	font-size: var(--text-body-md);
 	line-height: 1.6;
@@ -181,7 +131,7 @@
 	gap: 6px;
 	padding: 5px 18px;
 	border: none;
-	border-radius: var(--rounded-sm);
+	border-radius: var(--radius-sm);
 	background-color: var(--color-primary);
 	color: var(--color-on-primary);
 	font-family: var(--font-display);

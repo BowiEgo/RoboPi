@@ -80,12 +80,15 @@
 	height: 52px;
 	padding: 0;
 	border: none;
-	border-radius: var(--rounded-sm);
+	border-radius: var(--radius-sm);
 	background-color: transparent;
 	color: var(--sidebar-text);
 	opacity: 0.5;
 	cursor: pointer;
-	transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+	transition:
+		opacity 0.15s ease,
+		background-color 0.15s ease,
+		color 0.15s ease;
 }
 
 .navBtn:hover {
@@ -121,7 +124,6 @@
 	position: absolute;
 	left: calc(100% + 12px);
 	top: 50%;
-	transform: translateY(-50%);
 	white-space: nowrap;
 	padding: 5px 10px;
 	border-radius: 5px;
@@ -135,7 +137,9 @@
 	pointer-events: none;
 	opacity: 0;
 	transform: translateY(-50%) translateX(-4px);
-	transition: opacity 0.12s ease, transform 0.12s ease;
+	transition:
+		opacity 0.12s ease,
+		transform 0.12s ease;
 	z-index: 100;
 	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
@@ -155,4 +159,70 @@
 	overflow: hidden;
 	background-color: var(--main-bg);
 	color: var(--main-text);
+}
+
+/* ══════════════════════════════════════════
+   深色/亮色模式切换按钮
+   ══════════════════════════════════════════ */
+.modeToggle {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: var(--space-sm) var(--space-sm) var(--space-md);
+}
+
+.modeBtn {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 52px;
+	height: 52px;
+	padding: 0;
+	border: none;
+	border-radius: var(--radius-sm);
+	background-color: transparent;
+	color: var(--sidebar-text);
+	opacity: 0.5;
+	cursor: pointer;
+	transition:
+		opacity 0.15s ease,
+		background-color 0.15s ease,
+		color 0.15s ease;
+}
+
+.modeBtn:hover {
+	opacity: 1;
+	background-color: var(--sidebar-hover-bg);
+	color: var(--sidebar-text);
+}
+
+.modeBtn::after {
+	content: attr(data-tooltip);
+	position: absolute;
+	left: calc(100% + 12px);
+	top: 50%;
+	white-space: nowrap;
+	padding: 5px 10px;
+	border-radius: 5px;
+	background-color: var(--color-canvas-dark);
+	color: var(--color-on-dark);
+	font-family: var(--font-mono);
+	font-size: 11px;
+	font-weight: 400;
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
+	pointer-events: none;
+	opacity: 0;
+	transform: translateY(-50%) translateX(-4px);
+	transition:
+		opacity 0.12s ease,
+		transform 0.12s ease;
+	z-index: 100;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.modeBtn:hover::after {
+	opacity: 1;
+	transform: translateY(-50%) translateX(0);
 }

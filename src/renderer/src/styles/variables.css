@@ -1,53 +1,38 @@
 :root {
-	/* ── Brand & Accent Colors ── */
-	--color-primary: #000000;
-	--color-on-primary: #ffffff;
-	--color-ink: #000000;
-	--color-body: #999999;
-	--color-hairline: #ebebeb;
-	--color-canvas: #ffffff;
-	--color-canvas-dark: #010120;
-	--color-surface-dark-soft: #313641;
-	--color-on-dark: #ffffff;
-
-	--color-accent-orange: #fc4c02;
-	--color-accent-magenta: #ef2cc1;
-	--color-accent-periwinkle: #bdbbff;
-	--color-accent-mint: #c8f6f9;
-
-	/* ── Brand Gradient (orange → magenta → periwinkle) ── */
-	--gradient-brand: linear-gradient(135deg, #fc4c02, #ef2cc1, #bdbbff);
+	/* ═══════════════════════════════════════════════
+	   Shared Design Tokens
+	   所有主题共享的字体、字号、间距、圆角基底
+	   ═══════════════════════════════════════════════ */
 
 	/* ── Typography Families ── */
-	/*  Display sans substitute: Inter (closest open-source match)  */
+	/* 显示/正文用无衬线字体 */
 	--font-display: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-	/*  Mono substitute: JetBrains Mono  */
+	/* 等宽字体 — 代码块、标签、数据展示 */
 	--font-mono:
 		'JetBrains Mono', 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
-	/* ── Typography: Display Sizes ── */
+	/* ── Typography Sizes ── */
+	/* 展示级 — 大标题、品牌文案 */
 	--text-display-xxl: 64px;
 	--text-display-xl: 40px;
 	--text-display-lg: 28px;
 	--text-display-md: 22px;
-
-	/* ── Typography: Body Sizes ── */
+	/* 正文级 — 段落、按钮文字 */
 	--text-body-lg: 18px;
 	--text-body-md: 16px;
 	--text-caption: 14px;
-
-	/* ── Typography: Mono Sizes ── */
+	/* 等宽级 — 按钮、眉标、标签、小号说明 */
 	--text-mono-button: 16px;
 	--text-mono-eyebrow: 11px;
 	--text-mono-label: 11px;
 	--text-mono-caption: 10px;
 
 	/* ── Border Radius ── */
-	--rounded-none: 0px;
-	--rounded-xs: 3.25px;
-	--rounded-sm: 4px;
-	--rounded-md: 8px;
-	--rounded-full: 9999px;
+	--radius-none: 0px;
+	--radius-xs: 3.25px;
+	--radius-sm: 4px;
+	--radius-md: 8px;
+	--radius-full: 9999px;
 
 	/* ── Spacing (4 px base) ── */
 	--space-xxs: 2px;
@@ -63,20 +48,11 @@
 	--space-6xl: 55.2px;
 	--space-section: 80px;
 
-	/* ── App Surface Mappings ── */
-	--sidebar-bg: var(--color-surface-dark-soft);
-	--sidebar-border: var(--color-canvas-dark);
-	--sidebar-header-border: var(--color-canvas-dark);
-	--sidebar-text: var(--color-on-dark);
-	--sidebar-hover-bg: var(--color-canvas-dark);
-	--sidebar-active-bg: var(--color-canvas-dark);
-
-	--main-bg: var(--color-canvas-dark);
-	--main-text: var(--color-on-dark);
-
+	/* ── Misc ── */
+	/* 面板分隔条默认色（透明即不可见） */
 	--resizer-color: transparent;
-	--resizer-hover-color: var(--color-accent-periwinkle);
 
+	/* 侧边栏宽度约束 — 拖拽可调范围 */
 	--sidebar-width-min: 180px;
 	--sidebar-width-max: 600px;
 	--sidebar-width-default: 260px;

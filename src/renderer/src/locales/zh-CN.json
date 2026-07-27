@@ -38,5 +38,20 @@
 	"settings.pending": "应用设置（待实现）",
 	"settings.locale": "语言",
 	"settings.localeEn": "English",
-	"settings.localeZh": "中文"
+	"settings.localeZh": "中文",
+
+	"theme.mode": "外观",
+	"theme.modeDark": "深色",
+	"theme.modeLight": "亮色",
+	"theme.modeHint": "为当前主题选择深色或亮色外观",
+	"theme.switchToDark": "切换到深色模式",
+	"theme.switchToLight": "切换到亮色模式",
+
+	"theme.preview": "预览",
+	"theme.previewSidebar": "侧边栏",
+	"theme.previewChat": "对话面板",
+	"theme.previewMessage": "你好！我今天能帮你什么？",
+	"theme.previewReply": "能解释一下主题变量是如何工作的吗？",
+	"theme.previewInput": "输入消息...",
+	"theme.previewSend": "发送"
 }

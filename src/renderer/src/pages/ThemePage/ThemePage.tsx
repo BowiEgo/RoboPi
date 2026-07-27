@@ -3,50 +3,126 @@ import { type Component, createMemo, For } from "solid-js";
 import { useLocale } from "@/contexts/LocaleContext";
 import { THEMES, useTheme } from "@/contexts/ThemeContext";
 
+import Icon from "@/components/Icon";
+
+import moonSvg from "@/assets/icons/moon.svg?raw";
+import sunSvg from "@/assets/icons/sun.svg?raw";
+
 import styles from "./ThemePage.module.css";
+
+import ThemePreview from "./ThemePreview";
 
 interface SwatchDef {
 	name: string;
 	var: string;
-	value: string;
+	group: string;
 }
 
 const TOGETHER_SWATCHES: SwatchDef[] = [
-	{ name: "Primary", var: "--color-primary", value: "#000000" },
-	{ name: "Canvas Dark", var: "--color-canvas-dark", value: "#010120" },
+	/* ── 基础颜色 ── */
+	{ name: "Primary", var: "--color-primary", group: "base" },
+	{ name: "On Primary", var: "--color-on-primary", group: "base" },
+	{ name: "Ink", var: "--color-ink", group: "base" },
+	{ name: "Body", var: "--color-body", group: "base" },
+	{ name: "Hairline", var: "--color-hairline", group: "base" },
+	{ name: "On", var: "--color-on", group: "base" },
+	/* ── 表面颜色 ── */
+	{ name: "Canvas", var: "--color-canvas", group: "surface" },
+	{ name: "Canvas Dark", var: "--color-canvas-dark", group: "surface" },
+	{ name: "Surface Soft", var: "--color-surface-soft", group: "surface" },
+	{ name: "Surface Card", var: "--color-surface-card", group: "surface" },
 	{
 		name: "Surface Dark Soft",
 		var: "--color-surface-dark-soft",
-		value: "#313641",
+		group: "surface",
 	},
-	{ name: "On Dark", var: "--color-on-dark", value: "#ffffff" },
-	{ name: "Body", var: "--color-body", value: "#999999" },
-	{ name: "Hairline", var: "--color-hairline", value: "#ebebeb" },
-	{ name: "Canvas", var: "--color-canvas", value: "#ffffff" },
-	{ name: "Accent Orange", var: "--color-accent-orange", value: "#fc4c02" },
-	{ name: "Accent Magenta", var: "--color-accent-magenta", value: "#ef2cc1" },
+	{ name: "On Dark", var: "--color-on-dark", group: "surface" },
+	/* ── 语义色 ── */
+	{ name: "Accent Orange", var: "--color-accent-orange", group: "semantic" },
+	{ name: "Accent Magenta", var: "--color-accent-magenta", group: "semantic" },
 	{
 		name: "Accent Periwinkle",
 		var: "--color-accent-periwinkle",
-		value: "#bdbbff",
+		group: "semantic",
 	},
-	{ name: "Accent Mint", var: "--color-accent-mint", value: "#c8f6f9" },
+	{ name: "Accent Mint", var: "--color-accent-mint", group: "semantic" },
+	/* ── 布局映射 ── */
+	{ name: "Sidebar BG", var: "--sidebar-bg", group: "layout" },
+	{ name: "Sidebar Border", var: "--sidebar-border", group: "layout" },
+	{
+		name: "Sidebar Header Border",
+		var: "--sidebar-header-border",
+		group: "layout",
+	},
+	{ name: "Sidebar Text", var: "--sidebar-text", group: "layout" },
+	{ name: "Sidebar Hover BG", var: "--sidebar-hover-bg", group: "layout" },
+	{ name: "Sidebar Active BG", var: "--sidebar-active-bg", group: "layout" },
+	{ name: "Main BG", var: "--main-bg", group: "layout" },
+	{ name: "Main Text", var: "--main-text", group: "layout" },
+	{ name: "Resizer Hover", var: "--resizer-hover-color", group: "layout" },
 ];
 
 const OPENCODE_SWATCHES: SwatchDef[] = [
-	{ name: "Primary / Ink", var: "--color-primary", value: "#201d1d" },
-	{ name: "Canvas", var: "--color-canvas", value: "#fdfcfc" },
-	{ name: "Surface Soft", var: "--color-surface-soft", value: "#f8f7f7" },
-	{ name: "Surface Card", var: "--color-surface-card", value: "#f1eeee" },
-	{ name: "Surface Dark", var: "--color-surface-dark-soft", value: "#302c2c" },
-	{ name: "On Dark", var: "--color-on-dark", value: "#fdfcfc" },
-	{ name: "Body", var: "--color-body", value: "#424245" },
-	{ name: "Mute", var: "--color-mute", value: "#646262" },
-	{ name: "Ash", var: "--color-ash", value: "#9a9898" },
-	{ name: "Accent", var: "--color-accent", value: "#007aff" },
-	{ name: "Success", var: "--color-success", value: "#30d158" },
-	{ name: "Warning", var: "--color-warning", value: "#ff9f0a" },
-	{ name: "Danger", var: "--color-danger", value: "#ff3b30" },
+	/* ── 基础颜色 ── */
+	{ name: "Primary", var: "--color-primary", group: "base" },
+	{ name: "On Primary", var: "--color-on-primary", group: "base" },
+	{ name: "Ink", var: "--color-ink", group: "base" },
+	{ name: "Ink Deep", var: "--color-ink-deep", group: "base" },
+	{ name: "Body", var: "--color-body", group: "base" },
+	{ name: "Mute", var: "--color-mute", group: "base" },
+	{ name: "Stone", var: "--color-stone", group: "base" },
+	{ name: "Ash", var: "--color-ash", group: "base" },
+	{ name: "Hairline", var: "--color-hairline", group: "base" },
+	{ name: "Hairline Strong", var: "--color-hairline-strong", group: "base" },
+	{ name: "On", var: "--color-on", group: "base" },
+	/* ── 表面颜色 ── */
+	{ name: "Canvas", var: "--color-canvas", group: "surface" },
+	{ name: "Canvas Dark", var: "--color-canvas-dark", group: "surface" },
+	{ name: "Surface Soft", var: "--color-surface-soft", group: "surface" },
+	{ name: "Surface Card", var: "--color-surface-card", group: "surface" },
+	{ name: "Charcoal", var: "--color-charcoal", group: "surface" },
+	{
+		name: "Surface Dark Soft",
+		var: "--color-surface-dark-soft",
+		group: "surface",
+	},
+	{
+		name: "Surface Dark Elevated",
+		var: "--color-surface-dark-elevated",
+		group: "surface",
+	},
+	{ name: "On Dark", var: "--color-on-dark", group: "surface" },
+	{ name: "On Dark Mute", var: "--color-on-dark-mute", group: "surface" },
+	/* ── 语义色 ── */
+	{ name: "Accent", var: "--color-accent", group: "semantic" },
+	{ name: "Accent Hover", var: "--color-accent-hover", group: "semantic" },
+	{ name: "Accent Active", var: "--color-accent-active", group: "semantic" },
+	{ name: "Warning", var: "--color-warning", group: "semantic" },
+	{ name: "Danger", var: "--color-danger", group: "semantic" },
+	{ name: "Success", var: "--color-success", group: "semantic" },
+	{
+		name: "Accent Periwinkle",
+		var: "--color-accent-periwinkle",
+		group: "semantic",
+	},
+	{ name: "Accent Mint", var: "--color-accent-mint", group: "semantic" },
+	{ name: "Accent Orange", var: "--color-accent-orange", group: "semantic" },
+	{ name: "Accent Magenta", var: "--color-accent-magenta", group: "semantic" },
+	/* ── 布局映射 ── */
+	{ name: "Sidebar BG", var: "--sidebar-bg", group: "layout" },
+	{ name: "Sidebar Border", var: "--sidebar-border", group: "layout" },
+	{
+		name: "Sidebar Header Border",
+		var: "--sidebar-header-border",
+		group: "layout",
+	},
+	{ name: "Sidebar Text", var: "--sidebar-text", group: "layout" },
+	{ name: "Sidebar Hover BG", var: "--sidebar-hover-bg", group: "layout" },
+	{ name: "Sidebar Active BG", var: "--sidebar-active-bg", group: "layout" },
+	{ name: "Main BG", var: "--main-bg", group: "layout" },
+	{ name: "Main Text", var: "--main-text", group: "layout" },
+	{ name: "Resizer Color", var: "--resizer-color", group: "layout" },
+	{ name: "Resizer Hover", var: "--resizer-hover-color", group: "layout" },
 ];
 
 const TYPOGRAPHY = [
@@ -74,12 +150,35 @@ const SPACING = [
 ] as const;
 
 const ThemePage: Component = () => {
-	const { current, setTheme } = useTheme();
+	const { current, setTheme, mode, setMode } = useTheme();
 	const { t } = useLocale();
 
-	const swatches = createMemo<SwatchDef[]>(() =>
-		current().id === "opencode" ? OPENCODE_SWATCHES : TOGETHER_SWATCHES,
-	);
+	const swatches = createMemo<
+		{ label: string; items: (SwatchDef & { value: string })[] }[]
+	>(() => {
+		const list =
+			current().id === "opencode" ? OPENCODE_SWATCHES : TOGETHER_SWATCHES;
+		const root = document.documentElement;
+		const style = getComputedStyle(root);
+		const withValues = list.map((s) => ({
+			...s,
+			value: style.getPropertyValue(s.var).trim() || "—",
+		}));
+
+		const groups: { label: string; key: string }[] = [
+			{ label: "Base Colors", key: "base" },
+			{ label: "Surface Colors", key: "surface" },
+			{ label: "Semantic Colors", key: "semantic" },
+			{ label: "Layout Mappings", key: "layout" },
+		];
+
+		return groups
+			.map((g) => ({
+				label: g.label,
+				items: withValues.filter((s) => s.group === g.key),
+			}))
+			.filter((g) => g.items.length > 0);
+	});
 
 	const gradientClass = createMemo(() =>
 		current().id === "opencode"
@@ -113,24 +212,65 @@ const ThemePage: Component = () => {
 			</section>
 
 			<section class={styles.section}>
-				<h2 class={styles.sectionEyebrow}>{t("theme.colors")}</h2>
-				<div class={styles.swatchGrid}>
-					<For each={swatches()}>
-						{(s) => (
-							<div class={styles.swatchCard}>
-								<div
-									class={styles.swatch}
-									style={{ background: `var(${s.var})` }}
-								/>
-								<div class={styles.swatchInfo}>
-									<span class={styles.swatchName}>{s.name}</span>
-									<span class={styles.swatchValue}>{s.value}</span>
-									<code class={styles.swatchVar}>{s.var}</code>
-								</div>
-							</div>
-						)}
-					</For>
+				<h2 class={styles.sectionEyebrow}>{t("theme.mode")}</h2>
+				<p class={styles.modeHint}>{t("theme.modeHint")}</p>
+				<div class={styles.modeRow}>
+					<button
+						type="button"
+						class={`${styles.modeBtn} ${mode() === "dark" ? styles.modeBtnActive : ""}`}
+						onClick={() => setMode("dark")}
+					>
+						<span class={styles.modeBtnIcon}>
+							<Icon raw={moonSvg} />
+						</span>
+						<span>{t("theme.modeDark")}</span>
+					</button>
+					<button
+						type="button"
+						class={`${styles.modeBtn} ${mode() === "light" ? styles.modeBtnActive : ""}`}
+						onClick={() => setMode("light")}
+					>
+						<span class={styles.modeBtnIcon}>
+							<Icon raw={sunSvg} />
+						</span>
+						<span>{t("theme.modeLight")}</span>
+					</button>
 				</div>
+			</section>
+
+			<section class={styles.section}>
+				<h2 class={styles.sectionEyebrow}>{t("theme.preview")}</h2>
+				<ThemePreview />
+			</section>
+
+			<section class={styles.section}>
+				<h2 class={styles.sectionEyebrow}>{t("theme.colors")}</h2>
+				<For each={swatches()}>
+					{(group) => (
+						<div class={styles.swatchGroup}>
+							<h3 class={styles.swatchGroupLabel}>{group.label}</h3>
+							<div class={styles.swatchGrid}>
+								<For each={group.items}>
+									{(s) => (
+										<div class={styles.swatchCard}>
+											<div
+												class={styles.swatch}
+												style={{
+													background: `var(${s.var})`,
+												}}
+											/>
+											<div class={styles.swatchInfo}>
+												<span class={styles.swatchName}>{s.name}</span>
+												<span class={styles.swatchValue}>{s.value}</span>
+												<code class={styles.swatchVar}>{s.var}</code>
+											</div>
+										</div>
+									)}
+								</For>
+							</div>
+						</div>
+					)}
+				</For>
 			</section>
 
 			<section class={styles.section}>
@@ -180,7 +320,7 @@ const ThemePage: Component = () => {
 				<div class={styles.radiusRow}>
 					<div
 						class={styles.radiusBox}
-						style={{ "border-radius": "var(--rounded-sm)" }}
+						style={{ "border-radius": "var(--radius-sm)" }}
 					>
 						sm
 					</div>

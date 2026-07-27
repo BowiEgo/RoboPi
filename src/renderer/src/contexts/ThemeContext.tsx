@@ -19,7 +19,7 @@ export const THEMES: Theme[] = [
 		id: "together-ai",
 		name: "Together AI",
 		desc: "Dark surfaces, periwinkle accent, Inter display sans",
-		class: "",
+		class: "theme-together",
 	},
 	{
 		id: "opencode",
@@ -29,19 +29,38 @@ export const THEMES: Theme[] = [
 	},
 ];
 
+type Mode = "dark" | "light";
+
 interface ThemeContextValue {
 	current: () => Theme;
 	setTheme: (id: string) => void;
+	mode: () => Mode;
+	toggleMode: () => void;
+	setMode: (m: Mode) => void;
 }
 
 const ThemeCtx = createContext<ThemeContextValue>();
 
+const MODE_KEY = "robo-pi-mode";
+
+function getInitialMode(): Mode {
+	const saved = localStorage.getItem(MODE_KEY);
+	if (saved === "dark" || saved === "light") return saved;
+	return "dark";
+}
+
 export const ThemeProvider: Component<{ children: JSX.Element }> = (props) => {
 	const saved = localStorage.getItem("robo-pi-theme") ?? "together-ai";
 	const [id, setId] = createSignal(saved);
+	const [mode, setMode] = createSignal<Mode>(getInitialMode());
 
 	const current = () => THEMES.find((t) => t.id === id()) ?? THEMES[0];
 
+	const toggleMode = () => {
+		setMode((prev) => (prev === "dark" ? "light" : "dark"));
+	};
+
+	// Sync theme class to <html>
 	createEffect(() => {
 		const cls = current().class;
 		const root = document.documentElement;
@@ -53,8 +72,18 @@ export const ThemeProvider: Component<{ children: JSX.Element }> = (props) => {
 		localStorage.setItem("robo-pi-theme", id());
 	});
 
+	// Sync mode class to <html>
+	createEffect(() => {
+		const root = document.documentElement;
+		root.classList.remove("mode-dark", "mode-light");
+		root.classList.add(mode() === "dark" ? "mode-dark" : "mode-light");
+		localStorage.setItem(MODE_KEY, mode());
+	});
+
 	return (
-		<ThemeCtx.Provider value={{ current, setTheme: setId }}>
+		<ThemeCtx.Provider
+			value={{ current, setTheme: setId, mode, toggleMode, setMode }}
+		>
 			{props.children}
 		</ThemeCtx.Provider>
 	);

@@ -10,7 +10,7 @@
 	font-weight: 500;
 	line-height: 1.15;
 	letter-spacing: -0.42px;
-	color: var(--color-on-dark);
+	color: var(--color-ink);
 	margin-bottom: var(--space-sm);
 }
 
@@ -52,7 +52,7 @@
 .swatchCard {
 	display: flex;
 	flex-direction: column;
-	border-radius: var(--rounded-sm);
+	border-radius: var(--radius-sm);
 	overflow: hidden;
 	border: 1px solid var(--color-surface-dark-soft);
 }
@@ -73,7 +73,7 @@
 	font-family: var(--font-display);
 	font-size: var(--text-body-md);
 	font-weight: 500;
-	color: var(--color-on-dark);
+	color: var(--color-ink);
 }
 
 .swatchValue {
@@ -92,14 +92,14 @@
 /* ── Gradient ── */
 .gradientTogether {
 	height: 48px;
-	border-radius: var(--rounded-sm);
+	border-radius: var(--radius-sm);
 	background: linear-gradient(135deg, #fc4c02, #ef2cc1, #bdbbff);
 	margin-bottom: var(--space-sm);
 }
 
 .gradientOpenCode {
 	height: 48px;
-	border-radius: var(--rounded-sm);
+	border-radius: var(--radius-sm);
 	background: linear-gradient(135deg, #201d1d, #302c2c, #646262);
 	margin-bottom: var(--space-sm);
 }
@@ -131,7 +131,7 @@
 	font-weight: 500;
 	line-height: 1.1;
 	letter-spacing: -1.92px;
-	color: var(--color-on-dark);
+	color: var(--color-ink);
 }
 
 .displayXl {
@@ -140,7 +140,7 @@
 	font-weight: 500;
 	line-height: 1.2;
 	letter-spacing: -0.8px;
-	color: var(--color-on-dark);
+	color: var(--color-ink);
 }
 
 .displayLg {
@@ -149,7 +149,7 @@
 	font-weight: 500;
 	line-height: 1.15;
 	letter-spacing: -0.42px;
-	color: var(--color-on-dark);
+	color: var(--color-ink);
 }
 
 .displayMd {
@@ -158,7 +158,7 @@
 	font-weight: 500;
 	line-height: 1.15;
 	letter-spacing: -0.22px;
-	color: var(--color-on-dark);
+	color: var(--color-ink);
 }
 
 .bodyLg {
@@ -167,7 +167,7 @@
 	font-weight: 400;
 	line-height: 1.3;
 	letter-spacing: -0.18px;
-	color: var(--color-on-dark);
+	color: var(--color-ink);
 }
 
 .bodyMd {
@@ -176,7 +176,7 @@
 	font-weight: 400;
 	line-height: 1.3;
 	letter-spacing: -0.16px;
-	color: var(--color-on-dark);
+	color: var(--color-ink);
 }
 
 .caption {
@@ -194,7 +194,7 @@
 	line-height: 1;
 	letter-spacing: 0.08px;
 	text-transform: uppercase;
-	color: var(--color-on-dark);
+	color: var(--color-ink);
 }
 
 .monoEyebrow {
@@ -223,7 +223,7 @@
 .spacingName {
 	font-family: var(--font-mono);
 	font-size: var(--text-mono-label);
-	color: var(--color-on-dark);
+	color: var(--color-ink);
 	width: 40px;
 }
 
@@ -236,7 +236,7 @@
 
 .spacingBar {
 	height: 8px;
-	border-radius: var(--rounded-xs);
+	border-radius: var(--radius-xs);
 	background-color: var(--color-accent-periwinkle);
 	opacity: 0.5;
 }
@@ -257,7 +257,7 @@
 	border: 1px solid var(--color-body);
 	font-family: var(--font-mono);
 	font-size: var(--text-mono-caption);
-	color: var(--color-on-dark);
+	color: var(--color-ink);
 }
 
 /* ── Theme Switcher ── */
@@ -272,11 +272,13 @@
 	gap: var(--space-xs);
 	padding: var(--space-lg);
 	border: 1px solid var(--color-surface-dark-soft);
-	border-radius: var(--rounded-sm);
+	border-radius: var(--radius-sm);
 	background-color: transparent;
 	cursor: pointer;
 	text-align: left;
-	transition: border-color 0.15s ease, background-color 0.15s ease;
+	transition:
+		border-color 0.15s ease,
+		background-color 0.15s ease;
 	flex: 1;
 }
 
@@ -294,11 +296,84 @@
 	font-family: var(--font-display);
 	font-size: var(--text-body-md);
 	font-weight: 500;
-	color: var(--color-on-dark);
+	color: var(--color-ink);
 }
 
 .themeDesc {
 	font-family: var(--font-display);
 	font-size: var(--text-caption);
 	color: var(--color-body);
+}
+
+/* ── Appearance / Mode ── */
+.modeHint {
+	font-family: var(--font-display);
+	font-size: var(--text-caption);
+	color: var(--color-body);
+	margin-bottom: var(--space-md);
+}
+
+.modeRow {
+	display: flex;
+	gap: var(--space-md);
+}
+
+.modeBtn {
+	display: flex;
+	align-items: center;
+	gap: var(--space-sm);
+	padding: var(--space-md) var(--space-lg);
+	border: 1px solid var(--color-surface-dark-soft);
+	border-radius: var(--radius-sm);
+	background-color: transparent;
+	color: var(--color-ink);
+	font-family: var(--font-display);
+	font-size: var(--text-body-md);
+	cursor: pointer;
+	transition:
+		border-color 0.15s ease,
+		background-color 0.15s ease;
+	flex: 1;
+}
+
+.modeBtn:hover {
+	border-color: var(--color-accent-periwinkle);
+	background-color: var(--color-surface-dark-soft);
+}
+
+.modeBtnActive {
+	border-color: var(--color-accent-periwinkle);
+	background-color: var(--color-surface-dark-soft);
+}
+
+.modeBtnIcon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 18px;
+	height: 18px;
+}
+
+.modeBtnIcon svg {
+	width: 100%;
+	height: 100%;
+}
+
+/* ── Color Swatch Groups ── */
+.swatchGroup {
+	margin-bottom: var(--space-3xl);
+}
+
+.swatchGroup:last-child {
+	margin-bottom: 0;
+}
+
+.swatchGroupLabel {
+	font-family: var(--font-mono);
+	font-size: var(--text-mono-label);
+	font-weight: 500;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--color-body);
+	margin-bottom: var(--space-md);
 }

@@ -38,23 +38,25 @@
 
 .localeBtn {
 	padding: var(--space-sm) var(--space-lg);
-	border: 1px solid var(--sidebar-border);
-	border-radius: var(--rounded-sm);
+	border: 1px solid var(--color-surface-dark-soft);
+	border-radius: var(--radius-sm);
 	background-color: transparent;
-	color: var(--sidebar-text);
+	color: var(--color-on-dark);
 	font-family: var(--font-display);
 	font-size: var(--text-body-md);
 	cursor: pointer;
-	transition: background-color 0.15s ease, border-color 0.15s ease;
+	transition:
+		background-color 0.15s ease,
+		border-color 0.15s ease;
 }
 
 .localeBtn:hover {
-	background-color: var(--sidebar-hover-bg);
+	background-color: var(--color-surface-dark-soft);
 	border-color: var(--color-accent-periwinkle);
 }
 
 .localeBtnActive {
-	background-color: var(--sidebar-active-bg);
+	background-color: var(--color-surface-dark-soft);
 	border-color: var(--color-accent-periwinkle);
 	color: var(--color-accent-periwinkle);
 }

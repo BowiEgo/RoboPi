@@ -1,8 +1,8 @@
 import type { Component, JSX } from "solid-js";
 
-import Composer from "@/components/Composer/Composer";
-
 import styles from "./ChatPanel.module.css";
+
+import Composer from "./Composer/Composer";
 
 interface ChatPanelProps {
 	header?: JSX.Element;

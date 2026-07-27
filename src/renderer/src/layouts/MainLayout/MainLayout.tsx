@@ -1,6 +1,12 @@
 import { type Component, For, type JSX } from "solid-js";
 
 import { useLocale } from "@/contexts/LocaleContext";
+import { useTheme } from "@/contexts/ThemeContext";
+
+import Icon from "@/components/Icon";
+
+import moonSvg from "@/assets/icons/moon.svg?raw";
+import sunSvg from "@/assets/icons/sun.svg?raw";
 
 import styles from "./MainLayout.module.css";
 
@@ -21,6 +27,10 @@ interface MainLayoutProps {
 
 const MainLayout: Component<MainLayoutProps> = (props) => {
 	const { t } = useLocale();
+	const { mode, toggleMode } = useTheme();
+
+	const modeTooltip = () =>
+		mode() === "dark" ? t("theme.switchToLight") : t("theme.switchToDark");
 
 	return (
 		<div class={styles.layout}>
@@ -65,6 +75,25 @@ const MainLayout: Component<MainLayoutProps> = (props) => {
 						</For>
 					</div>
 				)}
+
+				{/* ── Dark/Light Mode Toggle ── */}
+				<div class={styles.modeToggle}>
+					<button
+						type="button"
+						class={styles.modeBtn}
+						aria-label={modeTooltip()}
+						data-tooltip={modeTooltip()}
+						onClick={toggleMode}
+					>
+						<span class={styles.navIcon}>
+							{mode() === "dark" ? (
+								<Icon raw={sunSvg} />
+							) : (
+								<Icon raw={moonSvg} />
+							)}
+						</span>
+					</button>
+				</div>
 			</nav>
 
 			<main class={styles.pageArea} aria-label={t("nav.pageContent")}>

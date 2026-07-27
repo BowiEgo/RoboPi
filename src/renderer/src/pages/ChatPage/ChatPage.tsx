@@ -8,6 +8,8 @@ import {
 
 import { useLocale } from "@/contexts/LocaleContext";
 
+import Resizer from "@/components/Resizer/Resizer";
+
 import styles from "./ChatPage.module.css";
 
 import ChatPanel from "./ChatPanel";
@@ -95,7 +97,7 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 				)}
 
 				{/* Draggable resizer */}
-				<div
+				{/* <div
 					class={`${styles.resizer} ${isResizing() ? styles.resizerActive : ""}`}
 					role="slider"
 					tabIndex={0}
@@ -105,6 +107,16 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 					aria-label={t("chat.drawerResize")}
 					onMouseDown={handleMouseDown}
 					onKeyDown={handleKeyDown}
+				/> */}
+
+				<Resizer
+					value={drawerWidth()}
+					min={minW()}
+					max={maxW()}
+					orientation="horizontal"
+					position="right"
+					handle={false}
+					onChange={(v) => setDrawerWidth(v)}
 				/>
 			</aside>
 
