@@ -10,6 +10,9 @@ function createWindow(): void {
 		height: 670,
 		show: false,
 		autoHideMenuBar: true,
+		...(process.platform === "darwin"
+			? { titleBarStyle: "hidden" as const }
+			: { frame: false }),
 		...(process.platform === "linux" ? { icon } : {}),
 		webPreferences: {
 			preload: join(__dirname, "../preload/index.js"),
@@ -24,6 +27,21 @@ function createWindow(): void {
 	mainWindow.webContents.setWindowOpenHandler((details) => {
 		shell.openExternal(details.url);
 		return { action: "deny" };
+	});
+
+	// Window controls IPC
+	ipcMain.on("window:minimize", () => {
+		mainWindow?.minimize();
+	});
+	ipcMain.on("window:maximize", () => {
+		if (mainWindow?.isMaximized()) {
+			mainWindow.unmaximize();
+		} else {
+			mainWindow?.maximize();
+		}
+	});
+	ipcMain.on("window:close", () => {
+		mainWindow?.close();
 	});
 
 	// HMR for renderer base on electron-vite cli.
@@ -51,6 +69,8 @@ app.whenReady().then(() => {
 	app.on("browser-window-created", (_, window) => {
 		optimizer.watchWindowShortcuts(window);
 	});
+
+	// Window controls IPC handled in createWindow()
 
 	// IPC test
 	ipcMain.on("ping", () => console.log("pong"));

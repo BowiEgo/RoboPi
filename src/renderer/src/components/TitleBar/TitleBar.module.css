@@ -1,0 +1,70 @@
+/* ═══════════════════════════════════════════════════════════
+   TitleBar — 跨平台自定义标题栏
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Windows 标题栏 ── */
+.winBar {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	height: 32px;
+	flex-shrink: 0;
+	background-color: var(--sidebar-bg);
+	user-select: none;
+	-webkit-app-region: no-drag;
+}
+
+/* 可拖拽区域 — 覆盖标题栏左侧大部分区域 */
+.dragRegion {
+	position: absolute;
+	inset: 0;
+	right: 100px;
+	-webkit-app-region: drag;
+}
+
+/* ── macOS 标题栏（仅拖拽区）── */
+.macBar {
+	height: 32px;
+	flex-shrink: 0;
+	background-color: var(--sidebar-bg);
+	-webkit-app-region: drag;
+	user-select: none;
+}
+
+/* ── 窗口控制按钮 ── */
+.controls {
+	display: flex;
+	align-items: center;
+	height: 100%;
+	-webkit-app-region: no-drag;
+}
+
+.controlBtn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 38px;
+	height: 100%;
+	border: none;
+	background: transparent;
+	color: var(--sidebar-text);
+	opacity: 0.55;
+	cursor: pointer;
+	transition: opacity 0.12s ease, background-color 0.12s ease;
+}
+
+.controlBtn:hover {
+	opacity: 1;
+	background-color: var(--sidebar-hover-bg);
+}
+
+.close:hover {
+	background-color: #e81123;
+	color: #ffffff;
+	opacity: 1;
+}
+
+.controlBtn svg {
+	display: block;
+}

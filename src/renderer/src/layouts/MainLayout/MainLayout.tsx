@@ -1,6 +1,7 @@
 import { type Component, For, type JSX } from "solid-js";
 
 import { useLocale } from "@/contexts/LocaleContext";
+import TitleBar from "@/components/TitleBar/TitleBar";
 
 import styles from "./MainLayout.module.css";
 
@@ -25,31 +26,13 @@ const MainLayout: Component<MainLayoutProps> = (props) => {
 
 	return (
 		<div class={styles.layout}>
-			<nav class={styles.navBar} aria-label={t("nav.pageNav")}>
-				{props.navTop && <div class={styles.navTop}>{props.navTop}</div>}
+			<TitleBar />
+			<div class={styles.body}>
+				<nav class={styles.navBar} aria-label={t("nav.pageNav")}>
+					{props.navTop && <div class={styles.navTop}>{props.navTop}</div>}
 
-				<div class={styles.navSection} role="tablist">
-					<For each={props.topNavItems}>
-						{(item) => (
-							<button
-								type="button"
-								class={`${styles.navBtn} glass-btn ${props.activeNav === item.id ? `${styles.navBtnActive} glass-btn-active` : ""}`}
-								role="tab"
-								aria-selected={props.activeNav === item.id}
-								aria-label={item.label}
-								data-tooltip={item.label}
-								onClick={() => props.onNavSelect(item)}
-							>
-								<span class={styles.navIcon}>{item.icon}</span>
-							</button>
-						)}
-					</For>
-				</div>
-
-				{props.bottomNavItems.length > 0 && (
-					<div class={styles.navSectionBottom}>
-						<div class={styles.navDivider} />
-						<For each={props.bottomNavItems}>
+					<div class={styles.navSection} role="tablist">
+						<For each={props.topNavItems}>
 							{(item) => (
 								<button
 									type="button"
@@ -65,12 +48,33 @@ const MainLayout: Component<MainLayoutProps> = (props) => {
 							)}
 						</For>
 					</div>
-				)}
-			</nav>
 
-			<main class={styles.pageArea} aria-label={t("nav.pageContent")}>
-				{props.children}
-			</main>
+					{props.bottomNavItems.length > 0 && (
+						<div class={styles.navSectionBottom}>
+							<div class={styles.navDivider} />
+							<For each={props.bottomNavItems}>
+								{(item) => (
+									<button
+										type="button"
+										class={`${styles.navBtn} glass-btn ${props.activeNav === item.id ? `${styles.navBtnActive} glass-btn-active` : ""}`}
+										role="tab"
+										aria-selected={props.activeNav === item.id}
+										aria-label={item.label}
+										data-tooltip={item.label}
+										onClick={() => props.onNavSelect(item)}
+									>
+										<span class={styles.navIcon}>{item.icon}</span>
+									</button>
+								)}
+							</For>
+						</div>
+					)}
+				</nav>
+
+				<main class={styles.pageArea} aria-label={t("nav.pageContent")}>
+					{props.children}
+				</main>
+			</div>
 		</div>
 	);
 };
