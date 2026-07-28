@@ -5,6 +5,9 @@
 	"nav.pageNav": "Page navigation",
 	"nav.pageContent": "Page content",
 
+	"logo.brand": "RoboPi",
+	"logo.description": "AI Agent",
+
 	"chat.sidebar": "Chat sidebar",
 	"chat.header": "Chat",
 	"chat.messages": "Message area",

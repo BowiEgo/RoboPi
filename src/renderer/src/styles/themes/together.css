@@ -23,16 +23,16 @@
 
 /* ── Dark Mode ── */
 .theme-together.mode-dark {
-	--color-primary: #000000;
+	--color-primary: #247bfa;
 	--color-on-primary: #ffffff;
 	--color-ink: #ebebeb;
 	--color-body: #999999;
 	--color-hairline: #363445;
-	--color-canvas: #00061a;
-	--color-canvas-dark: #00000e;
+	--color-canvas: #242424;
+	--color-canvas-dark: #1e1e1e;
 	--color-surface-soft: #1d1a2b;
 	--color-surface-card: #373347;
-	--color-surface-dark-soft: #313641;
+	--color-surface-dark-soft: #232323;
 	--color-on-dark: #ffffff;
 	--color-on: var(--color-on-dark);
 
@@ -41,7 +41,7 @@
 	--sidebar-header-border: var(--color-canvas-dark);
 	--sidebar-text: var(--color-on-dark);
 	--sidebar-hover-bg: var(--color-canvas-dark);
-	--sidebar-active-bg: var(--color-canvas-dark);
+	--sidebar-active-bg: var(--color-on-dark);
 
 	--main-bg: var(--color-canvas-dark);
 	--main-text: var(--color-on-dark);

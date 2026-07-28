@@ -1,12 +1,6 @@
 import { type Component, For, type JSX } from "solid-js";
 
 import { useLocale } from "@/contexts/LocaleContext";
-import { useTheme } from "@/contexts/ThemeContext";
-
-import Icon from "@/components/Icon";
-
-import moonSvg from "@/assets/icons/moon.svg?raw";
-import sunSvg from "@/assets/icons/sun.svg?raw";
 
 import styles from "./MainLayout.module.css";
 
@@ -14,23 +8,20 @@ export interface NavItem {
 	id: string;
 	icon: JSX.Element;
 	label: string;
+	isSwitch?: boolean;
 }
 
 interface MainLayoutProps {
 	topNavItems: NavItem[];
 	bottomNavItems: NavItem[];
 	activeNav: string;
-	onNavSelect: (id: string) => void;
+	onNavSelect: (item: NavItem) => void;
 	navTop?: JSX.Element;
 	children: JSX.Element;
 }
 
 const MainLayout: Component<MainLayoutProps> = (props) => {
 	const { t } = useLocale();
-	const { mode, toggleMode } = useTheme();
-
-	const modeTooltip = () =>
-		mode() === "dark" ? t("theme.switchToLight") : t("theme.switchToDark");
 
 	return (
 		<div class={styles.layout}>
@@ -42,12 +33,12 @@ const MainLayout: Component<MainLayoutProps> = (props) => {
 						{(item) => (
 							<button
 								type="button"
-								class={`${styles.navBtn} ${props.activeNav === item.id ? styles.navBtnActive : ""}`}
+								class={`${styles.navBtn} glass-btn ${props.activeNav === item.id ? `${styles.navBtnActive} glass-btn-active` : ""}`}
 								role="tab"
 								aria-selected={props.activeNav === item.id}
 								aria-label={item.label}
 								data-tooltip={item.label}
-								onClick={() => props.onNavSelect(item.id)}
+								onClick={() => props.onNavSelect(item)}
 							>
 								<span class={styles.navIcon}>{item.icon}</span>
 							</button>
@@ -62,12 +53,12 @@ const MainLayout: Component<MainLayoutProps> = (props) => {
 							{(item) => (
 								<button
 									type="button"
-									class={`${styles.navBtn} ${props.activeNav === item.id ? styles.navBtnActive : ""}`}
+									class={`${styles.navBtn} glass-btn ${props.activeNav === item.id ? `${styles.navBtnActive} glass-btn-active` : ""}`}
 									role="tab"
 									aria-selected={props.activeNav === item.id}
 									aria-label={item.label}
 									data-tooltip={item.label}
-									onClick={() => props.onNavSelect(item.id)}
+									onClick={() => props.onNavSelect(item)}
 								>
 									<span class={styles.navIcon}>{item.icon}</span>
 								</button>
@@ -75,25 +66,6 @@ const MainLayout: Component<MainLayoutProps> = (props) => {
 						</For>
 					</div>
 				)}
-
-				{/* ── Dark/Light Mode Toggle ── */}
-				<div class={styles.modeToggle}>
-					<button
-						type="button"
-						class={styles.modeBtn}
-						aria-label={modeTooltip()}
-						data-tooltip={modeTooltip()}
-						onClick={toggleMode}
-					>
-						<span class={styles.navIcon}>
-							{mode() === "dark" ? (
-								<Icon raw={sunSvg} />
-							) : (
-								<Icon raw={moonSvg} />
-							)}
-						</span>
-					</button>
-				</div>
 			</nav>
 
 			<main class={styles.pageArea} aria-label={t("nav.pageContent")}>

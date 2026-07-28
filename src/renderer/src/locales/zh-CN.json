@@ -5,6 +5,9 @@
 	"nav.pageNav": "页面切换",
 	"nav.pageContent": "页面内容",
 
+	"logo.brand": "RoboPi",
+	"logo.description": "AI助手",
+
 	"chat.sidebar": "对话侧边栏",
 	"chat.header": "对话",
 	"chat.messages": "对话消息区域",

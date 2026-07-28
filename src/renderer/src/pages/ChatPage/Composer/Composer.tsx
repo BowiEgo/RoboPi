@@ -64,11 +64,10 @@ const Composer: Component = () => {
 			{/* Footer */}
 			<div class={styles.footer}>
 				<span class={styles.footerMeta} />
-				<button class={styles.sendBtn} type="button">
+				<button class={`${styles.sendBtn} rounded-full`} type="button">
 					<span class={styles.sendIcon}>
 						<Icon raw={msgIcon} />
 					</span>
-					{t("composer.send")}
 				</button>
 			</div>
 		</div>

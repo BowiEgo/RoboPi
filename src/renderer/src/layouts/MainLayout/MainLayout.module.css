@@ -6,21 +6,21 @@
 }
 
 /* ══════════════════════════════════════════
-   左侧导航栏
+   Left side navbar
    ══════════════════════════════════════════ */
 .navBar {
 	display: flex;
 	flex-direction: column;
-	width: 72px;
+	width: 58px;
 	flex-shrink: 0;
 	background-color: var(--sidebar-bg);
-	border-right: 1px solid var(--sidebar-border);
+	border-right: 1px solid var(--color-hairline);
 	padding: var(--space-md) 0;
 	align-items: center;
 	user-select: none;
 }
 
-/* ── 顶部 Logo ── */
+/* ── Top Logo ── */
 .navTop {
 	display: flex;
 	align-items: center;
@@ -76,40 +76,36 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 52px;
-	height: 52px;
+	width: 28px;
+	height: 28px;
 	padding: 0;
+	margin-bottom: 10px;
 	border: none;
-	border-radius: var(--radius-sm);
-	background-color: transparent;
+	border-radius: var(--radius-md);
 	color: var(--sidebar-text);
-	opacity: 0.5;
+	opacity: 0.55;
 	cursor: pointer;
-	transition:
-		opacity 0.15s ease,
-		background-color 0.15s ease,
-		color 0.15s ease;
 }
 
 .navBtn:hover {
 	opacity: 1;
-	background-color: var(--sidebar-hover-bg);
 	color: var(--sidebar-text);
 }
 
 .navBtnActive {
 	opacity: 1;
-	background-color: var(--sidebar-active-bg);
-	color: var(--color-accent-periwinkle);
+	color: var(--color-body);
 }
 
-/* ── 按钮图标 ── */
+/* ── 按钮图标（置于玻璃层之上） ── */
 .navIcon {
+	position: relative;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
+	z-index: 1;
 }
 
 .navIcon svg {
@@ -144,11 +140,6 @@
 	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
-.navBtn:hover::after {
-	opacity: 1;
-	transform: translateY(-50%) translateX(0);
-}
-
 /* ══════════════════════════════════════════
    右侧页面区
    ══════════════════════════════════════════ */
@@ -181,19 +172,13 @@
 	padding: 0;
 	border: none;
 	border-radius: var(--radius-sm);
-	background-color: transparent;
 	color: var(--sidebar-text);
-	opacity: 0.5;
+	opacity: 0.55;
 	cursor: pointer;
-	transition:
-		opacity 0.15s ease,
-		background-color 0.15s ease,
-		color 0.15s ease;
 }
 
 .modeBtn:hover {
 	opacity: 1;
-	background-color: var(--sidebar-hover-bg);
 	color: var(--sidebar-text);
 }
 

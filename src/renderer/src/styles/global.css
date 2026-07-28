@@ -8,6 +8,7 @@
 @import './tailwind.css';
 @import './variables.css';
 @import './themes.css';
+@import './widgets.css';
 @import './base.css';
 
 body {

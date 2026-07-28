@@ -1,10 +1,4 @@
-import {
-	type Component,
-	createEffect,
-	createSignal,
-	type JSX,
-	onCleanup,
-} from "solid-js";
+import { type Component, createSignal, type JSX } from "solid-js";
 
 import { useLocale } from "@/contexts/LocaleContext";
 
@@ -39,46 +33,6 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 	const maxW = () => props.maxWidth ?? 600;
 
 	const [drawerWidth, setDrawerWidth] = createSignal(props.defaultWidth ?? 260);
-	const [isResizing, setIsResizing] = createSignal(false);
-
-	const clamp = (w: number) => Math.max(minW(), Math.min(maxW(), w));
-
-	/* ---- 鼠标拖拽 ---- */
-	const handleMouseDown = (e: MouseEvent) => {
-		e.preventDefault();
-		setIsResizing(true);
-	};
-
-	const handleMouseMove = (e: MouseEvent) => {
-		if (!isResizing()) return;
-		setDrawerWidth(clamp(e.clientX));
-	};
-
-	const handleMouseUp = () => {
-		setIsResizing(false);
-	};
-
-	createEffect(() => {
-		if (isResizing()) {
-			document.addEventListener("mousemove", handleMouseMove);
-			document.addEventListener("mouseup", handleMouseUp);
-		}
-		onCleanup(() => {
-			document.removeEventListener("mousemove", handleMouseMove);
-			document.removeEventListener("mouseup", handleMouseUp);
-		});
-	});
-
-	/* ---- 键盘 ---- */
-	const handleKeyDown = (e: KeyboardEvent) => {
-		if (e.key === "ArrowLeft") {
-			e.preventDefault();
-			setDrawerWidth((prev) => clamp(prev - 20));
-		} else if (e.key === "ArrowRight") {
-			e.preventDefault();
-			setDrawerWidth((prev) => clamp(prev + 20));
-		}
-	};
 
 	return (
 		<div class={styles.layout}>
@@ -95,19 +49,6 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 				{props.sidebarBottom && (
 					<div class={styles.drawerBottom}>{props.sidebarBottom}</div>
 				)}
-
-				{/* Draggable resizer */}
-				{/* <div
-					class={`${styles.resizer} ${isResizing() ? styles.resizerActive : ""}`}
-					role="slider"
-					tabIndex={0}
-					aria-valuenow={drawerWidth()}
-					aria-valuemin={minW()}
-					aria-valuemax={maxW()}
-					aria-label={t("chat.drawerResize")}
-					onMouseDown={handleMouseDown}
-					onKeyDown={handleKeyDown}
-				/> */}
 
 				<Resizer
 					value={drawerWidth()}

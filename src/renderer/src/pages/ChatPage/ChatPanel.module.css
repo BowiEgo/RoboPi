@@ -1,6 +1,7 @@
 .layout {
 	display: flex;
 	flex-direction: column;
+	align-items: center;
 	height: 100%;
 	overflow: hidden;
 }
@@ -15,13 +16,14 @@
 	font-size: var(--text-body-md);
 	font-family: var(--font-display);
 	color: var(--color-on);
-	background-color: var(--color-surface-soft);
+	background-color: var(--color-canvas-dark);
 }
 
 .dialog {
 	flex: 1;
 	overflow-y: auto;
 	padding: var(--space-lg);
-	background-color: var(--color-surface-soft);
+	display: flex;
+	background-color: var(--color-canvas-dark);
 	color: var(--color-on);
 }
