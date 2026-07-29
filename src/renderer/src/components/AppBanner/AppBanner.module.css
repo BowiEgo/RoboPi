@@ -1,0 +1,27 @@
+.appBanner {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+}
+
+.bannerLogo {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	color: var(--color-on-primary);
+	font-weight: 900;
+	font-size: x-large;
+	line-height: initial;
+}
+
+.appVersion {
+	box-sizing: content-box;
+	color: var(--color-on-primary);
+	font-size: x-small;
+	opacity: 80%;
+}
+
+.bannerDesc {
+	color: var(--color-body);
+	font-size: x-small;
+}

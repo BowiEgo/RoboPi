@@ -15,7 +15,7 @@
 	max-width: 600px;
 	overflow: hidden;
 	background-color: var(--color-canvas-dark);
-	border-right: 1px solid var(--color-hairline);
+	/* border-right: 1px solid var(--color-hairline); */
 	user-select: none;
 }
 
@@ -23,12 +23,12 @@
 	display: flex;
 	align-items: center;
 	gap: var(--space-sm);
-	padding: var(--space-lg);
+	padding: 0 var(--space-lg);
 	font-size: 15px;
 	font-weight: 500;
 	font-family: var(--font-display);
 	color: var(--color-on);
-	border-bottom: 1px solid var(--color-hairline);
+	/* border-bottom: 1px solid var(--color-hairline); */
 	flex-shrink: 0;
 }
 
@@ -41,7 +41,7 @@
 
 .drawerBottom {
 	flex-shrink: 0;
-	border-top: 1px solid var(--color-hairline);
+	/* border-top: 1px solid var(--color-hairline); */
 	background-color: var(--color-canvas-dark);
 }
 
@@ -69,7 +69,7 @@
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
-	border-left: 1px solid var(--color-hairline);
+	/* border-left: 1px solid var(--color-hairline); */
 	background-color: var(--color-canvas-dark);
 	color: var(--color-on);
 	margin-left: 10px;

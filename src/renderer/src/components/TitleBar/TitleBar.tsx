@@ -1,7 +1,7 @@
 import type { Component } from "solid-js";
 
-import TitleBarWin from "./TitleBarWin";
 import TitleBarMac from "./TitleBarMac";
+import TitleBarWin from "./TitleBarWin";
 
 /**
  * 根据运行平台自动切换标题栏：

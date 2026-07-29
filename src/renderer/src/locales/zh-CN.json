@@ -5,8 +5,8 @@
 	"nav.pageNav": "页面切换",
 	"nav.pageContent": "页面内容",
 
-	"logo.brand": "RoboPi",
-	"logo.description": "AI助手",
+	"banner.logo": "RoboPi",
+	"banner.desc": "AI助手",
 
 	"chat.sidebar": "对话侧边栏",
 	"chat.header": "对话",
@@ -14,6 +14,10 @@
 	"chat.drawerLabel": "对话侧边栏",
 	"chat.drawerResize": "调整面板宽度",
 	"chat.contentLabel": "对话内容",
+
+	"search.placeholder": "搜索",
+	"search.label": "搜索",
+	"search.clear": "清除搜索",
 
 	"composer.mode": "普通模式",
 	"composer.model": "模型：deepseek/DeepSeek V4 Flash",

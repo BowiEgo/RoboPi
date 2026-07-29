@@ -3,6 +3,7 @@ import { type Component, createSignal, type JSX } from "solid-js";
 import { useLocale } from "@/contexts/LocaleContext";
 
 import Resizer from "@/components/Resizer/Resizer";
+import Search from "@/components/Search/Search";
 
 import styles from "./ChatPage.module.css";
 
@@ -45,7 +46,10 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 				{props.sidebarHeader && (
 					<div class={styles.drawerHeader}>{props.sidebarHeader}</div>
 				)}
-				<div class={styles.drawerContent}>{props.sidebarContent}</div>
+				<div class={styles.drawerContent}>
+					<Search />
+					{props.sidebarContent}
+				</div>
 				{props.sidebarBottom && (
 					<div class={styles.drawerBottom}>{props.sidebarBottom}</div>
 				)}

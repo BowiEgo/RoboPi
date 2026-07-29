@@ -5,8 +5,8 @@
 	"nav.pageNav": "Page navigation",
 	"nav.pageContent": "Page content",
 
-	"logo.brand": "RoboPi",
-	"logo.description": "AI Agent",
+	"banner.logo": "RoboPi",
+	"banner.desc": "AI Agent",
 
 	"chat.sidebar": "Chat sidebar",
 	"chat.header": "Chat",
@@ -14,6 +14,10 @@
 	"chat.drawerLabel": "Chat sidebar",
 	"chat.drawerResize": "Resize panel width",
 	"chat.contentLabel": "Chat content",
+
+	"search.placeholder": "Search",
+	"search.label": "Search",
+	"search.clear": "Clear search",
 
 	"composer.mode": "Normal mode",
 	"composer.model": "Model: deepseek/DeepSeek V4 Flash",

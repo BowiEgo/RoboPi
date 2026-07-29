@@ -51,7 +51,9 @@
 	color: var(--sidebar-text);
 	opacity: 0.55;
 	cursor: pointer;
-	transition: opacity 0.12s ease, background-color 0.12s ease;
+	transition:
+		opacity 0.12s ease,
+		background-color 0.12s ease;
 }
 
 .controlBtn:hover {

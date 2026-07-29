@@ -7,6 +7,7 @@ import MainLayout, { type NavItem } from "@/layouts/MainLayout/MainLayout";
 import ChatPage from "@/pages/ChatPage/ChatPage";
 import SettingsPage from "@/pages/SettingsPage/SettingsPage";
 import ThemePage from "@/pages/ThemePage/ThemePage";
+import AppBanner from "@/components/AppBanner/AppBanner";
 import Icon from "@/components/Icon";
 
 import chatIcon from "@/assets/icons/chat.svg?raw";
@@ -63,7 +64,7 @@ const AppContent: Component = () => {
 			>
 				{activeNav() === "chat" && (
 					<ChatPage
-						sidebarHeader={<span>{t("logo.brand")}</span>}
+						sidebarHeader={<AppBanner />}
 						sidebarContent={<div />}
 						sidebarBottom={<div class="h-12" />}
 						chatHeader={<span>{t("chat.header")}</span>}
