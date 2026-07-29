@@ -10,6 +10,8 @@ import ThemePage from "@/pages/ThemePage/ThemePage";
 import AppBanner from "@/components/AppBanner/AppBanner";
 import Icon from "@/components/Icon";
 
+import ChatItem from "@/pages/ChatPage/ChatItem/ChatItem";
+
 import chatIcon from "@/assets/icons/chat.svg?raw";
 import electronLogo from "@/assets/icons/electron.svg";
 import moonSvg from "@/assets/icons/moon.svg?raw";
@@ -65,7 +67,38 @@ const AppContent: Component = () => {
 				{activeNav() === "chat" && (
 					<ChatPage
 						sidebarHeader={<AppBanner />}
-						sidebarContent={<div />}
+						sidebarContent={
+							<ChatItem
+								sessions={[
+									{
+										id: "1",
+										label: t("chat.session1"),
+										subtitle: t("chat.session1Preview"),
+										time: "10:30",
+										status: "active",
+									},
+									{
+										id: "2",
+										label: t("chat.session2"),
+										subtitle: t("chat.session2Preview"),
+										time: "09:15",
+										status: "starting",
+									},
+									{
+										id: "3",
+										label: t("chat.session3"),
+										subtitle: t("chat.session3Preview"),
+										time: "昨天",
+									},
+									{
+										id: "4",
+										label: t("chat.session4"),
+										subtitle: t("chat.session4Preview"),
+										time: "昨天",
+									},
+								]}
+							/>
+						}
 						sidebarBottom={<div class="h-12" />}
 						chatHeader={<span>{t("chat.header")}</span>}
 					>

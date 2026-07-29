@@ -1,0 +1,117 @@
+/* ═══════════════════════════════════════════════
+   SessionItem — 侧边栏会话列表中的单个条目
+   ═══════════════════════════════════════════════ */
+
+.sessionItem {
+	display: flex;
+	align-items: center;
+	gap: var(--space-sm);
+	width: 100%;
+	padding: var(--space-sm) var(--space-sm);
+	border: none;
+	border-radius: var(--radius-md);
+	background: transparent;
+	color: var(--color-on);
+	cursor: pointer;
+	text-align: left;
+	transition:
+		background-color 0.12s ease,
+		box-shadow 0.12s ease;
+}
+
+.sessionItem:hover {
+	background-color: var(--color-surface-card);
+}
+
+.sessionItem:active {
+	background-color: var(--color-surface-dark-soft);
+}
+
+.sessionItem.active {
+	background-color: var(--color-surface-card);
+	box-shadow: inset 2px 0 0 0 var(--color-accent);
+}
+
+/* ── Status Badge ── */
+.statusBadge {
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	padding: 0 6px;
+	height: 18px;
+	border-radius: var(--radius-full);
+	background-color: color-mix(in srgb, var(--color-ash) 20%, transparent);
+	color: var(--color-ash);
+	font-family: var(--font-mono);
+	font-size: 10px;
+	font-weight: 500;
+	line-height: 1;
+	letter-spacing: 0.02em;
+	white-space: nowrap;
+	transition:
+		background-color 0.2s ease,
+		color 0.2s ease,
+		box-shadow 0.2s ease;
+}
+
+.statusBadge.active {
+	background-color: color-mix(in srgb, var(--color-success) 20%, transparent);
+	color: var(--color-success);
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-success) 30%, transparent);
+}
+
+.statusBadge.starting {
+	background-color: color-mix(in srgb, var(--color-warning) 20%, transparent);
+	color: var(--color-warning);
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-warning) 30%, transparent);
+	animation: badgePulse 1.4s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+	0%, 100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.65;
+	}
+}
+
+/* ── Content ── */
+.content {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+}
+
+.label {
+	font-family: var(--font-display);
+	font-size: var(--text-caption);
+	font-weight: 500;
+	color: var(--color-on);
+	line-height: 1.3;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.subtitle {
+	font-family: var(--font-display);
+	font-size: 11px;
+	color: var(--color-ink);
+	line-height: 1.3;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* ── Time ── */
+.time {
+	flex-shrink: 0;
+	font-family: var(--font-mono);
+	font-size: 10px;
+	color: var(--color-ash);
+	line-height: 1;
+	white-space: nowrap;
+}

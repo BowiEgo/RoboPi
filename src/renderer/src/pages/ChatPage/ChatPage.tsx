@@ -7,7 +7,7 @@ import Search from "@/components/Search/Search";
 
 import styles from "./ChatPage.module.css";
 
-import ChatPanel from "./ChatPanel";
+import ChatPanel from "./ChatPanel/ChatPanel";
 
 interface ChatPageProps {
 	/** 侧边栏头部内容 */
