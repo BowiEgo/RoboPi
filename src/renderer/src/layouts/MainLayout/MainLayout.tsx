@@ -1,6 +1,7 @@
 import { type Component, For, type JSX } from "solid-js";
 
 import { useLocale } from "@/contexts/LocaleContext";
+
 import TitleBar from "@/components/TitleBar/TitleBar";
 
 import styles from "./MainLayout.module.css";

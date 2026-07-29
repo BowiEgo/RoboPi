@@ -39,7 +39,7 @@
 	align-items: center;
 	padding: 0 6px;
 	height: 18px;
-	border-radius: var(--radius-full);
+	border-radius: var(--radius-md);
 	background-color: color-mix(in srgb, var(--color-ash) 20%, transparent);
 	color: var(--color-ash);
 	font-family: var(--font-mono);
@@ -57,18 +57,21 @@
 .statusBadge.active {
 	background-color: color-mix(in srgb, var(--color-success) 20%, transparent);
 	color: var(--color-success);
-	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-success) 30%, transparent);
+	box-shadow: inset 0 0 0 1px
+		color-mix(in srgb, var(--color-success) 30%, transparent);
 }
 
 .statusBadge.starting {
 	background-color: color-mix(in srgb, var(--color-warning) 20%, transparent);
 	color: var(--color-warning);
-	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-warning) 30%, transparent);
+	box-shadow: inset 0 0 0 1px
+		color-mix(in srgb, var(--color-warning) 30%, transparent);
 	animation: badgePulse 1.4s ease-in-out infinite;
 }
 
 @keyframes badgePulse {
-	0%, 100% {
+	0%,
+	100% {
 		opacity: 1;
 	}
 	50% {

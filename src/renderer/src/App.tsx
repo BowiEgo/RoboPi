@@ -4,13 +4,12 @@ import { LocaleProvider, useLocale } from "@/contexts/LocaleContext";
 import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
 
 import MainLayout, { type NavItem } from "@/layouts/MainLayout/MainLayout";
+import ChatItem from "@/pages/ChatPage/ChatItem/ChatItem";
 import ChatPage from "@/pages/ChatPage/ChatPage";
 import SettingsPage from "@/pages/SettingsPage/SettingsPage";
 import ThemePage from "@/pages/ThemePage/ThemePage";
 import AppBanner from "@/components/AppBanner/AppBanner";
 import Icon from "@/components/Icon";
-
-import ChatItem from "@/pages/ChatPage/ChatItem/ChatItem";
 
 import chatIcon from "@/assets/icons/chat.svg?raw";
 import electronLogo from "@/assets/icons/electron.svg";
@@ -100,9 +99,16 @@ const AppContent: Component = () => {
 							/>
 						}
 						sidebarBottom={<div class="h-12" />}
-						chatHeader={<span>{t("chat.header")}</span>}
+						chatHeader={<span>.pi-desktop</span>}
+						chatTags={[
+							{ id: "context", label: "上下文：0.0% / 1.0M ↑ 0 ↓ 0" },
+							{ id: "cache", label: "缓存：0" },
+							{ id: "cost", label: "$0.000" },
+							{ id: "new", label: t("chat.newSession"), type: "action" },
+						]}
 					>
-						<div>{t("chat.messages")}</div>
+						<div></div>
+						{/* <div>{t("chat.messages")}</div> */}
 					</ChatPage>
 				)}
 				{activeNav() === "theme" && <ThemePage />}

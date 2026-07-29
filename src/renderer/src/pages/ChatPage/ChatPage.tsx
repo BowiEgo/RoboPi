@@ -7,7 +7,7 @@ import Search from "@/components/Search/Search";
 
 import styles from "./ChatPage.module.css";
 
-import ChatPanel from "./ChatPanel/ChatPanel";
+import ChatPanel, { type ChatTag } from "./ChatPanel/ChatPanel";
 
 interface ChatPageProps {
 	/** 侧边栏头部内容 */
@@ -18,6 +18,8 @@ interface ChatPageProps {
 	sidebarBottom?: JSX.Element;
 	/** 对话区标题 */
 	chatHeader?: JSX.Element;
+	/** 对话区过滤标签 */
+	chatTags?: ChatTag[];
 	/** 对话区消息内容 */
 	children: JSX.Element;
 	/** 侧边栏初始宽度（默认 260px） */
@@ -46,6 +48,7 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 				{props.sidebarHeader && (
 					<div class={styles.drawerHeader}>{props.sidebarHeader}</div>
 				)}
+
 				<div class={styles.drawerContent}>
 					<Search />
 					{props.sidebarContent}
@@ -67,7 +70,9 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 
 			{/* Right side main area */}
 			<main class={styles.main} aria-label={t("chat.contentLabel")}>
-				<ChatPanel header={props.chatHeader}>{props.children}</ChatPanel>
+				<ChatPanel header={props.chatHeader} tags={props.chatTags}>
+					{props.children}
+				</ChatPanel>
 			</main>
 		</div>
 	);

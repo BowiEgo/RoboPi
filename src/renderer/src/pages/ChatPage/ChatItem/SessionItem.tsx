@@ -1,4 +1,4 @@
-import { type Component } from "solid-js";
+import type { Component } from "solid-js";
 
 import { useLocale } from "@/contexts/LocaleContext";
 
@@ -31,7 +31,8 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 
 	const badgeClass = () => {
 		const base = styles.statusBadge;
-		const extra = resolvedStatus() !== "idle" ? " " + styles[resolvedStatus()] : "";
+		const extra =
+			resolvedStatus() !== "idle" ? " " + styles[resolvedStatus()] : "";
 		return base + extra;
 	};
 
@@ -43,12 +44,7 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 			role="tab"
 			aria-selected={props.active}
 		>
-			<span
-				class={badgeClass()}
-				aria-label={statusLabel()}
-			>
-				{statusLabel()}
-			</span>
+			<span class={badgeClass()}>{statusLabel()}</span>
 			<div class={styles.content}>
 				<span class={styles.label}>{props.label}</span>
 				{props.subtitle && (
