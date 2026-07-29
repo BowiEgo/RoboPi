@@ -59,16 +59,16 @@ const Composer: Component = () => {
 					onFocus={() => setIsFocused(true)}
 					onBlur={() => setIsFocused(false)}
 				/>
-			</div>
-
-			{/* Footer */}
-			<div class={styles.footer}>
-				<span class={styles.footerMeta} />
 				<button class={`${styles.sendBtn} rounded-full`} type="button">
 					<span class={styles.sendIcon}>
 						<Icon raw={msgIcon} />
 					</span>
 				</button>
+			</div>
+
+			{/* Footer */}
+			<div class={styles.footer}>
+				<span class={styles.footerMeta} />
 			</div>
 		</div>
 	);

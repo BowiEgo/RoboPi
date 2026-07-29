@@ -71,8 +71,10 @@
 .inputArea {
 	flex: 1;
 	display: flex;
+	align-items: center;
+	gap: var(--space-sm);
 	margin: 0 var(--space-lg);
-	padding: var(--space-sm) var(--space-md);
+	padding: var(--space-sm) var(--space-sm) var(--space-sm) var(--space-md);
 	border-radius: var(--radius-sm);
 	background-color: var(--color-canvas);
 	border: 1px solid transparent;
@@ -83,7 +85,7 @@
 /* input focus highlight is handled by .composer.focused border-top */
 
 .input {
-	width: 100%;
+	flex: 1;
 	min-height: 24px;
 	border: none;
 	outline: none;
