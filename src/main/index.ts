@@ -5,6 +5,8 @@ import { app, BrowserWindow, ipcMain, Menu, shell } from "electron";
 
 import icon from "../../resources/icon.png?asset";
 
+import { setupAgentHost } from "./agent-host-manager";
+
 function createWindow(): void {
 	// Create the browser window.
 	const mainWindow = new BrowserWindow({
@@ -76,6 +78,9 @@ app.whenReady().then(() => {
 
 	// IPC test
 	ipcMain.on("ping", () => console.log("pong"));
+
+	// ── Agent Host ──
+	setupAgentHost(ipcMain);
 
 	createWindow();
 

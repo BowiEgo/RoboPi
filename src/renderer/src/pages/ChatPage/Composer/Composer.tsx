@@ -9,8 +9,53 @@ import msgIcon from "@/assets/icons/message.svg?raw";
 
 import styles from "./Composer.module.css";
 
+export interface AgentConfig {
+	model?: string;
+	thinkingLevel?: string;
+	availableModels?: string[];
+	status?: string;
+}
+
 interface ComposerProps {
 	onSend?: (text: string) => void;
+	agentConfig?: AgentConfig;
+}
+
+const THINKING_LABELS: Record<string, string> = {
+	off: "composer.think.off",
+	minimal: "composer.think.minimal",
+	low: "composer.think.low",
+	medium: "composer.think.medium",
+	high: "composer.think.high",
+	xhigh: "composer.think.xhigh",
+	max: "composer.think.max",
+};
+
+function shortenModel(model: string | undefined): string {
+	if (!model) return "—";
+	// 提取最后一个路径段作为简短名称
+	const parts = model.split("/");
+	return parts[parts.length - 1] ?? model;
+}
+
+function thinkingLabel(t: string | undefined, fallback: (key: string) => string): string {
+	if (!t) return fallback("composer.think");
+	const key = THINKING_LABELS[t] ?? "composer.think";
+	return fallback(key);
+}
+
+function statusLabel(status: string | undefined, t: (key: string) => string): string {
+	if (!status) return t("composer.mode");
+	switch (status) {
+		case "responding":
+			return t("composer.mode.responding");
+		case "thinking":
+			return t("composer.mode.thinking");
+		case "error":
+			return t("composer.mode.error");
+		default:
+			return t("composer.mode.idle");
+	}
 }
 
 const Composer: Component<ComposerProps> = (props) => {
@@ -31,7 +76,6 @@ const Composer: Component<ComposerProps> = (props) => {
 		props.onSend?.(text);
 		setInputText("");
 
-		// Reset textarea height
 		if (textareaRef) {
 			textareaRef.style.height = "auto";
 		}
@@ -43,6 +87,8 @@ const Composer: Component<ComposerProps> = (props) => {
 			send();
 		}
 	}
+
+	const cfg = () => props.agentConfig;
 
 	return (
 		<div
@@ -62,11 +108,11 @@ const Composer: Component<ComposerProps> = (props) => {
 			{/* Toolbar */}
 			<div class={styles.toolbar}>
 				<button class={styles.toolBtn} type="button">
-					{t("composer.mode")}
+					{statusLabel(cfg()?.status, t)}
 				</button>
 				<span class={styles.toolSep} />
 				<button class={styles.toolBtn} type="button">
-					{t("composer.model")}
+					{shortenModel(cfg()?.model)}
 				</button>
 				<span class={styles.toolSep} />
 				<button class={styles.toolBtn} type="button">
@@ -74,7 +120,7 @@ const Composer: Component<ComposerProps> = (props) => {
 				</button>
 				<span class={styles.toolSep} />
 				<button class={styles.toolBtn} type="button">
-					{t("composer.think")}
+					{thinkingLabel(cfg()?.thinkingLevel, t)}
 				</button>
 			</div>
 
