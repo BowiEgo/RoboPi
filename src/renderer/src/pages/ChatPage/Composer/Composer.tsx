@@ -9,13 +9,40 @@ import msgIcon from "@/assets/icons/message.svg?raw";
 
 import styles from "./Composer.module.css";
 
-const Composer: Component = () => {
+interface ComposerProps {
+	onSend?: (text: string) => void;
+}
+
+const Composer: Component<ComposerProps> = (props) => {
 	const { t } = useLocale();
 	const [height, setHeight] = createSignal(160);
 	const [isFocused, setIsFocused] = createSignal(false);
+	const [inputText, setInputText] = createSignal("");
+
+	let textareaRef: HTMLTextAreaElement | undefined;
 
 	const minH = 120;
 	const maxH = 400;
+
+	function send() {
+		const text = inputText().trim();
+		if (!text) return;
+
+		props.onSend?.(text);
+		setInputText("");
+
+		// Reset textarea height
+		if (textareaRef) {
+			textareaRef.style.height = "auto";
+		}
+	}
+
+	function handleKeyDown(e: KeyboardEvent) {
+		if (e.key === "Enter" && !e.shiftKey) {
+			e.preventDefault();
+			send();
+		}
+	}
 
 	return (
 		<div
@@ -54,12 +81,21 @@ const Composer: Component = () => {
 			{/* Input Area */}
 			<div class={styles.inputArea}>
 				<textarea
+					ref={textareaRef}
 					class={styles.input}
 					placeholder={t("composer.placeholder")}
+					value={inputText()}
+					onInput={(e) => setInputText(e.currentTarget.value)}
+					onKeyDown={handleKeyDown}
 					onFocus={() => setIsFocused(true)}
 					onBlur={() => setIsFocused(false)}
 				/>
-				<button class={`${styles.sendBtn} rounded-full`} type="button">
+				<button
+					class={`${styles.sendBtn} rounded-full`}
+					type="button"
+					onClick={send}
+					disabled={!inputText().trim()}
+				>
 					<span class={styles.sendIcon}>
 						<Icon raw={msgIcon} />
 					</span>

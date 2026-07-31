@@ -21,6 +21,7 @@
 	"chat.newSession": "New Session",
 	"chat.drawerResize": "Resize panel width",
 	"chat.contentLabel": "Chat content",
+	"chat.thinking": "Thinking process",
 	"chat.session1": "Project Architecture Design",
 	"chat.session1Preview": "How to structure the monorepo...",
 	"chat.session2": "API Integration Discussion",

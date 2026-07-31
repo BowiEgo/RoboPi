@@ -106,10 +106,7 @@ const AppContent: Component = () => {
 							{ id: "cost", label: "$0.000" },
 							{ id: "new", label: t("chat.newSession"), type: "action" },
 						]}
-					>
-						<div></div>
-						{/* <div>{t("chat.messages")}</div> */}
-					</ChatPage>
+					/>
 				)}
 				{activeNav() === "theme" && <ThemePage />}
 				{activeNav() === "settings" && <SettingsPage />}

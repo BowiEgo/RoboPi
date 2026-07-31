@@ -21,6 +21,7 @@
 	"chat.newSession": "新会话",
 	"chat.drawerResize": "调整面板宽度",
 	"chat.contentLabel": "对话内容",
+	"chat.thinking": "思考过程",
 	"chat.session1": "项目架构设计",
 	"chat.session1Preview": "如何组织 monorepo 的结构...",
 	"chat.session2": "API 集成讨论",

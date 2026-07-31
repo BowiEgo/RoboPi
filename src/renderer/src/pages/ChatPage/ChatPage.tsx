@@ -21,7 +21,7 @@ interface ChatPageProps {
 	/** 对话区过滤标签 */
 	chatTags?: ChatTag[];
 	/** 对话区消息内容 */
-	children: JSX.Element;
+	children?: JSX.Element;
 	/** 侧边栏初始宽度（默认 260px） */
 	defaultWidth?: number;
 	/** 侧边栏最小宽度（默认 180px） */
