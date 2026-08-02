@@ -1,5 +1,6 @@
-import { type Component, createSignal, For } from "solid-js";
+import { type Component, createSignal, For, Show } from "solid-js";
 
+import { useAgent } from "@/agent/useAgent";
 import { useLocale } from "@/contexts/LocaleContext";
 
 import Icon from "@/components/Icon";
@@ -11,15 +12,30 @@ import styles from "./ChatItem.module.css";
 
 import SessionItem, { type SessionItemProps } from "./SessionItem";
 
-interface ChatItemProps {
-	sessions: SessionItemProps[];
-}
-
-const ChatItem: Component<ChatItemProps> = (props) => {
+const ChatItem: Component = () => {
 	const { t } = useLocale();
-	const [activeId, setActiveId] = createSignal<string | undefined>(
-		props.sessions[0]?.id,
-	);
+	const {
+		sessions,
+		activeId,
+		createSession,
+		switchSession,
+		deleteSession,
+		renameSession,
+	} = useAgent();
+
+	const [confirmDelete, setConfirmDelete] = createSignal<string | null>(null);
+
+	function handleDelete(id: string) {
+		if (confirmDelete() === id) {
+			deleteSession(id);
+			setConfirmDelete(null);
+		} else {
+			setConfirmDelete(id);
+			setTimeout(() => {
+				if (confirmDelete() === id) setConfirmDelete(null);
+			}, 3000);
+		}
+	}
 
 	return (
 		<section class={styles.chatItem}>
@@ -29,11 +45,12 @@ const ChatItem: Component<ChatItemProps> = (props) => {
 				</span>
 				<span class={styles.headerLabel}>{t("chat.sessions")}</span>
 				<div class={styles.headerActions}>
-					<span class={styles.headerCount}>{props.sessions.length}</span>
+					<span class={styles.headerCount}>{sessions().length}</span>
 					<button
 						type="button"
 						class={styles.addBtn}
 						aria-label={t("chat.addSession")}
+						onClick={() => createSession()}
 					>
 						<Icon raw={plusIcon} />
 					</button>
@@ -41,19 +58,28 @@ const ChatItem: Component<ChatItemProps> = (props) => {
 			</header>
 
 			<div class={styles.sessionList} role="tablist">
-				<For each={props.sessions}>
-					{(item) => (
-						<SessionItem
-							id={item.id}
-							label={item.label}
-							subtitle={item.subtitle}
-							time={item.time}
-							status={item.status}
-							active={activeId() === item.id}
-							onClick={() => setActiveId(item.id)}
-						/>
-					)}
-				</For>
+				<Show
+					when={sessions().length > 0}
+					fallback={<div class={styles.emptyHint}>{t("chat.noSessions")}</div>}
+				>
+					<For each={sessions()}>
+						{(item: SessionItemProps) => (
+							<SessionItem
+								id={item.id}
+								label={item.label}
+								subtitle={item.subtitle}
+								time={item.time}
+								status={item.status}
+								active={activeId() === item.id}
+								confirmDelete={confirmDelete() === item.id}
+								onClick={() => switchSession(item.id)}
+								onDelete={() => handleDelete(item.id)}
+								onDeleteImmediate={(id: string) => deleteSession(id)}
+								onRename={(id, name) => renameSession(id, name)}
+							/>
+						)}
+					</For>
+				</Show>
 			</div>
 		</section>
 	);

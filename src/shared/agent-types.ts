@@ -16,6 +16,7 @@ export interface AgentMessage {
 }
 
 export type AgentMessageType =
+	// Chat
 	| "chat:send"
 	| "chat:cancel"
 	| "chat:chunk"
@@ -24,10 +25,25 @@ export type AgentMessageType =
 	| "tool:call"
 	| "tool:result"
 	| "thinking:update"
+	// Agent lifecycle
 	| "agent:status"
 	| "agent:ready"
 	| "agent:config"
-	| "agent:shutdown";
+	| "agent:shutdown"
+	// Session management
+	| "session:create"
+	| "session:list"
+	| "session:switch"
+	| "session:delete"
+	| "session:rename"
+	| "session:history"
+	| "session:created"
+	| "session:list_result"
+	| "session:switched"
+	| "session:deleted"
+	| "session:renamed"
+	| "session:history_result"
+	| "session:error";
 
 // ── 负载类型 ──
 
@@ -42,6 +58,20 @@ export type AgentPayload =
 	| AgentStatusPayload
 	| AgentReadyPayload
 	| AgentConfigPayload
+	// Session
+	| SessionCreatePayload
+	| SessionListPayload
+	| SessionSwitchPayload
+	| SessionDeletePayload
+	| SessionRenamePayload
+	| SessionHistoryPayload
+	| SessionCreatedPayload
+	| SessionListResultPayload
+	| SessionSwitchedPayload
+	| SessionDeletedPayload
+	| SessionRenamedPayload
+	| SessionHistoryResultPayload
+	| SessionErrorPayload
 	| Record<string, never>;
 
 /** 发送对话消息 */
@@ -143,7 +173,117 @@ export interface AgentConfigPayload {
 	status?: "idle" | "thinking" | "responding" | "error";
 }
 
-// ── 会话 ──
+// ── Session 管理 ──
+
+/** 创建新会话 */
+export interface SessionCreatePayload {
+	name?: string;
+}
+
+/** 请求会话列表 */
+export type SessionListPayload = Record<string, never>;
+
+/** 切换到指定会话 */
+export interface SessionSwitchPayload {
+	sessionId: string;
+}
+
+/** 删除会话 */
+export interface SessionDeletePayload {
+	sessionId: string;
+}
+
+/** 重命名会话 */
+export interface SessionRenamePayload {
+	sessionId: string;
+	name: string;
+}
+
+/** 加载会话历史消息 */
+export interface SessionHistoryPayload {
+	sessionId: string;
+}
+
+/** 会话创建成功 */
+export interface SessionCreatedPayload {
+	sessionId: string;
+	name: string;
+	createdAt: number;
+}
+
+/** 会话列表结果 */
+export interface SessionListResultPayload {
+	sessions: SessionInfoPayload[];
+}
+
+/** 会话切换成功 */
+export interface SessionSwitchedPayload {
+	sessionId: string;
+	name: string;
+	messages: SessionMessagePayload[];
+}
+
+/** 会话删除成功 */
+export interface SessionDeletedPayload {
+	sessionId: string;
+}
+
+/** 会话重命名成功 */
+export interface SessionRenamedPayload {
+	sessionId: string;
+	name: string;
+}
+
+/** 历史消息结果 */
+export interface SessionHistoryResultPayload {
+	sessionId: string;
+	messages: SessionMessagePayload[];
+}
+
+/** 会话操作错误 */
+export interface SessionErrorPayload {
+	code: string;
+	message: string;
+}
+
+// ── 会话数据模型 ──
+
+/** 会话列表项（从 Agent Host 传回 UI） */
+export interface SessionInfoPayload {
+	file: string;
+	id: string;
+	name: string;
+	createdAt: number;
+	lastMessage?: string;
+	lastActiveAt: number;
+}
+
+export interface SessionInfo {
+	/** 会话文件路径（file: URI 或文件路径） */
+	file: string;
+	/** 会话 UUID */
+	id: string;
+	/** 会话显示名称 */
+	name: string;
+	/** 创建时间戳 (ms) */
+	createdAt: number;
+	/** 最后一条消息文本（用于侧边栏预览） */
+	lastMessage?: string;
+	/** 最后活动时间 */
+	lastActiveAt: number;
+}
+
+/** 单条消息（供 UI 渲染） */
+export interface SessionMessagePayload {
+	id: string;
+	role: "user" | "agent";
+	content: string;
+	thinking?: string;
+	timestamp: string;
+	streaming?: boolean;
+}
+
+// ── Agent 会话（运行时） ──
 
 export interface AgentSession {
 	id: string;

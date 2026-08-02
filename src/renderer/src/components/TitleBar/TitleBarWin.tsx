@@ -3,7 +3,7 @@ import { type Component, createSignal } from "solid-js";
 import styles from "./TitleBar.module.css";
 
 const TitleBarWin: Component = () => {
-	const [isMaximized, setIsMaximized] = createSignal(false);
+	const [isMaximized] = createSignal(false);
 
 	const onMinimize = () => window.api.minimize();
 	const onMaximize = () => window.api.maximize();

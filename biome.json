@@ -45,6 +45,7 @@
 							":PACKAGE:",
 							":BLANK_LINE:",
 
+							"@/agent/**",
 							"@/contexts/**",
 							":BLANK_LINE:",
 

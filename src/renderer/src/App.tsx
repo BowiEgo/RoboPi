@@ -21,7 +21,6 @@ import sunSvg from "@/assets/icons/sun.svg?raw";
 const AppContent: Component = () => {
 	const [activeNav, setActiveNav] = createSignal("chat");
 	const { t } = useLocale();
-
 	const { mode, toggleMode } = useTheme();
 
 	const topNav: NavItem[] = [
@@ -35,8 +34,6 @@ const AppContent: Component = () => {
 			icon: <Icon raw={settingsIcon} />,
 			label: t("nav.settings"),
 		},
-		// 每次 mode() 变化，这里都会重新执行
-		/* ── Dark/Light Mode Toggle ── */
 		{
 			id: "themeMode",
 			icon: mode() === "dark" ? <Icon raw={sunSvg} /> : <Icon raw={moonSvg} />,
@@ -66,46 +63,8 @@ const AppContent: Component = () => {
 				{activeNav() === "chat" && (
 					<ChatPage
 						sidebarHeader={<AppBanner />}
-						sidebarContent={
-							<ChatItem
-								sessions={[
-									{
-										id: "1",
-										label: t("chat.session1"),
-										subtitle: t("chat.session1Preview"),
-										time: "10:30",
-										status: "active",
-									},
-									{
-										id: "2",
-										label: t("chat.session2"),
-										subtitle: t("chat.session2Preview"),
-										time: "09:15",
-										status: "starting",
-									},
-									{
-										id: "3",
-										label: t("chat.session3"),
-										subtitle: t("chat.session3Preview"),
-										time: "昨天",
-									},
-									{
-										id: "4",
-										label: t("chat.session4"),
-										subtitle: t("chat.session4Preview"),
-										time: "昨天",
-									},
-								]}
-							/>
-						}
+						sidebarContent={<ChatItem />}
 						sidebarBottom={<div class="h-12" />}
-						chatHeader={<span>.pi-desktop</span>}
-						chatTags={[
-							{ id: "context", label: "上下文：0.0% / 1.0M ↑ 0 ↓ 0" },
-							{ id: "cache", label: "缓存：0" },
-							{ id: "cost", label: "$0.000" },
-							{ id: "new", label: t("chat.newSession"), type: "action" },
-						]}
 					/>
 				)}
 				{activeNav() === "theme" && <ThemePage />}

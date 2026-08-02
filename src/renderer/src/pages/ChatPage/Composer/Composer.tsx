@@ -38,13 +38,19 @@ function shortenModel(model: string | undefined): string {
 	return parts[parts.length - 1] ?? model;
 }
 
-function thinkingLabel(t: string | undefined, fallback: (key: string) => string): string {
+function thinkingLabel(
+	t: string | undefined,
+	fallback: (key: string) => string,
+): string {
 	if (!t) return fallback("composer.think");
 	const key = THINKING_LABELS[t] ?? "composer.think";
 	return fallback(key);
 }
 
-function statusLabel(status: string | undefined, t: (key: string) => string): string {
+function statusLabel(
+	status: string | undefined,
+	t: (key: string) => string,
+): string {
 	if (!status) return t("composer.mode");
 	switch (status) {
 		case "responding":

@@ -3,8 +3,9 @@ import {
 	createEffect,
 	createSignal,
 	For,
-	onCleanup,
 	type JSX,
+	onCleanup,
+	onMount,
 	Show,
 } from "solid-js";
 
@@ -28,27 +29,17 @@ interface ChatPanelProps {
 	header?: JSX.Element;
 	tags?: ChatTag[];
 	children?: JSX.Element;
+	/** 当前会话 ID */
+	sessionId?: string;
+	/** 初始消息列表（从会话历史加载） */
+	initialMessages?: ChatBubbleProps[];
+	/** 切换到新会话时清空消息 */
+	resetKey?: string;
+	/** 委托父组件处理发送（用于延迟创建会话等场景） */
+	onSend?: (text: string) => void;
 }
 
-// ── Agent IPC helpers ──
-
-interface AgentIpc {
-	send: (msg: unknown) => void;
-	onMessage: (cb: (msg: unknown) => void) => () => void;
-}
-
-function getAgentIpc(): AgentIpc | null {
-	try {
-		const w = window as Window & { agent?: AgentIpc };
-		const a = w.agent;
-		if (a) {
-			return a;
-		}
-	} catch {
-		// not available in test/dev without Electron
-	}
-	return null;
-}
+import { getAgentIpc } from "@/agent/ipc";
 
 function now(): string {
 	return new Date().toLocaleTimeString("zh-CN", {
@@ -61,9 +52,23 @@ let nextId = 0;
 
 const ChatPanel: Component<ChatPanelProps> = (props) => {
 	const [messages, setMessages] = createSignal<ChatBubbleProps[]>([]);
-	const [sessionId] = createSignal(`session-${Date.now()}`);
 	const [agentConfig, setAgentConfig] = createSignal<AgentConfig>({});
 	let dialogRef: HTMLDivElement | undefined;
+
+	// 会话切换时重新加载消息（仅响应 resetKey，不响应 sessionId）
+	// sessionId 变化但 resetKey 不变 = 延迟创建会话场景，保留 ChatPanel 内已有的气泡
+	let prevKey: string | undefined;
+	createEffect(() => {
+		const key = props.resetKey;
+		if (key && key !== prevKey) {
+			prevKey = key;
+			if (props.initialMessages?.length) {
+				setMessages([...props.initialMessages]);
+			} else {
+				setMessages([]);
+			}
+		}
+	});
 
 	// Auto-scroll to bottom when messages change
 	createEffect(() => {
@@ -79,8 +84,10 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 	});
 
 	// ── Subscribe to Agent Host messages ──
-	const agent = getAgentIpc();
-	if (agent) {
+	onMount(() => {
+		const agent = getAgentIpc();
+		if (!agent) return;
+
 		const unsub = agent.onMessage((raw) => {
 			const msg = raw as {
 				type: string;
@@ -120,7 +127,11 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 				}
 
 				case "agent:status": {
-					const st = msg.payload as { status?: string; model?: string; thinkingLevel?: string };
+					const st = msg.payload as {
+						status?: string;
+						model?: string;
+						thinkingLevel?: string;
+					};
 					setAgentConfig((prev) => ({
 						...prev,
 						status: st.status,
@@ -135,9 +146,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 					if (!text) return;
 					setMessages((prev) =>
 						prev.map((m) =>
-							m.streaming
-								? { ...m, thinking: (m.thinking ?? "") + text }
-								: m,
+							m.streaming ? { ...m, thinking: (m.thinking ?? "") + text } : m,
 						),
 					);
 					break;
@@ -148,9 +157,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 					if (!delta || kind !== "content") return;
 					setMessages((prev) =>
 						prev.map((m) =>
-							m.streaming
-								? { ...m, content: m.content + delta }
-								: m,
+							m.streaming ? { ...m, content: m.content + delta } : m,
 						),
 					);
 					break;
@@ -180,7 +187,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 							m.streaming
 								? {
 										...m,
-										content: m.content || `❌ 错误: ${errMsg ?? "未知错误"}`,
+										content: m.content || `❌ Error: ${errMsg ?? "unknown"}`,
 										streaming: false,
 									}
 								: m,
@@ -192,12 +199,10 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 		});
 
 		onCleanup(unsub);
-	}
+	});
 
 	function handleSend(text: string) {
 		if (!text.trim()) return;
-
-		const sid = sessionId();
 
 		// 1. Add user message
 		const userId = String(++nextId);
@@ -225,48 +230,50 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 			},
 		]);
 
-		// 3. Send to Agent Host or use mock fallback
-		const agentIpc = getAgentIpc();
-		if (agentIpc) {
-			agentIpc.send({
-				id: agentId,
-				type: "chat:send",
-				payload: {
-					content: text.trim(),
-					sessionId: sid,
-				},
-			});
+		// 3. Delegate to parent or send directly
+		if (props.onSend) {
+			props.onSend(text.trim());
 		} else {
-			// Mock fallback when Agent Host is not available
-			mockStreamReply(agentId);
+			const agentIpc = getAgentIpc();
+			if (agentIpc) {
+				agentIpc.send({
+					id: agentId,
+					type: "chat:send",
+					payload: {
+						content: text.trim(),
+						sessionId: props.sessionId ?? "",
+					},
+				});
+			} else {
+				mockStreamReply(agentId);
+			}
 		}
 	}
 
 	/** Mock streaming reply for when Agent Host is unavailable */
 	function mockStreamReply(agentId: string) {
 		const thinking =
-			"正在分析用户输入...\n识别意图：通用对话\n" +
-			"匹配回复模板：markdown 功能展示\n生成回复中...";
+			"analyzing user input...\n" +
+			"matching response template: markdown demo\n" +
+			"generating reply...";
 
 		const fullContent =
-			"收到你的消息！这是一个 **Markdown** 回复示例：\n\n" +
-			"## 功能概览\n\n" +
-			"- ✅ 支持 **粗体** 和 *斜体*\n" +
-			"- ✅ 代码高亮 `inline code`\n" +
-			"- ✅ 代码块\n\n" +
+			"Got your message! Here is a **Markdown** reply example:\n\n" +
+			"## Features\n\n" +
+			"- ✅ Supports **bold** and *italic*\n" +
+			"- ✅ Code highlight `inline code`\n" +
+			"- ✅ Code blocks\n\n" +
 			"```typescript\n" +
 			"const greet = (name: string): string => {\n" +
 			"  return `Hello, ${name}!`;\n" +
 			"};\n" +
 			"```\n\n" +
-			"> 这是一个引用块，用于展示提示信息。\n\n" +
-			"有什么我可以帮你的吗？";
+			"> This is a blockquote for tips.\n\n" +
+			"How can I help you?";
 
 		setTimeout(() => {
 			setMessages((prev) =>
-				prev.map((m) =>
-					m.id === agentId ? { ...m, thinking } : m,
-				),
+				prev.map((m) => (m.id === agentId ? { ...m, thinking } : m)),
 			);
 
 			let charIdx = 0;
@@ -279,9 +286,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 
 				setMessages((prev) =>
 					prev.map((m) =>
-						m.id === agentId
-							? { ...m, content: chunk, streaming: !done }
-							: m,
+						m.id === agentId ? { ...m, content: chunk, streaming: !done } : m,
 					),
 				);
 
@@ -321,7 +326,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 			<main class={styles.dialog} ref={dialogRef}>
 				<Show when={messages().length === 0} fallback={null}>
 					{props.children ?? (
-						<div class={styles.emptyHint}>发送一条消息开始对话</div>
+						<div class={styles.emptyHint}>Send a message to start</div>
 					)}
 				</Show>
 				<For each={messages()}>

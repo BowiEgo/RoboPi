@@ -114,3 +114,12 @@
 	padding: 0 0 var(--space-md) var(--space-lg);
 	overflow-y: auto;
 }
+
+/* ── Empty Hint ── */
+.emptyHint {
+	padding: var(--space-lg);
+	text-align: center;
+	font-family: var(--font-display);
+	font-size: var(--text-caption);
+	color: var(--color-mute);
+}
