@@ -36,7 +36,7 @@ interface ChatPanelProps {
 	/** 切换到新会话时清空消息 */
 	resetKey?: string;
 	/** 委托父组件处理发送（用于延迟创建会话等场景） */
-	onSend?: (text: string) => void;
+	onSend?: (text: string) => Promise<unknown> | void;
 }
 
 import { getAgentIpc } from "@/agent/ipc";

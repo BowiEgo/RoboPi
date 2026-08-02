@@ -6,6 +6,8 @@
  *   - 与 Agent Host 的 IPC 通信（create / switch / delete / rename / send）
  *   - 延迟创建：点击"新建"仅清空 UI，首条消息时才真正创建会话
  *
+ * 所有异步方法返回 Promise，可通过 await 等待操作完成。
+ *
  * 任意组件 import { useAgent } 获取同一个实例，无需 props 传递。
  */
 
@@ -27,13 +29,55 @@ export interface SessionInfoPayload {
 	lastActiveAt: number;
 }
 
+// ── Promise 追踪 ──
+
+class Deferred<T = void> {
+	resolve!: (value: T) => void;
+	reject!: (error: Error) => void;
+	promise: Promise<T>;
+
+	constructor() {
+		this.promise = new Promise<T>((res, rej) => {
+			this.resolve = res;
+			this.reject = rej;
+		});
+	}
+}
+
+const pending = new Map<string, Deferred<unknown>>();
+
+function track<T>(id: string): Promise<T> {
+	const d = new Deferred<T>();
+	pending.set(id, d as Deferred<unknown>);
+	return d.promise;
+}
+
+function settle(id: string, value?: unknown) {
+	const d = pending.get(id);
+	if (d) {
+		pending.delete(id);
+		d.resolve(value);
+	}
+}
+
+function fail(id: string, error: Error) {
+	const d = pending.get(id);
+	if (d) {
+		pending.delete(id);
+		d.reject(error);
+	}
+}
+
 // ── Helpers ──
 
 function fmtTime(ms: number): string {
 	const d = new Date(ms);
 	const now = new Date();
 	if (d.toDateString() === now.toDateString()) {
-		return d.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+		return d.toLocaleTimeString("zh-CN", {
+			hour: "2-digit",
+			minute: "2-digit",
+		});
 	}
 	return d.toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
 }
@@ -78,7 +122,11 @@ function createAgentStore() {
 		if (!agent) return;
 
 		const unsub = agent.onMessage((raw) => {
-			const msg = raw as { type: string; payload: Record<string, unknown> };
+			const msg = raw as {
+				id: string;
+				type: string;
+				payload: Record<string, unknown>;
+			};
 			if (!msg?.type) return;
 
 			switch (msg.type) {
@@ -93,6 +141,7 @@ function createAgentStore() {
 					setMessages(p.messages ?? []);
 					setResetKey(p.sessionId + "-" + Date.now());
 					setLoading(false);
+					settle(msg.id, p);
 					break;
 				}
 
@@ -101,10 +150,28 @@ function createAgentStore() {
 						sessionId: string;
 						name: string;
 						createdAt: number;
+						file: string;
 					};
 					setActiveId(p.sessionId);
 					setActiveName(p.name);
 					setLoading(false);
+
+					// 直接插入本地列表，不等 listAll（SDK 延迟写盘）
+					setSessions((prev) => {
+						if (prev.some((s) => s.id === p.sessionId)) return prev;
+						return [
+							{
+								file: p.file,
+								id: p.sessionId,
+								name: p.name,
+								createdAt: p.createdAt,
+								lastMessage: pendingMessage || "",
+								lastActiveAt: Date.now(),
+							},
+							...prev,
+						];
+					});
+
 					if (pendingMessage) {
 						const text = pendingMessage;
 						pendingMessage = null;
@@ -114,18 +181,22 @@ function createAgentStore() {
 							payload: { content: text, sessionId: p.sessionId },
 						});
 					}
-					refreshSessions();
+					// refreshSessions();
+					settle(msg.id, p);
 					break;
 				}
 
 				case "session:list_result": {
 					const p = msg.payload as { sessions: SessionInfoPayload[] };
+					console.log("session-lenght: ", p.sessions.length);
 					if (p.sessions?.length) setSessions(p.sessions);
+					settle(msg.id, p);
 					break;
 				}
 
 				case "session:deleted": {
 					refreshSessions();
+					settle(msg.id, msg.payload);
 					break;
 				}
 
@@ -133,12 +204,16 @@ function createAgentStore() {
 					const p = msg.payload as { sessionId: string; name: string };
 					if (activeId() === p.sessionId) setActiveName(p.name);
 					refreshSessions();
+					settle(msg.id, p);
 					break;
 				}
 
 				case "session:error": {
 					console.error("[useAgent] Session error:", msg.payload);
 					setLoading(false);
+					const message =
+						(msg.payload as { message?: string }).message ?? "Unknown error";
+					fail(msg.id, new Error(message));
 					break;
 				}
 			}
@@ -159,6 +234,12 @@ function createAgentStore() {
 		});
 	}
 
+	// ── 公开方法 ──
+
+	/**
+	 * 仅在本地清空 UI，不发送任何 IPC。
+	 * 真正的 session 创建延迟到首条消息发送时。
+	 */
 	function createSession(name?: string) {
 		pendingMessage = null;
 		setActiveId(null);
@@ -168,8 +249,15 @@ function createAgentStore() {
 		setLoading(false);
 	}
 
-	function handleSend(text: string) {
-		if (!agent) return;
+	/**
+	 * 发送消息。
+	 *   - 已有活跃会话：立即发送，Promise 同步 resolve。
+	 *   - 无活跃会话：先创建会话，等 session:created 后自动发送。
+	 *
+	 * @returns Promise<{ sessionId: string }>
+	 */
+	async function handleSend(text: string): Promise<{ sessionId: string }> {
+		if (!agent) throw new Error("Agent not ready");
 
 		if (activeId()) {
 			agent.send({
@@ -177,43 +265,88 @@ function createAgentStore() {
 				type: "chat:send",
 				payload: { content: text, sessionId: activeId()! },
 			});
-		} else {
-			setLoading(true);
-			pendingMessage = text;
-			agent.send({
-				id: "create-" + Date.now(),
-				type: "session:create",
-				payload: {},
-			});
+			return { sessionId: activeId()! };
 		}
+
+		setLoading(true);
+		pendingMessage = text;
+		const id = "create-" + Date.now();
+		const promise = track<{
+			sessionId: string;
+			name: string;
+			createdAt: number;
+		}>(id);
+		agent.send({ id, type: "session:create", payload: {} });
+		return promise;
 	}
 
-	function switchSession(id: string) {
-		if (!agent || id === activeId()) return;
+	/**
+	 * 切换到指定会话。
+	 * Promise resolve 于 session:switched 事件到达时。
+	 */
+	async function switchSession(
+		id: string,
+	): Promise<{ sessionId: string; name: string; messages: ChatBubbleProps[] }> {
+		if (!agent) throw new Error("Agent not ready");
+
+		if (id === activeId()) {
+			return {
+				sessionId: id,
+				name: activeName(),
+				messages: messages(),
+			};
+		}
+
 		setLoading(true);
+		const msgId = "switch-" + Date.now();
+		const promise = track<{
+			sessionId: string;
+			name: string;
+			messages: ChatBubbleProps[];
+		}>(msgId);
 		agent.send({
-			id: "switch-" + Date.now(),
+			id: msgId,
 			type: "session:switch",
 			payload: { sessionId: id },
 		});
+		return promise;
 	}
 
-	function deleteSession(id: string) {
-		if (!agent) return;
+	/**
+	 * 删除指定会话。
+	 * Promise resolve 于 session:deleted 事件到达时。
+	 */
+	async function deleteSession(id: string): Promise<void> {
+		if (!agent) throw new Error("Agent not ready");
+
+		const msgId = "delete-" + Date.now();
+		const promise = track<void>(msgId);
 		agent.send({
-			id: "delete-" + Date.now(),
+			id: msgId,
 			type: "session:delete",
 			payload: { sessionId: id },
 		});
+		return promise;
 	}
 
-	function renameSession(id: string, name: string) {
-		if (!agent) return;
+	/**
+	 * 重命名指定会话。
+	 * Promise resolve 于 session:renamed 事件到达时。
+	 */
+	async function renameSession(
+		id: string,
+		name: string,
+	): Promise<{ sessionId: string; name: string }> {
+		if (!agent) throw new Error("Agent not ready");
+
+		const msgId = "rename-" + Date.now();
+		const promise = track<{ sessionId: string; name: string }>(msgId);
 		agent.send({
-			id: "rename-" + Date.now(),
+			id: msgId,
 			type: "session:rename",
 			payload: { sessionId: id, name },
 		});
+		return promise;
 	}
 
 	const sessionItems = createMemo(() =>

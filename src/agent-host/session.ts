@@ -363,8 +363,8 @@ export async function handleCreateSession(
 		const dir = await getSessionsDir();
 		const sm = SessionManager.create(cwd, dir);
 
-		const name = payload.name?.trim() || undefined;
-		if (name) sm.appendSessionInfo(name);
+		const name = payload.name?.trim() || "Untitled";
+		sm.appendSessionInfo(name);
 
 		session = await createAgentSessionFor(sm);
 		currentSessionManager = sm;
@@ -380,6 +380,7 @@ export async function handleCreateSession(
 				sessionId: currentSessionId,
 				name: currentSessionName,
 				createdAt: Date.now(),
+				file: sm.getSessionFile() ?? "",
 			},
 		});
 		console.log(

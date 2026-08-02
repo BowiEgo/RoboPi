@@ -148,7 +148,7 @@ class AgentHostManager {
     if (existsSync(tsSourcePath)) {
       return {
         command: process.execPath,
-        args: ["--experimental-strip-types", tsSourcePath],
+        args: ["--no-warnings", "--experimental-strip-types", tsSourcePath],
       };
     }
 

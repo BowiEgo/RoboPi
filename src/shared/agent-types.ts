@@ -209,6 +209,7 @@ export interface SessionCreatedPayload {
 	sessionId: string;
 	name: string;
 	createdAt: number;
+	file: string;
 }
 
 /** 会话列表结果 */
