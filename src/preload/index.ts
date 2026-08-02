@@ -1,17 +1,7 @@
 import { electronAPI } from "@electron-toolkit/preload";
 import { contextBridge, ipcRenderer } from "electron";
 
-interface WindowApi {
-	minimize: () => void;
-	maximize: () => void;
-	close: () => void;
-	platform: NodeJS.Platform;
-}
-
-interface AgentApi {
-	send: (msg: unknown) => void;
-	onMessage: (callback: (msg: unknown) => void) => () => void;
-}
+import type { AgentApi, WindowApi } from "./index.d";
 
 // Custom APIs for renderer
 const api: WindowApi = {
@@ -43,10 +33,7 @@ if (process.contextIsolated) {
 		console.error(error);
 	}
 } else {
-	// @ts-expect-error (define in dts)
 	window.electron = electronAPI;
-	// @ts-expect-error (define in dts)
 	window.api = api;
-	// @ts-expect-error (define in dts)
 	window.agent = agentApi;
 }

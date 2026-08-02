@@ -10,22 +10,6 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve(__dirname, 'src/main/index.ts'),
-          'agent-host': resolve(__dirname, 'src/agent-host/index.ts'),
-        },
-        external: (id: string) => {
-          // Keep ESM-only pi packages and their transitive deps external
-          // so that dynamic import() resolves them correctly at runtime
-          if (
-            id.startsWith('@earendil-works/') ||
-            id.startsWith('@anthropic-ai/') ||
-            id.startsWith('@google/') ||
-            id.startsWith('openai') ||
-            id === 'typebox' ||
-            id.startsWith('@sinclair/typebox')
-          ) {
-            return true;
-          }
-          return false;
         },
       },
     },

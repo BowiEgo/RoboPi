@@ -1,19 +1,19 @@
 /**
- * Agent Host — 入口（真实 Pi Agent SDK 集成）
+ * Agent Host — 入口（原生 ESM 集成 Pi Agent SDK）
  *
  * 作为独立 Node.js 进程运行，通过 IPC 与 Electron 主进程通信。
- * 使用 @earendil-works/pi-coding-agent SDK 进行实际的 AI 对话。
- *
- * 注意：pi-coding-agent 是 ESM-only 包，无法用 require() 加载。
- * 因此使用动态 import() 来在 CJS 上下文中加载 ESM 模块。
+ * 使用 spawn() + 原生 ESM import 加载 pi-coding-agent SDK。
  */
 
-import type { AgentMessage } from "../shared/agent-types";
-
-// ESM SDK 的类型（import type 只在编译时解析，不产生运行时代码）
-import type {
-  AgentSession,
+import {
+  type AgentSession,
+  createAgentSession,
+  ModelRuntime,
+  SessionManager,
+  SettingsManager,
 } from "@earendil-works/pi-coding-agent";
+
+import type { AgentMessage } from "../shared/agent-types";
 
 // ── 状态 ──
 
@@ -37,27 +37,13 @@ function uid(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-// ── 动态加载 ESM SDK ──
-
-type PiSdk = typeof import("@earendil-works/pi-coding-agent");
-let piSdk: PiSdk | null = null;
-
-async function loadSdk(): Promise<PiSdk> {
-  if (piSdk) return piSdk;
-  // 动态 import() 在 Node.js CJS 中可以加载 ESM 模块
-  piSdk = await import("@earendil-works/pi-coding-agent");
-  return piSdk;
-}
-
 // ── 初始化 Pi Agent Session ──
 
 async function initAgent(): Promise<void> {
   console.log("[AgentHost] Initializing Pi Agent SDK...");
 
-  const sdk = await loadSdk();
-
   // 1. 创建 ModelRuntime（管理认证和模型）
-  const modelRuntime = await sdk.ModelRuntime.create();
+  const modelRuntime = await ModelRuntime.create();
 
   // 设置 API key（优先使用环境变量）
   if (process.env.ANTHROPIC_API_KEY) {
@@ -80,22 +66,23 @@ async function initAgent(): Promise<void> {
   }
 
   // 3. 创建 Session
-  const result = await sdk.createAgentSession({
+  const result = await createAgentSession({
     modelRuntime,
-    sessionManager: sdk.SessionManager.inMemory(),
-    settingsManager: sdk.SettingsManager.inMemory({
+    sessionManager: SessionManager.inMemory(),
+    settingsManager: SettingsManager.inMemory({
       compaction: { enabled: false },
       retry: { enabled: false },
     }),
     tools: ["read", "bash", "edit", "write"],
-    thinkingLevel: (process.env.PI_THINKING_LEVEL as
-      | "off"
-      | "minimal"
-      | "low"
-      | "medium"
-      | "high"
-      | "xhigh"
-      | "max") ?? "medium",
+    thinkingLevel:
+      (process.env.PI_THINKING_LEVEL as
+        | "off"
+        | "minimal"
+        | "low"
+        | "medium"
+        | "high"
+        | "xhigh"
+        | "max") ?? "medium",
   });
 
   session = result.session;
@@ -196,7 +183,7 @@ async function initAgent(): Promise<void> {
 
 process.on("message", (raw: unknown) => {
   const msg = raw as AgentMessage;
-  if (!msg || !msg.type) {
+  if (!msg?.type) {
     console.warn("[AgentHost] Received invalid message:", raw);
     return;
   }
@@ -233,21 +220,19 @@ process.on("message", (raw: unknown) => {
       }
 
       // 异步发送 prompt（不阻塞消息循环）
-      session
-        .prompt(payload.content)
-        .catch((err) => {
-          const message = err instanceof Error ? err.message : String(err);
-          send({
-            id: uid(),
-            type: "chat:error",
-            payload: {
-              sessionId: payload.sessionId ?? "",
-              code: "AGENT_ERROR",
-              message,
-            },
-          });
-          console.error("[AgentHost] prompt error:", err);
+      session.prompt(payload.content).catch((err) => {
+        const message = err instanceof Error ? err.message : String(err);
+        send({
+          id: uid(),
+          type: "chat:error",
+          payload: {
+            sessionId: payload.sessionId ?? "",
+            code: "AGENT_ERROR",
+            message,
+          },
         });
+        console.error("[AgentHost] prompt error:", err);
+      });
       break;
     }
 

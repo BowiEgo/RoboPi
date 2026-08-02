@@ -2,14 +2,17 @@
  * Agent Host Manager
  *
  * 在主进程中管理 Agent Host 子进程的生命周期：
- * - 启动 / 关闭 Agent Host
+ * - 使用 spawn() 启动 ESM 格式的 agent-host.mjs
  * - 桥接渲染进程 ↔ Agent Host 的消息
  * - 处理子进程异常
  */
 
-import { fork, type ChildProcess } from "node:child_process";
+import { type ChildProcess, spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
+
 import { app } from "electron";
+
 import type { AgentMessage } from "../shared/agent-types";
 
 export type AgentMessageHandler = (msg: AgentMessage) => void;
@@ -27,9 +30,11 @@ class AgentHostManager {
       return;
     }
 
-    const scriptPath = join(__dirname, "agent-host.js");
+    const { command, args } = this.resolveCommand();
 
-    this.child = fork(scriptPath, [], {
+    console.log(`[AgentHostManager] Spawning: ${command} ${args.join(" ")}`);
+
+    this.child = spawn(command, args, {
       stdio: ["pipe", "pipe", "pipe", "ipc"],
       env: {
         ...process.env,
@@ -39,7 +44,7 @@ class AgentHostManager {
 
     this.child.on("message", (raw: unknown) => {
       const msg = raw as AgentMessage;
-      if (!msg || !msg.type) return;
+      if (!msg?.type) return;
 
       console.log(`[AgentHostManager] ← ${msg.type}`);
 
@@ -130,6 +135,38 @@ class AgentHostManager {
     return this.isReady;
   }
 
+  /**
+   * 解析 Agent Host 启动命令
+   *
+   * 开发模式：使用 Node.js 原生 --experimental-strip-types 运行 TS 源码
+   * 生产模式：运行预编译的 agent-host.mjs（ESM）
+   */
+  private resolveCommand(): { command: string; args: string[] } {
+    // 开发模式：使用 Node.js 原生 --experimental-strip-types 运行 TS 源码
+    // 走原生 ESM 路径，完美兼容 pi-coding-agent 这类 ESM-only 包
+    const tsSourcePath = join(__dirname, "../../src/agent-host/index.ts");
+    if (existsSync(tsSourcePath)) {
+      return {
+        command: process.execPath,
+        args: ["--experimental-strip-types", tsSourcePath],
+      };
+    }
+
+    // 生产模式：运行编译后的 ESM 文件
+    const mjsPath = join(__dirname, "agent-host.mjs");
+    if (existsSync(mjsPath)) {
+      return {
+        command: process.execPath,
+        args: [mjsPath],
+      };
+    }
+
+    throw new Error(
+      `[AgentHostManager] Cannot find agent-host entry. ` +
+        `Tried: ${tsSourcePath}, ${mjsPath}`,
+    );
+  }
+
   private flushQueue(): void {
     const queue = this.messageQueue;
     this.messageQueue = [];
@@ -157,7 +194,6 @@ export function setupAgentHost(ipcMain: Electron.IpcMain): void {
 
   // 桥接：Agent Host → 渲染进程
   agentHostManager.onMessage((msg) => {
-    // 通过所有窗口的 webContents 发送
     const { BrowserWindow } = require("electron");
     for (const win of BrowserWindow.getAllWindows()) {
       if (!win.isDestroyed()) {
