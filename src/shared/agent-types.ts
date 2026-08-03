@@ -1,51 +1,67 @@
 /**
- * Agent Host 通信协议类型定义
+ * Agent Host IPC type definitions.
  *
- * 渲染进程 ↔ 主进程 ↔ Agent Host 之间的消息格式
+ * Message format used across: renderer ↔ main process ↔ Agent Host.
  */
 
-// ── 基础消息信封 ──
+// ============================================================================
+// Message envelope
+// ============================================================================
 
 export interface AgentMessage {
-	/** 消息唯一 ID，用于关联请求/响应 */
+	/** Unique message ID for request/response correlation. */
 	id: string;
-	/** 消息类型 */
+	/** Message type. */
 	type: AgentMessageType;
-	/** 消息负载 */
+	/** Message payload. */
 	payload: AgentPayload;
 }
 
-export type AgentMessageType =
-	// Chat
-	| "chat:send"
-	| "chat:cancel"
-	| "chat:chunk"
-	| "chat:done"
-	| "chat:error"
-	| "tool:call"
-	| "tool:result"
-	| "thinking:update"
-	// Agent lifecycle
-	| "agent:status"
-	| "agent:ready"
-	| "agent:config"
-	| "agent:shutdown"
-	// Session management
-	| "session:create"
-	| "session:list"
-	| "session:switch"
-	| "session:delete"
-	| "session:rename"
-	| "session:history"
-	| "session:created"
-	| "session:list_result"
-	| "session:switched"
-	| "session:deleted"
-	| "session:renamed"
-	| "session:history_result"
-	| "session:error";
+/** Validate whether a value is a legal AgentMessageType. */
+export function isValidMessageType(value: unknown): value is AgentMessageType {
+	return (
+		typeof value === "string" &&
+		Object.values(AgentMessageType).includes(value as AgentMessageType)
+	);
+}
 
-// ── 负载类型 ──
+export const AgentMessageType = {
+	// Chat
+	ChatSend: "chat:send",
+	ChatCancel: "chat:cancel",
+	ChatChunk: "chat:chunk",
+	ChatDone: "chat:done",
+	ChatError: "chat:error",
+	ToolCall: "tool:call",
+	ToolResult: "tool:result",
+	ThinkingUpdate: "thinking:update",
+	// Agent lifecycle
+	AgentStatus: "agent:status",
+	AgentReady: "agent:ready",
+	AgentConfig: "agent:config",
+	AgentShutdown: "agent:shutdown",
+	// Session management
+	SessionCreate: "session:create",
+	SessionList: "session:list",
+	SessionSwitch: "session:switch",
+	SessionDelete: "session:delete",
+	SessionRename: "session:rename",
+	SessionHistory: "session:history",
+	SessionCreated: "session:created",
+	SessionListResult: "session:list_result",
+	SessionSwitched: "session:switched",
+	SessionDeleted: "session:deleted",
+	SessionRenamed: "session:renamed",
+	SessionHistoryResult: "session:history_result",
+	SessionError: "session:error",
+} as const;
+
+export type AgentMessageType =
+	(typeof AgentMessageType)[keyof typeof AgentMessageType];
+
+// ============================================================================
+// Payload types
+// ============================================================================
 
 export type AgentPayload =
 	| ChatSendPayload
@@ -74,16 +90,16 @@ export type AgentPayload =
 	| SessionErrorPayload
 	| Record<string, never>;
 
-/** 发送对话消息 */
+/** Send a chat message. */
 export interface ChatSendPayload {
-	/** 用户消息内容 */
+	/** User message content. */
 	content: string;
-	/** 会话 ID */
+	/** Session ID. */
 	sessionId: string;
-	/** 附加上下文（可选） */
+	/** Optional additional context. */
 	context?: {
 		files?: FileContext[];
-		/** 系统提示词 */
+		/** System prompt override. */
 		systemPrompt?: string;
 	};
 }
@@ -94,45 +110,45 @@ export interface FileContext {
 	mimeType?: string;
 }
 
-/** 流式回复片段 */
+/** Streaming reply chunk. */
 export interface ChatChunkPayload {
-	/** 会话 ID */
+	/** Session ID. */
 	sessionId: string;
-	/** 本次追加的文本片段 */
+	/** Text delta for this chunk. */
 	delta: string;
-	/** 片段类型：content | thinking */
+	/** Chunk kind: content | thinking. */
 	kind: "content" | "thinking";
 }
 
-/** 对话完成 */
+/** Chat completion. */
 export interface ChatDonePayload {
 	sessionId: string;
-	/** 完整回复内容 */
+	/** Full reply content. */
 	content: string;
-	/** 完整思考过程 */
+	/** Full thinking process. */
 	thinking?: string;
-	/** 使用的 token 数 */
+	/** Token usage stats. */
 	usage?: {
 		promptTokens: number;
 		completionTokens: number;
 	};
 }
 
-/** 错误 */
+/** Chat error. */
 export interface ChatErrorPayload {
 	sessionId: string;
 	code: string;
 	message: string;
 }
 
-/** 工具调用请求 */
+/** Tool call request. */
 export interface ToolCallPayload {
 	sessionId: string;
 	toolName: string;
 	args: Record<string, unknown>;
 }
 
-/** 工具调用结果 */
+/** Tool call result. */
 export interface ToolResultPayload {
 	sessionId: string;
 	toolName: string;
@@ -140,71 +156,73 @@ export interface ToolResultPayload {
 	error?: string;
 }
 
-/** 思考过程更新 */
+/** Thinking process update. */
 export interface ThinkingUpdatePayload {
 	sessionId: string;
 	text: string;
 }
 
-/** Agent 状态 */
+/** Agent status. */
 export interface AgentStatusPayload {
 	status: "idle" | "thinking" | "responding" | "error";
 	sessionId?: string;
 }
 
-/** Agent 就绪 */
+/** Agent ready signal. */
 export interface AgentReadyPayload {
 	pid: number;
 	version: string;
-	/** 当前使用的模型 ID */
+	/** Currently active model ID. */
 	model?: string;
-	/** 思考等级 */
+	/** Current thinking level. */
 	thinkingLevel?: string;
-	/** 可用模型列表 */
+	/** Available model list. */
 	availableModels?: string[];
 }
 
-/** Agent 配置（查询/响应） */
+/** Agent configuration (query / response). */
 export interface AgentConfigPayload {
 	model?: string;
 	thinkingLevel?: string;
-	/** 可用模型列表 */
+	/** Available model list. */
 	availableModels?: string[];
 	status?: "idle" | "thinking" | "responding" | "error";
 }
 
-// ── Session 管理 ──
+// ============================================================================
+// Session management
+// ============================================================================
 
-/** 创建新会话 */
+/** Create a new session. */
 export interface SessionCreatePayload {
 	name?: string;
 }
 
-/** 请求会话列表 */
+/** Request session list. */
 export type SessionListPayload = Record<string, never>;
 
-/** 切换到指定会话 */
+/** Switch to the specified session. */
 export interface SessionSwitchPayload {
 	sessionId: string;
 }
 
-/** 删除会话 */
+/** Delete a session. */
 export interface SessionDeletePayload {
 	sessionId: string;
 }
 
-/** 重命名会话 */
+/** Rename a session. */
 export interface SessionRenamePayload {
 	sessionId: string;
 	name: string;
 }
 
-/** 加载会话历史消息 */
+/** Load session message history. */
 export interface SessionHistoryPayload {
 	sessionId: string;
 }
 
-/** 会话创建成功 */
+/** Session created successfully. */
 export interface SessionCreatedPayload {
 	sessionId: string;
 	name: string;
@@ -212,44 +230,46 @@ export interface SessionCreatedPayload {
 	file: string;
 }
 
-/** 会话列表结果 */
+/** Session list result. */
 export interface SessionListResultPayload {
 	sessions: SessionInfoPayload[];
 }
 
-/** 会话切换成功 */
+/** Session switched successfully. */
 export interface SessionSwitchedPayload {
 	sessionId: string;
 	name: string;
 	messages: SessionMessagePayload[];
 }
 
-/** 会话删除成功 */
+/** Session deleted successfully. */
 export interface SessionDeletedPayload {
 	sessionId: string;
 }
 
-/** 会话重命名成功 */
+/** Session renamed successfully. */
 export interface SessionRenamedPayload {
 	sessionId: string;
 	name: string;
 }
 
-/** 历史消息结果 */
+/** Message history result. */
 export interface SessionHistoryResultPayload {
 	sessionId: string;
 	messages: SessionMessagePayload[];
 }
 
-/** 会话操作错误 */
+/** Session operation error. */
 export interface SessionErrorPayload {
 	code: string;
 	message: string;
 }
 
-// ── 会话数据模型 ──
+// ============================================================================
+// Session data models
+// ============================================================================
 
-/** 会话列表项（从 Agent Host 传回 UI） */
+/** Session list item (transferred from Agent Host to UI). */
 export interface SessionInfoPayload {
 	file: string;
 	id: string;
@@ -260,21 +280,21 @@ export interface SessionInfoPayload {
 }
 
 export interface SessionInfo {
-	/** 会话文件路径（file: URI 或文件路径） */
+	/** Session file path (file: URI or file path). */
 	file: string;
-	/** 会话 UUID */
+	/** Session UUID. */
 	id: string;
-	/** 会话显示名称 */
+	/** Session display name. */
 	name: string;
-	/** 创建时间戳 (ms) */
+	/** Creation timestamp (ms). */
 	createdAt: number;
-	/** 最后一条消息文本（用于侧边栏预览） */
+	/** Last message text (for sidebar preview). */
 	lastMessage?: string;
-	/** 最后活动时间 */
+	/** Last activity time. */
 	lastActiveAt: number;
 }
 
-/** 单条消息（供 UI 渲染） */
+/** Single message (for UI rendering). */
 export interface SessionMessagePayload {
 	id: string;
 	role: "user" | "agent";
@@ -284,7 +304,9 @@ export interface SessionMessagePayload {
 	streaming?: boolean;
 }
 
-// ── Agent 会话（运行时） ──
+// ============================================================================
+// Agent session (runtime)
+// ============================================================================
 
 export interface AgentSession {
 	id: string;

@@ -41,6 +41,8 @@ interface ChatPanelProps {
 
 import { getAgentIpc } from "@/agent/ipc";
 
+import { AgentMessageType, isValidMessageType } from "@shared/agent-types";
+
 function now(): string {
 	return new Date().toLocaleTimeString("zh-CN", {
 		hour: "2-digit",
@@ -102,10 +104,10 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 				};
 			};
 
-			if (!msg?.type) return;
+			if (!msg?.type || !isValidMessageType(msg.type)) return;
 
 			switch (msg.type) {
-				case "agent:ready": {
+				case AgentMessageType.AgentReady: {
 					const ready = msg.payload as {
 						model?: string;
 						thinkingLevel?: string;
@@ -120,13 +122,13 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 					break;
 				}
 
-				case "agent:config": {
+				case AgentMessageType.AgentConfig: {
 					const cfg = msg.payload as AgentConfig;
 					setAgentConfig((prev) => ({ ...prev, ...cfg }));
 					break;
 				}
 
-				case "agent:status": {
+				case AgentMessageType.AgentStatus: {
 					const st = msg.payload as {
 						status?: string;
 						model?: string;
@@ -141,7 +143,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 					break;
 				}
 
-				case "thinking:update": {
+				case AgentMessageType.ThinkingUpdate: {
 					const { text } = msg.payload;
 					if (!text) return;
 					setMessages((prev) =>
@@ -152,7 +154,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 					break;
 				}
 
-				case "chat:chunk": {
+				case AgentMessageType.ChatChunk: {
 					const { delta, kind } = msg.payload;
 					if (!delta || kind !== "content") return;
 					setMessages((prev) =>
@@ -163,7 +165,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 					break;
 				}
 
-				case "chat:done": {
+				case AgentMessageType.ChatDone: {
 					const { content, thinking } = msg.payload;
 					setMessages((prev) =>
 						prev.map((m) =>
@@ -180,7 +182,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 					break;
 				}
 
-				case "chat:error": {
+				case AgentMessageType.ChatError: {
 					const { message: errMsg } = msg.payload;
 					setMessages((prev) =>
 						prev.map((m) =>
@@ -238,7 +240,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 			if (agentIpc) {
 				agentIpc.send({
 					id: agentId,
-					type: "chat:send",
+					type: AgentMessageType.ChatSend,
 					payload: {
 						content: text.trim(),
 						sessionId: props.sessionId ?? "",

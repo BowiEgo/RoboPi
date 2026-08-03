@@ -18,6 +18,8 @@ import type { ChatBubbleProps } from "@/pages/ChatPage/ChatPanel/ChatBubble";
 
 import { getAgentIpc } from "./ipc";
 
+import { AgentMessageType, isValidMessageType } from "@shared/agent-types";
+
 // ── Types ──
 
 export interface SessionInfoPayload {
@@ -127,10 +129,10 @@ function createAgentStore() {
 				type: string;
 				payload: Record<string, unknown>;
 			};
-			if (!msg?.type) return;
+			if (!msg?.type || !isValidMessageType(msg.type)) return;
 
 			switch (msg.type) {
-				case "session:switched": {
+				case AgentMessageType.SessionSwitched: {
 					const p = msg.payload as {
 						sessionId: string;
 						name: string;
@@ -145,7 +147,7 @@ function createAgentStore() {
 					break;
 				}
 
-				case "session:created": {
+				case AgentMessageType.SessionCreated: {
 					const p = msg.payload as {
 						sessionId: string;
 						name: string;
@@ -177,7 +179,7 @@ function createAgentStore() {
 						pendingMessage = null;
 						agent.send({
 							id: "msg-" + Date.now(),
-							type: "chat:send",
+							type: AgentMessageType.ChatSend,
 							payload: { content: text, sessionId: p.sessionId },
 						});
 					}
@@ -186,7 +188,7 @@ function createAgentStore() {
 					break;
 				}
 
-				case "session:list_result": {
+				case AgentMessageType.SessionListResult: {
 					const p = msg.payload as { sessions: SessionInfoPayload[] };
 					console.log("session-lenght: ", p.sessions.length);
 					if (p.sessions?.length) setSessions(p.sessions);
@@ -194,13 +196,13 @@ function createAgentStore() {
 					break;
 				}
 
-				case "session:deleted": {
+				case AgentMessageType.SessionDeleted: {
 					refreshSessions();
 					settle(msg.id, msg.payload);
 					break;
 				}
 
-				case "session:renamed": {
+				case AgentMessageType.SessionRenamed: {
 					const p = msg.payload as { sessionId: string; name: string };
 					if (activeId() === p.sessionId) setActiveName(p.name);
 					refreshSessions();
@@ -208,7 +210,7 @@ function createAgentStore() {
 					break;
 				}
 
-				case "session:error": {
+				case AgentMessageType.SessionError: {
 					console.error("[useAgent] Session error:", msg.payload);
 					setLoading(false);
 					const message =
@@ -219,7 +221,7 @@ function createAgentStore() {
 			}
 		});
 
-		agent.send({ id: "init-list", type: "session:list", payload: {} });
+		agent.send({ id: "init-list", type: AgentMessageType.SessionList, payload: {} });
 		onCleanup(unsub);
 	});
 
@@ -228,7 +230,7 @@ function createAgentStore() {
 		queueMicrotask(() => {
 			agent.send({
 				id: "list-" + Date.now(),
-				type: "session:list",
+				type: AgentMessageType.SessionList,
 				payload: {},
 			});
 		});
@@ -262,7 +264,7 @@ function createAgentStore() {
 		if (activeId()) {
 			agent.send({
 				id: "msg-" + Date.now(),
-				type: "chat:send",
+				type: AgentMessageType.ChatSend,
 				payload: { content: text, sessionId: activeId()! },
 			});
 			return { sessionId: activeId()! };
@@ -276,7 +278,7 @@ function createAgentStore() {
 			name: string;
 			createdAt: number;
 		}>(id);
-		agent.send({ id, type: "session:create", payload: {} });
+		agent.send({ id, type: AgentMessageType.SessionCreate, payload: {} });
 		return promise;
 	}
 
@@ -306,7 +308,7 @@ function createAgentStore() {
 		}>(msgId);
 		agent.send({
 			id: msgId,
-			type: "session:switch",
+			type: AgentMessageType.SessionSwitch,
 			payload: { sessionId: id },
 		});
 		return promise;
@@ -323,7 +325,7 @@ function createAgentStore() {
 		const promise = track<void>(msgId);
 		agent.send({
 			id: msgId,
-			type: "session:delete",
+			type: AgentMessageType.SessionDelete,
 			payload: { sessionId: id },
 		});
 		return promise;
@@ -343,7 +345,7 @@ function createAgentStore() {
 		const promise = track<{ sessionId: string; name: string }>(msgId);
 		agent.send({
 			id: msgId,
-			type: "session:rename",
+			type: AgentMessageType.SessionRename,
 			payload: { sessionId: id, name },
 		});
 		return promise;

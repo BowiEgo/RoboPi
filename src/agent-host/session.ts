@@ -1,82 +1,696 @@
 /**
- * Session 管理模块
- *   - 会话的创建 / 列表 / 切换 / 删除 / 重命名 / 历史
- *   - Pi SDK SessionManager 持久化
- *   - SDK 事件订阅 → IPC 转发
+ * Session management module.
+ *   - Create / list / switch / delete / rename / history.
+ *   - Pi SDK SessionManager persistence.
+ *   - SDK event subscription → IPC forwarding.
+ *
+ * All session state is encapsulated in the SessionHost class.
  */
 
 import {
 	type AgentSession,
+	type AgentSessionEvent,
 	createAgentSession,
 	type ModelRuntime,
 	SessionManager,
 	SettingsManager,
 } from "@earendil-works/pi-coding-agent";
 
-import type {
-	AgentMessage,
-	SessionInfoPayload,
-	SessionMessagePayload,
-} from "../shared/agent-types";
+import {
+	type AgentMessage,
+	AgentMessageType,
+	type SessionInfoPayload,
+	type SessionMessagePayload,
+} from "../shared/agent-types.ts";
 
-// ── 模块状态 ──
+// ============================================================================
+// IPC helpers (stateless, module-level exports)
+// ============================================================================
 
-export let session: AgentSession | null = null;
-export let currentSessionManager: ReturnType<
-	typeof SessionManager.open
-> | null = null;
-export let currentSessionId: string | null = null;
-export let currentSessionName: string | null = null;
-
-let sessionsDir: string | null = null;
-let unsubscribe: (() => void) | null = null;
-let needsTitleGen = false;
-let generatingTitle = false;
-let leafBeforeTitleGen: string | null = null;
-
-// 由 index.ts 注入
-let modelRuntime: Awaited<ReturnType<typeof ModelRuntime.create>> | null = null;
-let sendFn: ((msg: AgentMessage) => void) | null = null;
-let agentModelRef: { value: string | undefined } | null = null;
-let thinkingLevelRef: { value: string | undefined } | null = null;
-
-function send(msg: AgentMessage): void {
-	sendFn?.(msg);
+export function postMessageToHost(msg: AgentMessage): void {
+	if (process.send) process.send(msg);
 }
 
-function uid(): string {
+export function uid(): string {
 	return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-// ── 目录 ──
+// ============================================================================
+// SessionHost
+// ============================================================================
 
-async function getSessionsDir(): Promise<string> {
-	if (sessionsDir) return sessionsDir;
-	const path = await import("node:path");
-	const os = await import("node:os");
-	const fs = await import("node:fs/promises");
-	const dir = path.join(os.homedir(), ".pi", "agent", "sessions");
-	await fs.mkdir(dir, { recursive: true });
-	sessionsDir = dir;
-	return dir;
+export interface SessionHostOptions {
+	modelRuntime: Awaited<ReturnType<typeof ModelRuntime.create>>;
+	agentModelRef: { value: string | undefined };
+	thinkingLevelRef: { value: string | undefined };
 }
 
-// ── 列出会话 ──
+export class SessionHost {
+	// ---- Public read-only state ----
+	session: AgentSession | null = null;
+	currentSessionManager: ReturnType<typeof SessionManager.open> | null = null;
+	currentSessionId: string | null = null;
+	currentSessionName: string | null = null;
 
-export async function listSessions(): Promise<SessionInfoPayload[]> {
-	await getSessionsDir();
-	const sessions = await SessionManager.listAll(sessionsDir!);
-	return sessions.map((s) => ({
-		file: s.path,
-		id: s.id,
-		name: s.name ?? "Untitled",
-		createdAt: s.created.getTime(),
-		lastMessage: s.firstMessage?.slice(0, 80),
-		lastActiveAt: s.modified.getTime(),
-	}));
+	// ---- Constructor-injected dependencies ----
+	private modelRuntime: Awaited<ReturnType<typeof ModelRuntime.create>> | null =
+		null;
+	private agentModelRef: { value: string | undefined };
+	private thinkingLevelRef: { value: string | undefined };
+
+	// ---- Internal state ----
+	private sessionsDir: string | null = null;
+	private unsubscribe: (() => void) | null = null;
+	private needsTitleGen = false;
+	private generatingTitle = false;
+	private leafBeforeTitleGen: string | null = null;
+
+	constructor(opts: SessionHostOptions) {
+		this.modelRuntime = opts.modelRuntime;
+		this.agentModelRef = opts.agentModelRef;
+		this.thinkingLevelRef = opts.thinkingLevelRef;
+	}
+
+	// ---- Init / Dispose ----
+
+	async init(): Promise<void> {
+		const dir = await this.getSessionsDir();
+
+		try {
+			const recent = await SessionManager.listAll(dir);
+			const mostRecent = recent[0];
+
+			if (mostRecent) {
+				const sm = SessionManager.open(mostRecent.path);
+				this.currentSessionManager = sm;
+				this.currentSessionId = sm.getSessionId();
+				this.currentSessionName = mostRecent.name ?? "Untitled";
+				this.session = await this.createAgentSessionFor(sm);
+				this.subscribeToSession(this.session);
+				console.log(
+					`[AgentHost] Restored session: ${this.currentSessionId} (${this.currentSessionName})`,
+				);
+			} else {
+				const sm = SessionManager.create(process.cwd(), dir);
+				this.currentSessionManager = sm;
+				this.currentSessionId = sm.getSessionId();
+				this.currentSessionName = "Untitled";
+				this.session = await this.createAgentSessionFor(sm);
+				this.subscribeToSession(this.session);
+				console.log(
+					`[AgentHost] Created default session: ${this.currentSessionId}`,
+				);
+			}
+		} catch (err) {
+			console.error("[AgentHost] Session init error:", err);
+			if (!this.session) {
+				const sm = SessionManager.inMemory(process.cwd());
+				this.currentSessionManager = sm;
+				this.currentSessionId = sm.getSessionId();
+				this.currentSessionName = "Untitled";
+				this.session = await this.createAgentSessionFor(sm);
+				this.subscribeToSession(this.session);
+			}
+		}
+
+		console.log(
+			`[AgentHost] Pi Agent session ready (model: ${this.session?.model?.id ?? "auto"})`,
+		);
+	}
+
+	async dispose(): Promise<void> {
+		await this.closeCurrentSession();
+	}
+
+	// ---- Public queries ----
+
+	getInitialMessages(): SessionMessagePayload[] {
+		return this.currentSessionManager
+			? loadMessagesFromSession(this.currentSessionManager)
+			: [];
+	}
+
+	// ---- IPC Handlers ----
+
+	async createSession(
+		msgId: string,
+		payload: { name?: string },
+	): Promise<void> {
+		try {
+			await this.closeCurrentSession();
+			const cwd = process.cwd();
+			const dir = await this.getSessionsDir();
+			const sm = SessionManager.create(cwd, dir);
+
+			const name = payload.name?.trim() || "Untitled";
+			sm.appendSessionInfo(name);
+
+			this.session = await this.createAgentSessionFor(sm);
+			this.currentSessionManager = sm;
+			this.currentSessionId = sm.getSessionId();
+			this.currentSessionName = name;
+			this.needsTitleGen = true;
+			this.subscribeToSession(this.session);
+
+			postMessageToHost({
+				id: msgId,
+				type: AgentMessageType.SessionCreated,
+				payload: {
+					sessionId: this.currentSessionId,
+					name: this.currentSessionName,
+					createdAt: Date.now(),
+					file: sm.getSessionFile() ?? "",
+				},
+			});
+			console.log(
+				`[AgentHost] Session created: ${this.currentSessionId} (${this.currentSessionName})`,
+			);
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+			console.error("[AgentHost] Session create error:", message);
+			postMessageToHost({
+				id: msgId,
+				type: AgentMessageType.SessionError,
+				payload: { code: "CREATE_ERROR", message },
+			});
+		}
+	}
+
+	async listSessions(msgId: string): Promise<void> {
+		try {
+			const sessions = await this.listAllSessions();
+			postMessageToHost({
+				id: msgId,
+				type: AgentMessageType.SessionListResult,
+				payload: { sessions },
+			});
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+			postMessageToHost({
+				id: msgId,
+				type: AgentMessageType.SessionError,
+				payload: { code: "LIST_ERROR", message },
+			});
+		}
+	}
+
+	async switchSession(
+		msgId: string,
+		payload: { sessionId: string },
+	): Promise<void> {
+		try {
+			if (this.currentSessionId === payload.sessionId && this.session) {
+				const messages = this.currentSessionManager
+					? loadMessagesFromSession(this.currentSessionManager)
+					: [];
+				postMessageToHost({
+					id: msgId,
+					type: AgentMessageType.SessionSwitched,
+					payload: {
+						sessionId: this.currentSessionId,
+						name: this.currentSessionName ?? "Untitled",
+						messages,
+					},
+				});
+				return;
+			}
+
+			const dir = await this.getSessionsDir();
+			const all = await SessionManager.listAll(dir);
+			const target = all.find((s) => s.id === payload.sessionId);
+			if (!target) {
+				postMessageToHost({
+					id: msgId,
+					type: AgentMessageType.SessionError,
+					payload: {
+						code: "NOT_FOUND",
+						message: `Session ${payload.sessionId} not found`,
+					},
+				});
+				return;
+			}
+
+			await this.closeCurrentSession();
+
+			const sm = SessionManager.open(target.path);
+			const sessionEntry = sm
+				.getEntries()
+				.find((e) => (e as { type: string }).type === "session_info") as
+				| { name?: string }
+				| undefined;
+
+			this.currentSessionManager = sm;
+			this.currentSessionId = sm.getSessionId();
+			this.currentSessionName = sessionEntry?.name ?? "Untitled";
+			this.session = await this.createAgentSessionFor(sm);
+			this.subscribeToSession(this.session);
+
+			const messages = loadMessagesFromSession(sm);
+			postMessageToHost({
+				id: msgId,
+				type: AgentMessageType.SessionSwitched,
+				payload: {
+					sessionId: this.currentSessionId,
+					name: this.currentSessionName,
+					messages,
+				},
+			});
+			console.log(
+				`[AgentHost] Session switched: ${this.currentSessionId} (${this.currentSessionName})`,
+			);
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+			console.error("[AgentHost] Session switch error:", message);
+			postMessageToHost({
+				id: msgId,
+				type: AgentMessageType.SessionError,
+				payload: { code: "SWITCH_ERROR", message },
+			});
+		}
+	}
+
+	async deleteSession(
+		msgId: string,
+		payload: { sessionId: string },
+	): Promise<void> {
+		try {
+			const fs = await import("node:fs/promises");
+			const isActive = this.currentSessionId === payload.sessionId;
+			if (isActive) await this.closeCurrentSession();
+
+			const dir = await this.getSessionsDir();
+			const all = await SessionManager.listAll(dir);
+			const target = all.find((s) => s.id === payload.sessionId);
+			if (!target) {
+				if (isActive) await this.createDefaultSession();
+				postMessageToHost({
+					id: msgId,
+					type: AgentMessageType.SessionError,
+					payload: {
+						code: "NOT_FOUND",
+						message: `Session ${payload.sessionId} not found`,
+					},
+				});
+				return;
+			}
+
+			await fs.unlink(target.path);
+			postMessageToHost({
+				id: msgId,
+				type: AgentMessageType.SessionDeleted,
+				payload: { sessionId: payload.sessionId },
+			});
+			console.log(`[AgentHost] Session deleted: ${payload.sessionId}`);
+
+			if (isActive) {
+				await this.createDefaultSession();
+				const messages = this.currentSessionManager
+					? loadMessagesFromSession(this.currentSessionManager)
+					: [];
+				postMessageToHost({
+					id: uid(),
+					type: AgentMessageType.SessionCreated,
+					payload: {
+						sessionId: this.currentSessionId ?? "",
+						name: this.currentSessionName ?? "Untitled",
+						createdAt: Date.now(),
+					},
+				});
+				postMessageToHost({
+					id: uid(),
+					type: AgentMessageType.SessionSwitched,
+					payload: {
+						sessionId: this.currentSessionId ?? "",
+						name: this.currentSessionName ?? "Untitled",
+						messages,
+					},
+				});
+			}
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+			postMessageToHost({
+				id: msgId,
+				type: AgentMessageType.SessionError,
+				payload: { code: "DELETE_ERROR", message },
+			});
+		}
+	}
+
+	async renameSession(
+		msgId: string,
+		payload: { sessionId: string; name: string },
+	): Promise<void> {
+		try {
+			const trimmedName = payload.name.trim();
+			if (!trimmedName) {
+				postMessageToHost({
+					id: msgId,
+					type: AgentMessageType.SessionError,
+					payload: {
+						code: "INVALID_NAME",
+						message: "Name cannot be empty",
+					},
+				});
+				return;
+			}
+
+			const dir = await this.getSessionsDir();
+			const all = await SessionManager.listAll(dir);
+			const target = all.find((s) => s.id === payload.sessionId);
+			if (!target) {
+				postMessageToHost({
+					id: msgId,
+					type: AgentMessageType.SessionError,
+					payload: {
+						code: "NOT_FOUND",
+						message: `Session ${payload.sessionId} not found`,
+					},
+				});
+				return;
+			}
+
+			const sm = SessionManager.open(target.path);
+			sm.appendSessionInfo(trimmedName);
+			if (this.currentSessionId === payload.sessionId)
+				this.currentSessionName = trimmedName;
+
+			postMessageToHost({
+				id: msgId,
+				type: AgentMessageType.SessionRenamed,
+				payload: { sessionId: payload.sessionId, name: trimmedName },
+			});
+			console.log(
+				`[AgentHost] Session renamed: ${payload.sessionId} → "${trimmedName}"`,
+			);
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+			postMessageToHost({
+				id: msgId,
+				type: AgentMessageType.SessionError,
+				payload: { code: "RENAME_ERROR", message },
+			});
+		}
+	}
+
+	async history(msgId: string, payload: { sessionId: string }): Promise<void> {
+		try {
+			if (
+				this.currentSessionId === payload.sessionId &&
+				this.currentSessionManager
+			) {
+				const messages = loadMessagesFromSession(this.currentSessionManager);
+				postMessageToHost({
+					id: msgId,
+					type: AgentMessageType.SessionHistoryResult,
+					payload: { sessionId: payload.sessionId, messages },
+				});
+				return;
+			}
+
+			const dir = await this.getSessionsDir();
+			const all = await SessionManager.listAll(dir);
+			const target = all.find((s) => s.id === payload.sessionId);
+			if (!target) {
+				postMessageToHost({
+					id: msgId,
+					type: AgentMessageType.SessionError,
+					payload: {
+						code: "NOT_FOUND",
+						message: `Session ${payload.sessionId} not found`,
+					},
+				});
+				return;
+			}
+
+			const sm = SessionManager.open(target.path);
+			const messages = loadMessagesFromSession(sm);
+			postMessageToHost({
+				id: msgId,
+				type: AgentMessageType.SessionHistoryResult,
+				payload: { sessionId: payload.sessionId, messages },
+			});
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+			postMessageToHost({
+				id: msgId,
+				type: AgentMessageType.SessionError,
+				payload: { code: "HISTORY_ERROR", message },
+			});
+		}
+	}
+
+	// ---- Private ----
+
+	private async getSessionsDir(): Promise<string> {
+		if (this.sessionsDir) return this.sessionsDir;
+		const path = await import("node:path");
+		const os = await import("node:os");
+		const fs = await import("node:fs/promises");
+		const dir = path.join(os.homedir(), ".pi", "agent", "sessions");
+		await fs.mkdir(dir, { recursive: true });
+		this.sessionsDir = dir;
+		return dir;
+	}
+
+	private async listAllSessions(): Promise<SessionInfoPayload[]> {
+		const dir = await this.getSessionsDir();
+		const sessions = await SessionManager.listAll(dir);
+		return sessions.map((s) => ({
+			file: s.path,
+			id: s.id,
+			name: s.name ?? "Untitled",
+			createdAt: s.created.getTime(),
+			lastMessage: s.firstMessage?.slice(0, 80),
+			lastActiveAt: s.modified.getTime(),
+		}));
+	}
+
+	private async createAgentSessionFor(
+		sm: ReturnType<typeof SessionManager.open>,
+	): Promise<AgentSession> {
+		if (!this.modelRuntime) throw new Error("ModelRuntime not initialized");
+
+		const level =
+			(process.env.PI_THINKING_LEVEL as
+				| "off"
+				| "minimal"
+				| "low"
+				| "medium"
+				| "high"
+				| "xhigh"
+				| "max") ?? "medium";
+
+		const result = await createAgentSession({
+			modelRuntime: this.modelRuntime,
+			sessionManager: sm,
+			settingsManager: SettingsManager.inMemory({
+				compaction: { enabled: false },
+				retry: { enabled: false },
+			}),
+			tools: ["read", "bash", "edit", "write"],
+			thinkingLevel: level,
+		});
+
+		if (this.agentModelRef) this.agentModelRef.value = result.session.model?.id;
+		if (this.thinkingLevelRef)
+			this.thinkingLevelRef.value = process.env.PI_THINKING_LEVEL ?? "medium";
+
+		return result.session;
+	}
+
+	private async createDefaultSession(): Promise<void> {
+		try {
+			const cwd = process.cwd();
+			const dir = await this.getSessionsDir();
+			const sm = SessionManager.create(cwd, dir);
+			this.currentSessionManager = sm;
+			this.currentSessionId = sm.getSessionId();
+			this.currentSessionName = "Untitled";
+			this.session = await this.createAgentSessionFor(sm);
+			this.subscribeToSession(this.session);
+		} catch (err) {
+			console.error(
+				"[AgentHost] Failed to create default session, falling back to in-memory:",
+				err,
+			);
+			const sm = SessionManager.inMemory(process.cwd());
+			this.currentSessionManager = sm;
+			this.currentSessionId = sm.getSessionId();
+			this.currentSessionName = "Untitled";
+			this.session = await this.createAgentSessionFor(sm);
+			this.subscribeToSession(this.session);
+		}
+	}
+
+	private async closeCurrentSession(): Promise<void> {
+		this.unsubscribe?.();
+		this.unsubscribe = null;
+		if (this.session) {
+			try {
+				this.session.dispose();
+			} catch (err) {
+				console.error("[AgentHost] Error disposing session:", err);
+			}
+			this.session = null;
+		}
+		this.currentSessionManager = null;
+		this.currentSessionId = null;
+		this.currentSessionName = null;
+	}
+
+	// ---- Event subscription ----
+
+	private subscribeToSession(s: AgentSession): void {
+		this.unsubscribe = s.subscribe((event) => {
+			switch (event.type) {
+				case "message_update":
+					this.handleMessageUpdate(event);
+					break;
+				case "tool_execution_start":
+					this.handleToolExecutionStart(event);
+					break;
+				case "tool_execution_end":
+					this.handleToolExecutionEnd(event);
+					break;
+				case "agent_end":
+					this.handleAgentEnd(event);
+					break;
+			}
+		});
+	}
+
+	private handleMessageUpdate(
+		event: Extract<AgentSessionEvent, { type: "message_update" }>,
+	): void {
+		if (this.generatingTitle) return; // suppress streaming during title generation
+		const { assistantMessageEvent } = event;
+		if (assistantMessageEvent.type === "text_delta") {
+			postMessageToHost({
+				id: uid(),
+				type: AgentMessageType.ChatChunk,
+				payload: {
+					sessionId: this.currentSessionId ?? "",
+					delta: assistantMessageEvent.delta,
+					kind: "content",
+				},
+			});
+		}
+		if (assistantMessageEvent.type === "thinking_delta") {
+			postMessageToHost({
+				id: uid(),
+				type: AgentMessageType.ThinkingUpdate,
+				payload: {
+					sessionId: this.currentSessionId ?? "",
+					text: assistantMessageEvent.delta,
+				},
+			});
+		}
+	}
+
+	private handleToolExecutionStart(
+		event: Extract<AgentSessionEvent, { type: "tool_execution_start" }>,
+	): void {
+		console.log(`[AgentHost] Tool: ${event.toolName}`);
+	}
+
+	private handleToolExecutionEnd(
+		event: Extract<AgentSessionEvent, { type: "tool_execution_end" }>,
+	): void {
+		console.log(`[AgentHost] Tool result: ${event.isError ? "error" : "ok"}`);
+	}
+
+	private handleAgentEnd(
+		event: Extract<AgentSessionEvent, { type: "agent_end" }>,
+	): void {
+		const newMessages = event.messages;
+		const lastAssistant = [...newMessages]
+			.reverse()
+			.find((m) => m.role === "assistant");
+		let content = "";
+		let thinking = "";
+		if (lastAssistant) {
+			for (const block of lastAssistant.content) {
+				if (block.type === "text") content += block.text;
+				else if (block.type === "thinking") thinking += block.thinking;
+			}
+		}
+
+		// Title generation mode: extract title, skip chat:done
+		if (this.generatingTitle) {
+			this.finishTitleGeneration(content);
+			return;
+		}
+
+		// Normal flow: send chat:done
+		postMessageToHost({
+			id: uid(),
+			type: AgentMessageType.ChatDone,
+			payload: {
+				sessionId: this.currentSessionId ?? "",
+				content,
+				thinking: thinking || undefined,
+				usage: lastAssistant?.usage
+					? {
+							promptTokens: lastAssistant.usage.input,
+							completionTokens: lastAssistant.usage.output,
+						}
+					: undefined,
+			},
+		});
+
+		// Auto-generate title for the first reply of a new session
+		if (this.needsTitleGen && this.session) {
+			this.triggerTitleGeneration(
+				extractLastUserText(
+					newMessages as Array<{
+						role: string;
+						content: unknown;
+					}>,
+				),
+			);
+		}
+	}
+
+	/** Finalize title generation: extract title text, roll back the leaf node. */
+	private finishTitleGeneration(content: string): void {
+		this.generatingTitle = false;
+		const title = content.trim().replace(/^"|"$/g, "").slice(0, 50);
+		if (title && this.currentSessionManager && this.leafBeforeTitleGen) {
+			this.currentSessionManager.branch(this.leafBeforeTitleGen);
+			this.leafBeforeTitleGen = null;
+			this.currentSessionManager.appendSessionInfo(title);
+			this.currentSessionName = title;
+			postMessageToHost({
+				id: uid(),
+				type: AgentMessageType.SessionRenamed,
+				payload: {
+					sessionId: this.currentSessionId ?? "",
+					name: title,
+				},
+			});
+			console.log(`[AgentHost] Auto-titled session: "${title}"`);
+		}
+	}
+
+	/** Trigger automatic title generation for a new session's first reply. */
+	private triggerTitleGeneration(userText: string): void {
+		this.needsTitleGen = false;
+		const prompt = userText
+			? `Generate a short title (5 words or fewer) for a conversation that starts with: "${userText.slice(0, 200)}". Reply with ONLY the title, no quotes, no explanation.`
+			: "Generate a short title for this conversation. Reply with ONLY the title.";
+
+		this.generatingTitle = true;
+		this.leafBeforeTitleGen = this.currentSessionManager?.getLeafId() ?? null;
+		this.session?.followUp(prompt).catch((err) => {
+			this.generatingTitle = false;
+			console.error("[AgentHost] Title generation failed:", err);
+		});
+	}
 }
 
-// ── 加载消息 ──
+// ============================================================================
+// Pure functions
+// ============================================================================
 
 export function loadMessagesFromSession(
 	sm: ReturnType<typeof SessionManager.open>,
@@ -88,7 +702,11 @@ export function loadMessagesFromSession(
 		if (entry.type !== "message") continue;
 		const msg = (
 			entry as {
-				message: { role: string; content: unknown; timestamp: number };
+				message: {
+					role: string;
+					content: unknown;
+					timestamp: number;
+				};
 			}
 		).message;
 		const role = msg.role;
@@ -142,572 +760,19 @@ export function loadMessagesFromSession(
 	return messages;
 }
 
-// ── AgentSession 工厂 ──
-
-async function createAgentSessionFor(
-	sm: ReturnType<typeof SessionManager.open>,
-): Promise<AgentSession> {
-	if (!modelRuntime) throw new Error("ModelRuntime not initialized");
-
-	const level =
-		(process.env.PI_THINKING_LEVEL as
-			| "off"
-			| "minimal"
-			| "low"
-			| "medium"
-			| "high"
-			| "xhigh"
-			| "max") ?? "medium";
-
-	const result = await createAgentSession({
-		modelRuntime,
-		sessionManager: sm,
-		settingsManager: SettingsManager.inMemory({
-			compaction: { enabled: false },
-			retry: { enabled: false },
-		}),
-		tools: ["read", "bash", "edit", "write"],
-		thinkingLevel: level,
-	});
-
-	if (agentModelRef) agentModelRef.value = result.session.model?.id;
-	if (thinkingLevelRef)
-		thinkingLevelRef.value = process.env.PI_THINKING_LEVEL ?? "medium";
-
-	return result.session;
-}
-
-// ── 事件订阅 ──
-
-function subscribeToSession(s: AgentSession): void {
-	unsubscribe = s.subscribe((event) => {
-		switch (event.type) {
-			case "message_update": {
-				if (generatingTitle) return; // 标题生成不推流
-				const { assistantMessageEvent } = event;
-				if (assistantMessageEvent.type === "text_delta") {
-					send({
-						id: uid(),
-						type: "chat:chunk",
-						payload: {
-							sessionId: currentSessionId ?? "",
-							delta: assistantMessageEvent.delta,
-							kind: "content",
-						},
-					});
-				}
-				if (assistantMessageEvent.type === "thinking_delta") {
-					send({
-						id: uid(),
-						type: "thinking:update",
-						payload: {
-							sessionId: currentSessionId ?? "",
-							text: assistantMessageEvent.delta,
-						},
-					});
-				}
-				break;
-			}
-			case "tool_execution_start":
-				console.log(`[AgentHost] Tool: ${event.toolName}`);
-				break;
-			case "tool_execution_end":
-				console.log(
-					`[AgentHost] Tool result: ${event.isError ? "error" : "ok"}`,
-				);
-				break;
-			case "agent_end": {
-				const newMessages = event.messages;
-				const lastAssistant = [...newMessages]
-					.reverse()
-					.find((m) => m.role === "assistant");
-				let content = "";
-				let thinking = "";
-				if (lastAssistant) {
-					for (const block of lastAssistant.content) {
-						if (block.type === "text") content += block.text;
-						else if (block.type === "thinking") thinking += block.thinking;
-					}
-				}
-
-				// 标题生成模式：提取标题，不发 chat:done
-				if (generatingTitle) {
-					generatingTitle = false;
-					const title = content.trim().replace(/^"|"$/g, "").slice(0, 50);
-					if (title && currentSessionManager) {
-						// 回退到标题生成前的叶子节点，移除标题生成对话
-						currentSessionManager.branch(leafBeforeTitleGen!);
-						leafBeforeTitleGen = null;
-						currentSessionManager.appendSessionInfo(title);
-						currentSessionName = title;
-						send({
-							id: uid(),
-							type: "session:renamed",
-							payload: { sessionId: currentSessionId ?? "", name: title },
-						});
-						console.log(`[AgentHost] Auto-titled session: "${title}"`);
-					}
-					return;
-				}
-
-				// 正常流程：发送 chat:done
-				send({
-					id: uid(),
-					type: "chat:done",
-					payload: {
-						sessionId: currentSessionId ?? "",
-						content,
-						thinking: thinking || undefined,
-						usage: lastAssistant?.usage
-							? {
-									promptTokens: lastAssistant.usage.input,
-									completionTokens: lastAssistant.usage.output,
-								}
-							: undefined,
-					},
-				});
-
-				// 新会话首次回复 → 触发标题生成
-				if (needsTitleGen && session) {
-					needsTitleGen = false;
-					// 取最后一条 user 消息作为上下文
-					const lastUser = [...newMessages]
-						.reverse()
-						.find((m) => m.role === "user");
-					let userText = "";
-					if (lastUser) {
-						const uc = lastUser.content;
-						if (typeof uc === "string") userText = uc;
-						else if (Array.isArray(uc)) {
-							userText = (uc as Array<{ text?: string }>)
-								.filter((b) => "text" in b)
-								.map((b) => b.text ?? "")
-								.join(" ");
-						}
-					}
-					const prompt = userText
-						? `Generate a short title (5 words or fewer) for a conversation that starts with: "${userText.slice(0, 200)}". Reply with ONLY the title, no quotes, no explanation.`
-						: "Generate a short title for this conversation. Reply with ONLY the title.";
-
-					generatingTitle = true;
-					leafBeforeTitleGen = currentSessionManager?.getLeafId() ?? null;
-					session.followUp(prompt).catch((err) => {
-						generatingTitle = false;
-						console.error("[AgentHost] Title generation failed:", err);
-					});
-				}
-
-				break;
-			}
-		}
-	});
-}
-
-// ── 关闭 ──
-
-async function closeCurrentSession(): Promise<void> {
-	unsubscribe?.();
-	unsubscribe = null;
-	if (session) {
-		try {
-			session.dispose();
-		} catch (err) {
-			console.error("[AgentHost] Error disposing session:", err);
-		}
-		session = null;
+/** Extract the text content from the last user message in a message list. */
+export function extractLastUserText(
+	messages: Array<{ role: string; content: unknown }>,
+): string {
+	const lastUser = [...messages].reverse().find((m) => m.role === "user");
+	if (!lastUser) return "";
+	const uc = lastUser.content;
+	if (typeof uc === "string") return uc;
+	if (Array.isArray(uc)) {
+		return (uc as Array<{ text?: string }>)
+			.filter((b) => "text" in b)
+			.map((b) => b.text ?? "")
+			.join(" ");
 	}
-	currentSessionManager = null;
-	currentSessionId = null;
-	currentSessionName = null;
-}
-
-export async function closeAllSessions(): Promise<void> {
-	await closeCurrentSession();
-}
-
-// ── 创建默认会话 ──
-
-async function createDefaultSession(): Promise<void> {
-	try {
-		const cwd = process.cwd();
-		const dir = await getSessionsDir();
-		const sm = SessionManager.create(cwd, dir);
-		currentSessionManager = sm;
-		currentSessionId = sm.getSessionId();
-		currentSessionName = "Untitled";
-		session = await createAgentSessionFor(sm);
-		subscribeToSession(session);
-	} catch (err) {
-		console.error(
-			"[AgentHost] Failed to create default session, falling back to in-memory:",
-			err,
-		);
-		const sm = SessionManager.inMemory(process.cwd());
-		currentSessionManager = sm;
-		currentSessionId = sm.getSessionId();
-		currentSessionName = "Untitled";
-		session = await createAgentSessionFor(sm);
-		subscribeToSession(session);
-	}
-}
-
-// ── Handlers ──
-
-export async function handleCreateSession(
-	msgId: string,
-	payload: { name?: string },
-): Promise<void> {
-	try {
-		await closeCurrentSession();
-		const cwd = process.cwd();
-		const dir = await getSessionsDir();
-		const sm = SessionManager.create(cwd, dir);
-
-		const name = payload.name?.trim() || "Untitled";
-		sm.appendSessionInfo(name);
-
-		session = await createAgentSessionFor(sm);
-		currentSessionManager = sm;
-		currentSessionId = sm.getSessionId();
-		currentSessionName = name ?? "Untitled";
-		needsTitleGen = true;
-		subscribeToSession(session);
-
-		send({
-			id: msgId,
-			type: "session:created",
-			payload: {
-				sessionId: currentSessionId,
-				name: currentSessionName,
-				createdAt: Date.now(),
-				file: sm.getSessionFile() ?? "",
-			},
-		});
-		console.log(
-			`[AgentHost] Session created: ${currentSessionId} (${currentSessionName})`,
-		);
-	} catch (err) {
-		const message = err instanceof Error ? err.message : String(err);
-		console.error("[AgentHost] Session create error:", message);
-		send({
-			id: msgId,
-			type: "session:error",
-			payload: { code: "CREATE_ERROR", message },
-		});
-	}
-}
-
-export async function handleListSessions(msgId: string): Promise<void> {
-	try {
-		const sessions = await listSessions();
-		send({ id: msgId, type: "session:list_result", payload: { sessions } });
-	} catch (err) {
-		const message = err instanceof Error ? err.message : String(err);
-		send({
-			id: msgId,
-			type: "session:error",
-			payload: { code: "LIST_ERROR", message },
-		});
-	}
-}
-
-export async function handleSwitchSession(
-	msgId: string,
-	payload: { sessionId: string },
-): Promise<void> {
-	try {
-		if (currentSessionId === payload.sessionId && session) {
-			const messages = currentSessionManager
-				? loadMessagesFromSession(currentSessionManager)
-				: [];
-			send({
-				id: msgId,
-				type: "session:switched",
-				payload: {
-					sessionId: currentSessionId,
-					name: currentSessionName ?? "Untitled",
-					messages,
-				},
-			});
-			return;
-		}
-
-		const all = await SessionManager.listAll(sessionsDir!);
-		const target = all.find((s) => s.id === payload.sessionId);
-		if (!target) {
-			send({
-				id: msgId,
-				type: "session:error",
-				payload: {
-					code: "NOT_FOUND",
-					message: `Session ${payload.sessionId} not found`,
-				},
-			});
-			return;
-		}
-
-		await closeCurrentSession();
-
-		const sm = SessionManager.open(target.path);
-		const sessionEntry = sm
-			.getEntries()
-			.find((e) => (e as { type: string }).type === "session_info") as
-			| { name?: string }
-			| undefined;
-
-		currentSessionManager = sm;
-		currentSessionId = sm.getSessionId();
-		currentSessionName = sessionEntry?.name ?? "Untitled";
-		session = await createAgentSessionFor(sm);
-		subscribeToSession(session);
-
-		const messages = loadMessagesFromSession(sm);
-		send({
-			id: msgId,
-			type: "session:switched",
-			payload: {
-				sessionId: currentSessionId,
-				name: currentSessionName,
-				messages,
-			},
-		});
-		console.log(
-			`[AgentHost] Session switched: ${currentSessionId} (${currentSessionName})`,
-		);
-	} catch (err) {
-		const message = err instanceof Error ? err.message : String(err);
-		console.error("[AgentHost] Session switch error:", message);
-		send({
-			id: msgId,
-			type: "session:error",
-			payload: { code: "SWITCH_ERROR", message },
-		});
-	}
-}
-
-export async function handleDeleteSession(
-	msgId: string,
-	payload: { sessionId: string },
-): Promise<void> {
-	try {
-		const fs = await import("node:fs/promises");
-		const isActive = currentSessionId === payload.sessionId;
-		if (isActive) await closeCurrentSession();
-
-		const all = await SessionManager.listAll(sessionsDir!);
-		const target = all.find((s) => s.id === payload.sessionId);
-		if (!target) {
-			if (isActive) await createDefaultSession();
-			send({
-				id: msgId,
-				type: "session:error",
-				payload: {
-					code: "NOT_FOUND",
-					message: `Session ${payload.sessionId} not found`,
-				},
-			});
-			return;
-		}
-
-		await fs.unlink(target.path);
-		send({
-			id: msgId,
-			type: "session:deleted",
-			payload: { sessionId: payload.sessionId },
-		});
-		console.log(`[AgentHost] Session deleted: ${payload.sessionId}`);
-
-		if (isActive) {
-			await createDefaultSession();
-			const messages = currentSessionManager
-				? loadMessagesFromSession(currentSessionManager)
-				: [];
-			send({
-				id: uid(),
-				type: "session:created",
-				payload: {
-					sessionId: currentSessionId ?? "",
-					name: currentSessionName ?? "Untitled",
-					createdAt: Date.now(),
-				},
-			});
-			send({
-				id: uid(),
-				type: "session:switched",
-				payload: {
-					sessionId: currentSessionId ?? "",
-					name: currentSessionName ?? "Untitled",
-					messages,
-				},
-			});
-		}
-	} catch (err) {
-		const message = err instanceof Error ? err.message : String(err);
-		send({
-			id: msgId,
-			type: "session:error",
-			payload: { code: "DELETE_ERROR", message },
-		});
-	}
-}
-
-export async function handleRenameSession(
-	msgId: string,
-	payload: { sessionId: string; name: string },
-): Promise<void> {
-	try {
-		const trimmedName = payload.name.trim();
-		if (!trimmedName) {
-			send({
-				id: msgId,
-				type: "session:error",
-				payload: { code: "INVALID_NAME", message: "Name cannot be empty" },
-			});
-			return;
-		}
-
-		const all = await SessionManager.listAll(sessionsDir!);
-		const target = all.find((s) => s.id === payload.sessionId);
-		if (!target) {
-			send({
-				id: msgId,
-				type: "session:error",
-				payload: {
-					code: "NOT_FOUND",
-					message: `Session ${payload.sessionId} not found`,
-				},
-			});
-			return;
-		}
-
-		const sm = SessionManager.open(target.path);
-		sm.appendSessionInfo(trimmedName);
-		if (currentSessionId === payload.sessionId)
-			currentSessionName = trimmedName;
-
-		send({
-			id: msgId,
-			type: "session:renamed",
-			payload: { sessionId: payload.sessionId, name: trimmedName },
-		});
-		console.log(
-			`[AgentHost] Session renamed: ${payload.sessionId} → "${trimmedName}"`,
-		);
-	} catch (err) {
-		const message = err instanceof Error ? err.message : String(err);
-		send({
-			id: msgId,
-			type: "session:error",
-			payload: { code: "RENAME_ERROR", message },
-		});
-	}
-}
-
-export async function handleSessionHistory(
-	msgId: string,
-	payload: { sessionId: string },
-): Promise<void> {
-	try {
-		if (currentSessionId === payload.sessionId && currentSessionManager) {
-			const messages = loadMessagesFromSession(currentSessionManager);
-			send({
-				id: msgId,
-				type: "session:history_result",
-				payload: { sessionId: payload.sessionId, messages },
-			});
-			return;
-		}
-
-		const all = await SessionManager.listAll(sessionsDir!);
-		const target = all.find((s) => s.id === payload.sessionId);
-		if (!target) {
-			send({
-				id: msgId,
-				type: "session:error",
-				payload: {
-					code: "NOT_FOUND",
-					message: `Session ${payload.sessionId} not found`,
-				},
-			});
-			return;
-		}
-
-		const sm = SessionManager.open(target.path);
-		const messages = loadMessagesFromSession(sm);
-		send({
-			id: msgId,
-			type: "session:history_result",
-			payload: { sessionId: payload.sessionId, messages },
-		});
-	} catch (err) {
-		const message = err instanceof Error ? err.message : String(err);
-		send({
-			id: msgId,
-			type: "session:error",
-			payload: { code: "HISTORY_ERROR", message },
-		});
-	}
-}
-
-// ── 初始化 ──
-
-export interface SessionInitOptions {
-	modelRuntime: Awaited<ReturnType<typeof ModelRuntime.create>>;
-	sendFn: (msg: AgentMessage) => void;
-	agentModelRef: { value: string | undefined };
-	thinkingLevelRef: { value: string | undefined };
-}
-
-export async function initSession(opts: SessionInitOptions): Promise<void> {
-	modelRuntime = opts.modelRuntime;
-	sendFn = opts.sendFn;
-	agentModelRef = opts.agentModelRef;
-	thinkingLevelRef = opts.thinkingLevelRef;
-
-	await getSessionsDir();
-
-	try {
-		const recent = await SessionManager.listAll(sessionsDir!);
-		const mostRecent = recent[0];
-
-		if (mostRecent) {
-			const sm = SessionManager.open(mostRecent.path);
-			currentSessionManager = sm;
-			currentSessionId = sm.getSessionId();
-			currentSessionName = mostRecent.name ?? "Untitled";
-			session = await createAgentSessionFor(sm);
-			subscribeToSession(session);
-			console.log(
-				`[AgentHost] Restored session: ${currentSessionId} (${currentSessionName})`,
-			);
-		} else {
-			const sm = SessionManager.create(process.cwd(), sessionsDir!);
-			currentSessionManager = sm;
-			currentSessionId = sm.getSessionId();
-			currentSessionName = "Untitled";
-			session = await createAgentSessionFor(sm);
-			subscribeToSession(session);
-			console.log(`[AgentHost] Created default session: ${currentSessionId}`);
-		}
-	} catch (err) {
-		console.error("[AgentHost] Session init error:", err);
-		if (!session) {
-			const sm = SessionManager.inMemory(process.cwd());
-			currentSessionManager = sm;
-			currentSessionId = sm.getSessionId();
-			currentSessionName = "Untitled";
-			session = await createAgentSessionFor(sm);
-			subscribeToSession(session);
-		}
-	}
-
-	console.log(
-		`[AgentHost] Pi Agent session ready (model: ${session?.model?.id ?? "auto"})`,
-	);
-}
-
-export function getInitialMessages(): SessionMessagePayload[] {
-	return currentSessionManager
-		? loadMessagesFromSession(currentSessionManager)
-		: [];
+	return "";
 }

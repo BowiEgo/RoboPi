@@ -13,167 +13,172 @@ import { join } from "node:path";
 
 import { app } from "electron";
 
-import type { AgentMessage } from "../shared/agent-types";
+import {
+	type AgentMessage,
+	AgentMessageType,
+	isValidMessageType,
+} from "../shared/agent-types.ts";
 
 export type AgentMessageHandler = (msg: AgentMessage) => void;
 
 class AgentHostManager {
-  private child: ChildProcess | null = null;
-  private handlers = new Set<AgentMessageHandler>();
-  private messageQueue: AgentMessage[] = [];
-  private isReady = false;
+	private child: ChildProcess | null = null;
+	private handlers = new Set<AgentMessageHandler>();
+	private messageQueue: AgentMessage[] = [];
+	private isReady = false;
 
-  /** 启动 Agent Host 子进程 */
-  start(): void {
-    if (this.child) {
-      console.warn("[AgentHostManager] Agent host is already running");
-      return;
-    }
+	/** 启动 Agent Host 子进程 */
+	start(): void {
+		if (this.child) {
+			console.warn("[AgentHostManager] Agent host is already running");
+			return;
+		}
 
-    const { command, args } = this.resolveCommand();
+		const { command, args } = this.resolveCommand();
 
-    console.log(`[AgentHostManager] Spawning: ${command} ${args.join(" ")}`);
+		console.log(`[AgentHostManager] Spawning: ${command} ${args.join(" ")}`);
 
-    this.child = spawn(command, args, {
-      stdio: ["pipe", "pipe", "pipe", "ipc"],
-      env: {
-        ...process.env,
-        PI_AGENT_MODEL: process.env.PI_AGENT_MODEL ?? "pi-agent/v1",
-      },
-    });
+		this.child = spawn(command, args, {
+			stdio: ["pipe", "pipe", "pipe", "ipc"],
+			env: {
+				...process.env,
+				PI_AGENT_MODEL: process.env.PI_AGENT_MODEL ?? "pi-agent/v1",
+			},
+		});
 
-    this.child.on("message", (raw: unknown) => {
-      const msg = raw as AgentMessage;
-      if (!msg?.type) return;
+		this.child.on("message", (raw: unknown) => {
+			const msg = raw as AgentMessage;
+			if (!msg?.type || !isValidMessageType(msg.type)) return;
 
-      console.log(`[AgentHostManager] ← ${msg.type}`);
+			console.log(`[AgentHostManager] ← ${msg.type}`);
 
-      if (msg.type === "agent:ready") {
-        this.isReady = true;
-        this.flushQueue();
-      }
+			if (msg.type === AgentMessageType.AgentReady) {
+				this.isReady = true;
+				this.flushQueue();
+			}
 
-      // 转发到所有已注册的 handler（通常是转发给渲染进程）
-      for (const handler of this.handlers) {
-        handler(msg);
-      }
-    });
+			// 转发到所有已注册的 handler（通常是转发给渲染进程）
+			for (const handler of this.handlers) {
+				handler(msg);
+			}
+		});
 
-    this.child.on("error", (err) => {
-      console.error("[AgentHostManager] Agent host error:", err);
-      this.isReady = false;
-    });
+		this.child.on("error", (err) => {
+			console.error("[AgentHostManager] Agent host error:", err);
+			this.isReady = false;
+		});
 
-    this.child.on("exit", (code, signal) => {
-      console.log(
-        `[AgentHostManager] Agent host exited (code: ${code}, signal: ${signal})`,
-      );
-      this.child = null;
-      this.isReady = false;
-    });
+		this.child.on("exit", (code, signal) => {
+			console.log(
+				`[AgentHostManager] Agent host exited (code: ${code}, signal: ${signal})`,
+			);
+			this.child = null;
+			this.isReady = false;
+		});
 
-    if (this.child.stdout) {
-      this.child.stdout.on("data", (data: Buffer) => {
-        console.log(`[AgentHost stdout] ${data.toString().trim()}`);
-      });
-    }
+		if (this.child.stdout) {
+			this.child.stdout.on("data", (data: Buffer) => {
+				console.log(`[AgentHost stdout] ${data.toString().trim()}`);
+			});
+		}
 
-    if (this.child.stderr) {
-      this.child.stderr.on("data", (data: Buffer) => {
-        console.error(`[AgentHost stderr] ${data.toString().trim()}`);
-      });
-    }
-  }
+		if (this.child.stderr) {
+			this.child.stderr.on("data", (data: Buffer) => {
+				console.error(`[AgentHost stderr] ${data.toString().trim()}`);
+			});
+		}
+	}
 
-  /** 发送消息到 Agent Host */
-  send(msg: AgentMessage): void {
-    if (!this.child || !this.isReady) {
-      // 排队，等就绪后发出
-      this.messageQueue.push(msg);
-      return;
-    }
+	/** 发送消息到 Agent Host */
+	send(msg: AgentMessage): void {
+		if (!this.child || !this.isReady) {
+			// 排队，等就绪后发出
+			this.messageQueue.push(msg);
+			return;
+		}
 
-    console.log(`[AgentHostManager] → ${msg.type}`);
-    this.child.send(msg);
-  }
+		console.log(`[AgentHostManager] → ${msg.type}`);
+		this.child.send(msg);
+	}
 
-  /** 注册消息处理器（供 renderer→agent 方向桥接） */
-  onMessage(handler: AgentMessageHandler): () => void {
-    this.handlers.add(handler);
-    return () => this.handlers.delete(handler);
-  }
+	/** 注册消息处理器（供 renderer→agent 方向桥接） */
+	onMessage(handler: AgentMessageHandler): () => void {
+		this.handlers.add(handler);
+		return () => this.handlers.delete(handler);
+	}
 
-  /** 关闭 Agent Host */
-  async shutdown(): Promise<void> {
-    if (!this.child) return;
+	/** 关闭 Agent Host */
+	async shutdown(): Promise<void> {
+		const child = this.child;
+		if (!child) return;
 
-    return new Promise((resolve) => {
-      const timeout = setTimeout(() => {
-        if (this.child) {
-          this.child.kill("SIGKILL");
-        }
-        resolve();
-      }, 3000);
+		return new Promise((resolve) => {
+			const timeout = setTimeout(() => {
+				if (this.child) {
+					this.child.kill("SIGKILL");
+				}
+				resolve();
+			}, 3000);
 
-      this.child!.once("exit", () => {
-        clearTimeout(timeout);
-        this.child = null;
-        this.isReady = false;
-        resolve();
-      });
+			child.once("exit", () => {
+				clearTimeout(timeout);
+				this.child = null;
+				this.isReady = false;
+				resolve();
+			});
 
-      this.child!.send({
-        id: "shutdown",
-        type: "agent:shutdown",
-        payload: {},
-      } as AgentMessage);
-    });
-  }
+			child.send({
+				id: "shutdown",
+				type: AgentMessageType.AgentShutdown,
+				payload: {},
+			} as AgentMessage);
+		});
+	}
 
-  /** 是否就绪 */
-  get ready(): boolean {
-    return this.isReady;
-  }
+	/** 是否就绪 */
+	get ready(): boolean {
+		return this.isReady;
+	}
 
-  /**
-   * 解析 Agent Host 启动命令
-   *
-   * 开发模式：使用 Node.js 原生 --experimental-strip-types 运行 TS 源码
-   * 生产模式：运行预编译的 agent-host.mjs（ESM）
-   */
-  private resolveCommand(): { command: string; args: string[] } {
-    // 开发模式：使用 Node.js 原生 --experimental-strip-types 运行 TS 源码
-    // 走原生 ESM 路径，完美兼容 pi-coding-agent 这类 ESM-only 包
-    const tsSourcePath = join(__dirname, "../../src/agent-host/index.ts");
-    if (existsSync(tsSourcePath)) {
-      return {
-        command: process.execPath,
-        args: ["--no-warnings", "--experimental-strip-types", tsSourcePath],
-      };
-    }
+	/**
+	 * 解析 Agent Host 启动命令
+	 *
+	 * 开发模式：使用 Node.js 原生 --experimental-strip-types 运行 TS 源码
+	 * 生产模式：运行预编译的 agent-host.mjs（ESM）
+	 */
+	private resolveCommand(): { command: string; args: string[] } {
+		// 开发模式：使用 Node.js 原生 --experimental-strip-types 运行 TS 源码
+		// 走原生 ESM 路径，完美兼容 pi-coding-agent 这类 ESM-only 包
+		const tsSourcePath = join(__dirname, "../../src/agent-host/index.ts");
+		if (existsSync(tsSourcePath)) {
+			return {
+				command: process.execPath,
+				args: ["--no-warnings", "--experimental-strip-types", tsSourcePath],
+			};
+		}
 
-    // 生产模式：运行编译后的 ESM 文件
-    const mjsPath = join(__dirname, "agent-host.mjs");
-    if (existsSync(mjsPath)) {
-      return {
-        command: process.execPath,
-        args: [mjsPath],
-      };
-    }
+		// 生产模式：运行编译后的 ESM 文件
+		const mjsPath = join(__dirname, "agent-host.mjs");
+		if (existsSync(mjsPath)) {
+			return {
+				command: process.execPath,
+				args: [mjsPath],
+			};
+		}
 
-    throw new Error(
-      `[AgentHostManager] Cannot find agent-host entry. ` +
-        `Tried: ${tsSourcePath}, ${mjsPath}`,
-    );
-  }
+		throw new Error(
+			`[AgentHostManager] Cannot find agent-host entry. ` +
+				`Tried: ${tsSourcePath}, ${mjsPath}`,
+		);
+	}
 
-  private flushQueue(): void {
-    const queue = this.messageQueue;
-    this.messageQueue = [];
-    for (const msg of queue) {
-      this.send(msg);
-    }
-  }
+	private flushQueue(): void {
+		const queue = this.messageQueue;
+		this.messageQueue = [];
+		for (const msg of queue) {
+			this.send(msg);
+		}
+	}
 }
 
 // 单例
@@ -184,26 +189,26 @@ export const agentHostManager = new AgentHostManager();
  * 并注册 IPC handlers 用于渲染进程通信
  */
 export function setupAgentHost(ipcMain: Electron.IpcMain): void {
-  // 启动 agent 子进程
-  agentHostManager.start();
+	// 启动 agent 子进程
+	agentHostManager.start();
 
-  // 桥接：渲染进程 → Agent Host
-  ipcMain.on("agent:send", (_event, msg: AgentMessage) => {
-    agentHostManager.send(msg);
-  });
+	// 桥接：渲染进程 → Agent Host
+	ipcMain.on("agent:send", (_event, msg: AgentMessage) => {
+		agentHostManager.send(msg);
+	});
 
-  // 桥接：Agent Host → 渲染进程
-  agentHostManager.onMessage((msg) => {
-    const { BrowserWindow } = require("electron");
-    for (const win of BrowserWindow.getAllWindows()) {
-      if (!win.isDestroyed()) {
-        win.webContents.send("agent:message", msg);
-      }
-    }
-  });
+	// 桥接：Agent Host → 渲染进程
+	agentHostManager.onMessage((msg) => {
+		const { BrowserWindow } = require("electron");
+		for (const win of BrowserWindow.getAllWindows()) {
+			if (!win.isDestroyed()) {
+				win.webContents.send("agent:message", msg);
+			}
+		}
+	});
 
-  // 应用退出时关闭 agent
-  app.on("before-quit", async () => {
-    await agentHostManager.shutdown();
-  });
+	// 应用退出时关闭 agent
+	app.on("before-quit", async () => {
+		await agentHostManager.shutdown();
+	});
 }

@@ -4,6 +4,11 @@
 
 A desktop application built on Pi Agent that integrates conversational AI, task automation, and knowledge base construction into a unified interface.
 
+## Documentation
+
+- [DESIGN.md](docs/DESIGN.md) — Architecture & design decisions
+- [CODE_STYLE.md](docs/CODE_STYLE.md) — Code conventions & style guide
+
 ## Recommended IDE Setup
 
 - [VSCode](https://code.visualstudio.com/) + [Biome](https://biomejs.dev/)

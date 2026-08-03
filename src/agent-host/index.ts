@@ -1,229 +1,60 @@
 /**
- * Agent Host — 入口
+ * Agent Host — entry point.
  *
- * 作为独立 Node.js 进程运行，通过 IPC 与 Electron 主进程通信。
- * Session 管理逻辑在 ./session.ts 中。
+ * Runs as a standalone Node.js child process, communicating with the Electron
+ * main process via IPC.
+ *
+ * Agent initialization lives in ./agent.ts.
+ * Session management lives in ./session.ts.
  */
 
-import { ModelRuntime } from "@earendil-works/pi-coding-agent";
-
-import type { AgentMessage } from "../shared/agent-types";
 import {
-	closeAllSessions,
-	currentSessionId,
-	currentSessionName,
-	getInitialMessages,
-	handleCreateSession,
-	handleDeleteSession,
-	handleListSessions,
-	handleRenameSession,
-	handleSessionHistory,
-	handleSwitchSession,
-	initSession,
-	session,
-} from "./session.ts";
+	type AgentMessage,
+	AgentMessageType,
+	isValidMessageType,
+} from "../shared/agent-types.ts";
+import { AgentHost } from "./agent.ts";
+import { postMessageToHost, uid } from "./session.ts";
 
-// ── Agent 配置 ──
+// ============================================================================
+// Lifecycle
+// ============================================================================
 
-export const agentModelRef = { value: undefined as string | undefined };
-export const thinkingLevelRef = { value: undefined as string | undefined };
-let agentAvailableModels: string[] = [];
+const agentHost = new AgentHost();
 
-// ── IPC ──
-
-function send(msg: AgentMessage): void {
-	if (process.send) process.send(msg);
+/** Convenience accessor — only valid after initialize(). */
+function sh() {
+	const h = agentHost.sessionHost;
+	if (!h) throw new Error("SessionHost not initialized");
+	return h;
 }
-
-function uid(): string {
-	return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-}
-
-// ── 初始化 ──
-
-async function initAgent(): Promise<void> {
-	console.log("[AgentHost] Initializing Pi Agent SDK...");
-
-	const modelRuntime = await ModelRuntime.create();
-
-	if (process.env.ANTHROPIC_API_KEY) {
-		modelRuntime.setRuntimeApiKey("anthropic", process.env.ANTHROPIC_API_KEY);
-	}
-	if (process.env.OPENAI_API_KEY) {
-		modelRuntime.setRuntimeApiKey("openai", process.env.OPENAI_API_KEY);
-	}
-
-	const available = await modelRuntime.getAvailable();
-	if (available.length === 0) {
-		console.warn(
-			"[AgentHost] No authenticated models available. Set ANTHROPIC_API_KEY or OPENAI_API_KEY.",
-		);
-	} else {
-		console.log(
-			`[AgentHost] Available models: ${available.map((m) => m.id).join(", ")}`,
-		);
-	}
-
-	agentAvailableModels = available.map((m) => m.id);
-
-	await initSession({
-		modelRuntime,
-		sendFn: send,
-		agentModelRef,
-		thinkingLevelRef,
-	});
-}
-
-// ── 消息路由 ──
-
-process.on("message", (raw: unknown) => {
-	const msg = raw as AgentMessage;
-	if (!msg?.type) {
-		console.warn("[AgentHost] Received invalid message:", raw);
-		return;
-	}
-
-	console.log(`[AgentHost] ← ${msg.type} (${msg.id})`);
-
-	switch (msg.type) {
-		// ── Chat ──
-		case "chat:send": {
-			const payload = msg.payload as { content: string; sessionId: string };
-			if (!payload?.content) {
-				send({
-					id: msg.id,
-					type: "chat:error",
-					payload: {
-						sessionId: payload?.sessionId ?? "",
-						code: "INVALID_PAYLOAD",
-						message: "Missing content",
-					},
-				});
-				return;
-			}
-
-			if (!session) {
-				send({
-					id: msg.id,
-					type: "chat:error",
-					payload: {
-						sessionId: payload.sessionId ?? "",
-						code: "NOT_READY",
-						message: "Agent session not initialized yet",
-					},
-				});
-				return;
-			}
-
-			session.prompt(payload.content).catch((err) => {
-				const message = err instanceof Error ? err.message : String(err);
-				send({
-					id: uid(),
-					type: "chat:error",
-					payload: {
-						sessionId: payload.sessionId ?? "",
-						code: "AGENT_ERROR",
-						message,
-					},
-				});
-				console.error("[AgentHost] prompt error:", err);
-			});
-			break;
-		}
-
-		case "chat:cancel": {
-			if (session) {
-				session.abort().catch((err) => {
-					console.error("[AgentHost] abort error:", err);
-				});
-			}
-			break;
-		}
-
-		// ── Agent ──
-		case "agent:status": {
-			send({
-				id: msg.id,
-				type: "agent:status",
-				payload: {
-					status: session?.isStreaming ? "responding" : "idle",
-				},
-			});
-			break;
-		}
-
-		case "agent:config": {
-			send({
-				id: msg.id,
-				type: "agent:config",
-				payload: {
-					model: agentModelRef.value,
-					thinkingLevel: thinkingLevelRef.value,
-					availableModels: agentAvailableModels,
-					status: session?.isStreaming ? "responding" : "idle",
-				},
-			});
-			break;
-		}
-
-		// ── Session ──
-		case "session:create":
-			handleCreateSession(msg.id, msg.payload as { name?: string });
-			break;
-		case "session:list":
-			handleListSessions(msg.id);
-			break;
-		case "session:switch":
-			handleSwitchSession(msg.id, msg.payload as { sessionId: string });
-			break;
-		case "session:delete":
-			handleDeleteSession(msg.id, msg.payload as { sessionId: string });
-			break;
-		case "session:rename":
-			handleRenameSession(
-				msg.id,
-				msg.payload as { sessionId: string; name: string },
-			);
-			break;
-		case "session:history":
-			handleSessionHistory(msg.id, msg.payload as { sessionId: string });
-			break;
-
-		// ── Shutdown ──
-		case "agent:shutdown":
-			console.log("[AgentHost] Shutting down...");
-			shutdown();
-			break;
-	}
-});
-
-// ── 生命周期 ──
 
 async function startup(): Promise<void> {
 	try {
-		await initAgent();
+		await agentHost.initialize();
+		const host = sh();
 
-		const initialMessages = getInitialMessages();
+		const initialMessages = host.getInitialMessages();
 
-		send({
+		postMessageToHost({
 			id: "agent-ready",
-			type: "agent:ready",
+			type: AgentMessageType.AgentReady,
 			payload: {
 				pid: process.pid,
 				version: "0.4.0",
-				model: agentModelRef.value,
-				thinkingLevel: thinkingLevelRef.value,
-				availableModels: agentAvailableModels,
+				model: agentHost.modelRef.value,
+				thinkingLevel: agentHost.thinkingLevelRef.value,
+				availableModels: agentHost.getAvailableModels(),
 			},
 		});
 
-		if (currentSessionId) {
-			send({
+		if (host.currentSessionId) {
+			postMessageToHost({
 				id: "agent-ready",
-				type: "session:switched",
+				type: AgentMessageType.SessionSwitched,
 				payload: {
-					sessionId: currentSessionId,
-					name: currentSessionName ?? "Untitled",
+					sessionId: host.currentSessionId,
+					name: host.currentSessionName ?? "Untitled",
 					messages: initialMessages,
 				},
 			});
@@ -233,9 +64,9 @@ async function startup(): Promise<void> {
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
 		console.error("[AgentHost] Failed to initialize:", message);
-		send({
+		postMessageToHost({
 			id: "agent-ready",
-			type: "chat:error",
+			type: AgentMessageType.ChatError,
 			payload: {
 				sessionId: "",
 				code: "INIT_ERROR",
@@ -246,8 +77,146 @@ async function startup(): Promise<void> {
 }
 
 async function shutdown(): Promise<void> {
-	await closeAllSessions();
+	await agentHost.sessionHost?.dispose();
 	process.exit(0);
+}
+
+// ============================================================================
+// Message routing
+// ============================================================================
+
+process.on("message", (raw: unknown) => {
+	const msg = raw as AgentMessage;
+	if (!msg?.type || !isValidMessageType(msg.type)) {
+		console.warn("[AgentHost] Received invalid message:", raw);
+		return;
+	}
+
+	console.log(`[AgentHost] ← ${msg.type} (${msg.id})`);
+
+	switch (msg.type) {
+		case AgentMessageType.ChatSend:
+			handleChatSend(msg);
+			break;
+		case AgentMessageType.ChatCancel:
+			handleChatCancel();
+			break;
+		case AgentMessageType.AgentStatus:
+			handleAgentStatus(msg.id);
+			break;
+		case AgentMessageType.AgentConfig:
+			handleAgentConfig(msg.id);
+			break;
+		case AgentMessageType.SessionCreate:
+			sh().createSession(msg.id, msg.payload as { name?: string });
+			break;
+		case AgentMessageType.SessionList:
+			sh().listSessions(msg.id);
+			break;
+		case AgentMessageType.SessionSwitch:
+			sh().switchSession(msg.id, msg.payload as { sessionId: string });
+			break;
+		case AgentMessageType.SessionDelete:
+			sh().deleteSession(msg.id, msg.payload as { sessionId: string });
+			break;
+		case AgentMessageType.SessionRename:
+			sh().renameSession(
+				msg.id,
+				msg.payload as { sessionId: string; name: string },
+			);
+			break;
+		case AgentMessageType.SessionHistory:
+			sh().history(msg.id, msg.payload as { sessionId: string });
+			break;
+		case AgentMessageType.AgentShutdown:
+			handleShutdown();
+			break;
+	}
+});
+
+// ============================================================================
+// Handler functions
+// ============================================================================
+
+function handleChatSend(msg: AgentMessage): void {
+	const payload = msg.payload as { content: string; sessionId: string };
+	if (!payload?.content) {
+		postMessageToHost({
+			id: msg.id,
+			type: AgentMessageType.ChatError,
+			payload: {
+				sessionId: payload?.sessionId ?? "",
+				code: "INVALID_PAYLOAD",
+				message: "Missing content",
+			},
+		});
+		return;
+	}
+
+	const host = sh();
+	if (!host.session) {
+		postMessageToHost({
+			id: msg.id,
+			type: AgentMessageType.ChatError,
+			payload: {
+				sessionId: payload.sessionId ?? "",
+				code: "NOT_READY",
+				message: "Agent session not initialized yet",
+			},
+		});
+		return;
+	}
+
+	host.session.prompt(payload.content).catch((err) => {
+		const message = err instanceof Error ? err.message : String(err);
+		postMessageToHost({
+			id: uid(),
+			type: AgentMessageType.ChatError,
+			payload: {
+				sessionId: payload.sessionId ?? "",
+				code: "AGENT_ERROR",
+				message,
+			},
+		});
+		console.error("[AgentHost] prompt error:", err);
+	});
+}
+
+function handleChatCancel(): void {
+	const host = sh();
+	if (host.session) {
+		host.session.abort().catch((err) => {
+			console.error("[AgentHost] abort error:", err);
+		});
+	}
+}
+
+function handleAgentStatus(msgId: string): void {
+	postMessageToHost({
+		id: msgId,
+		type: AgentMessageType.AgentStatus,
+		payload: {
+			status: sh().session?.isStreaming ? "responding" : "idle",
+		},
+	});
+}
+
+function handleAgentConfig(msgId: string): void {
+	postMessageToHost({
+		id: msgId,
+		type: AgentMessageType.AgentConfig,
+		payload: {
+			model: agentHost.modelRef.value,
+			thinkingLevel: agentHost.thinkingLevelRef.value,
+			availableModels: agentHost.getAvailableModels(),
+			status: sh().session?.isStreaming ? "responding" : "idle",
+		},
+	});
+}
+
+function handleShutdown(): void {
+	console.log("[AgentHost] Shutting down...");
+	shutdown();
 }
 
 process.on("SIGTERM", () => shutdown());
