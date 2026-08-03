@@ -1,4 +1,11 @@
-import { MessageCircle, Moon, Palette, Settings, Sun } from "lucide-solid";
+import {
+	BotMessageSquare,
+	MessageCircle,
+	Moon,
+	Palette,
+	Settings,
+	Sun,
+} from "lucide-solid";
 import { type Component, createMemo, createSignal } from "solid-js";
 
 import { LocaleProvider, useLocale } from "@/contexts/LocaleContext";
@@ -9,8 +16,6 @@ import ChatPage from "@/pages/ChatPage/ChatPage";
 import SettingsPage from "@/pages/SettingsPage/SettingsPage";
 import ThemePage from "@/pages/ThemePage/ThemePage";
 import AppBanner from "@/components/AppBanner/AppBanner";
-
-import electronLogo from "@/assets/icons/electron.svg";
 
 const AppContent: Component = () => {
 	const [activeNav, setActiveNav] = createSignal("chat");
@@ -55,7 +60,7 @@ const AppContent: Component = () => {
 				bottomNavItems={bottomNav()}
 				activeNav={activeNav()}
 				onNavSelect={onNavSelect}
-				navTop={<img alt="logo" src={electronLogo} class="h-5 w-5" />}
+				navTop={<BotMessageSquare class="w-10 h-10 text-primary" />}
 			>
 				{activeNav() === "chat" && (
 					<ChatPage
