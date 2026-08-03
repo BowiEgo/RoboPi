@@ -3,7 +3,6 @@
 *::before,
 *::after {
 	box-sizing: border-box;
-	margin: 0;
 	font-weight: normal;
 }
 
@@ -14,8 +13,8 @@ ul {
 /* ── Body ── */
 body {
 	min-height: 100vh;
-	color: var(--main-text);
-	background: var(--main-bg);
+	color: var(--color-base-content);
+	background: var(--color-base-100);
 	font-family: var(--font-display);
 	line-height: 1.6;
 	text-rendering: optimizeLegibility;
@@ -34,13 +33,13 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-	background: var(--color-surface-dark-soft);
+	background: var(--color-base-300);
 	border-radius: 3px;
 	transition: background 0.15s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-	background: var(--color-accent-periwinkle);
+	background: var(--color-accent);
 	opacity: 0.6;
 }
 

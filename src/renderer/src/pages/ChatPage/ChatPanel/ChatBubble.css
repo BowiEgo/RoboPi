@@ -1,0 +1,53 @@
+/* ── Markdown inline styles (rendered via innerHTML) ── */
+
+.md-content code {
+	padding: 1px 6px;
+	border-radius: var(--radius-xs);
+	background-color: var(--color-base-300);
+	font-family: var(--font-mono);
+	font-size: 0.9em;
+	color: var(--color-primary);
+}
+
+.md-content strong {
+	font-weight: 650;
+	color: var(--color-base-content);
+}
+
+.md-content em {
+	font-style: italic;
+}
+
+.md-content a {
+	color: var(--color-primary);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.md-content a:hover {
+	opacity: 0.8;
+}
+
+.md-content .md-img,
+.md-img {
+	max-width: 100%;
+	border-radius: var(--radius-sm);
+	margin: var(--space-xs) 0;
+}
+
+/* ── Streaming cursor animation ── */
+
+.cursor-blink {
+	animation: cursorBlink 0.8s ease-in-out infinite;
+}
+
+@keyframes cursorBlink {
+	0%,
+	50% {
+		opacity: 1;
+	}
+	51%,
+	100% {
+		opacity: 0;
+	}
+}

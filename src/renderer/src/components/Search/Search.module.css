@@ -15,13 +15,13 @@
 }
 
 .search:hover {
-	border-color: var(--color-hairline);
+	border-color: var(--color-base-300);
 }
 
 .search.focused {
-	background-color: var(--color-canvas-dark);
-	border-color: var(--color-accent);
-	box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 15%, transparent);
+	background-color: var(--color-neutral);
+	border-color: var(--color-primary);
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 15%, transparent);
 }
 
 /* ── Search Icon ── */
@@ -32,7 +32,7 @@
 	width: 16px;
 	height: 16px;
 	flex-shrink: 0;
-	color: var(--color-ink);
+	color: var(--color-base-content);
 	opacity: 0.7;
 	transition:
 		color 0.15s ease,
@@ -41,12 +41,12 @@
 }
 
 .search:hover .icon {
-	color: var(--color-body);
+	color: color-mix(in srgb, var(--color-base-content) 70%, transparent);
 	opacity: 0.85;
 }
 
 .search.focused .icon {
-	color: var(--color-accent);
+	color: var(--color-primary);
 	opacity: 1;
 }
 
@@ -64,14 +64,14 @@
 	border: none;
 	outline: none;
 	background: transparent;
-	color: var(--color-ink);
+	color: var(--color-base-content);
 	font-family: var(--font-display);
 	font-size: var(--text-mono-eyebrow);
 	line-height: 1;
 }
 
 .input::placeholder {
-	color: var(--color-ink);
+	color: var(--color-base-content);
 	font-weight: 400;
 }
 
@@ -86,7 +86,7 @@
 	border: none;
 	border-radius: 50%;
 	background: transparent;
-	color: var(--color-ink);
+	color: var(--color-base-content);
 	cursor: pointer;
 	opacity: 0.6;
 	transition:
@@ -97,7 +97,7 @@
 
 .clearBtn:hover {
 	opacity: 1;
-	color: var(--color-on);
+	color: var(--color-base-content);
 }
 
 .clearBtn:active {

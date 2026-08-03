@@ -11,14 +11,13 @@
  * 任意组件 import { useAgent } 获取同一个实例，无需 props 传递。
  */
 
+import { AgentMessageType, isValidMessageType } from "@shared/agent-types";
 import { createMemo, createSignal, onCleanup, onMount } from "solid-js";
 
-import type { SessionItemProps } from "@/pages/ChatPage/ChatItem/SessionItem";
+import type { SessionItemProps } from "@/pages/ChatPage/SessionList/SessionItem";
 import type { ChatBubbleProps } from "@/pages/ChatPage/ChatPanel/ChatBubble";
 
 import { getAgentIpc } from "./ipc";
-
-import { AgentMessageType, isValidMessageType } from "@shared/agent-types";
 
 // ── Types ──
 
@@ -91,7 +90,7 @@ function sessionToItem(
 	return {
 		id: s.id,
 		label: s.name,
-		subtitle: s.lastMessage?.slice(0, 40) ?? undefined,
+		subtitle: s.lastMessage?.slice(0, 60) ?? undefined,
 		time: fmtTime(s.lastActiveAt),
 		status: s.id === activeId ? "active" : "idle",
 	};
@@ -221,7 +220,11 @@ function createAgentStore() {
 			}
 		});
 
-		agent.send({ id: "init-list", type: AgentMessageType.SessionList, payload: {} });
+		agent.send({
+			id: "init-list",
+			type: AgentMessageType.SessionList,
+			payload: {},
+		});
 		onCleanup(unsub);
 	});
 

@@ -24,6 +24,6 @@
 }
 
 .bannerDesc {
-	color: var(--color-body);
+	color: color-mix(in srgb, var(--color-base-content) 70%, transparent);
 	font-size: x-small;
 }

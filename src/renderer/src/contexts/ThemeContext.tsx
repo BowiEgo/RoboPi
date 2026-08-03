@@ -1,89 +1,98 @@
 import {
 	type Component,
 	createContext,
-	createEffect,
 	createSignal,
 	type JSX,
 	useContext,
 } from "solid-js";
 
-export interface Theme {
-	id: string;
-	name: string;
-	desc: string;
-	class: string;
-}
+// ============================================================================
+// Available themes (must match @plugin daisyUI themes in tailwind.css)
+// ============================================================================
 
-export const THEMES: Theme[] = [
-	{
-		id: "together-ai",
-		name: "Together AI",
-		desc: "Dark surfaces, periwinkle accent, Inter display sans",
-		class: "theme-together",
-	},
-	{
-		id: "opencode",
-		name: "OpenCode",
-		desc: "Cream canvas, monospaced, terminal-inspired",
-		class: "theme-opencode",
-	},
-];
+export const THEMES = [
+	"light",
+	"dark",
+	"cupcake",
+	"bumblebee",
+	"emerald",
+	"corporate",
+	"synthwave",
+	"retro",
+	"cyberpunk",
+	"valentine",
+	"halloween",
+	"garden",
+	"forest",
+	"aqua",
+	"lofi",
+	"pastel",
+	"fantasy",
+	"wireframe",
+	"black",
+	"luxury",
+	"dracula",
+	"cmyk",
+	"autumn",
+	"business",
+	"acid",
+	"lemonade",
+	"night",
+	"coffee",
+	"winter",
+	"dim",
+	"nord",
+	"sunset",
+	"caramellatte",
+	"abyss",
+	"silk",
+] as const;
 
-type Mode = "dark" | "light";
+// ============================================================================
+// Context
+// ============================================================================
 
 interface ThemeContextValue {
-	current: () => Theme;
+	theme: () => string;
 	setTheme: (id: string) => void;
-	mode: () => Mode;
-	toggleMode: () => void;
-	setMode: (m: Mode) => void;
+	isDark: () => boolean;
+	toggleDark: () => void;
 }
 
 const ThemeCtx = createContext<ThemeContextValue>();
 
-const MODE_KEY = "robo-pi-mode";
+const STORAGE_KEY = "robo-pi-theme";
 
-function getInitialMode(): Mode {
-	const saved = localStorage.getItem(MODE_KEY);
-	if (saved === "dark" || saved === "light") return saved;
-	return "dark";
+function getInitialTheme(): string {
+	return localStorage.getItem(STORAGE_KEY) ?? "dark";
 }
 
 export const ThemeProvider: Component<{ children: JSX.Element }> = (props) => {
-	const saved = localStorage.getItem("robo-pi-theme") ?? "together-ai";
-	const [id, setId] = createSignal(saved);
-	const [mode, setMode] = createSignal<Mode>(getInitialMode());
+	const [theme, setThemeSignal] = createSignal(getInitialTheme());
 
-	const current = () => THEMES.find((t) => t.id === id()) ?? THEMES[0];
-
-	const toggleMode = () => {
-		setMode((prev) => (prev === "dark" ? "light" : "dark"));
+	const setTheme = (id: string) => {
+		setThemeSignal(id);
+		document.documentElement.setAttribute("data-theme", id);
+		localStorage.setItem(STORAGE_KEY, id);
 	};
 
-	// Sync theme class to <html>
-	createEffect(() => {
-		const cls = current().class;
-		const root = document.documentElement;
-		// 移除非空的旧主题 class
-		for (const t of THEMES) {
-			if (t.class) root.classList.remove(t.class);
-		}
-		if (cls) root.classList.add(cls);
-		localStorage.setItem("robo-pi-theme", id());
-	});
+	// Check if the current theme visually looks dark (handles all daisyUI themes)
+	const isDark = () => {
+		const html = document.documentElement;
+		const style = getComputedStyle(html);
+		// daisyUI sets color-scheme based on theme brightness
+		return style.colorScheme === "dark";
+	};
 
-	// Sync mode class to <html>
-	createEffect(() => {
-		const root = document.documentElement;
-		root.classList.remove("mode-dark", "mode-light");
-		root.classList.add(mode() === "dark" ? "mode-dark" : "mode-light");
-		localStorage.setItem(MODE_KEY, mode());
-	});
+	const toggleDark = () => {
+		setTheme(isDark() ? "light" : "dark");
+	};
+
+	// Apply theme on mount
+	document.documentElement.setAttribute("data-theme", getInitialTheme());
 
 	return (
-		<ThemeCtx.Provider
-			value={{ current, setTheme: setId, mode, toggleMode, setMode }}
-		>
+		<ThemeCtx.Provider value={{ theme, setTheme, isDark, toggleDark }}>
 			{props.children}
 		</ThemeCtx.Provider>
 	);

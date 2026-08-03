@@ -455,14 +455,46 @@ export class SessionHost {
 	private async listAllSessions(): Promise<SessionInfoPayload[]> {
 		const dir = await this.getSessionsDir();
 		const sessions = await SessionManager.listAll(dir);
-		return sessions.map((s) => ({
-			file: s.path,
-			id: s.id,
-			name: s.name ?? "Untitled",
-			createdAt: s.created.getTime(),
-			lastMessage: s.firstMessage?.slice(0, 80),
-			lastActiveAt: s.modified.getTime(),
-		}));
+		return sessions.map((s) => {
+			let lastMessage: string | undefined;
+			try {
+				const sm = SessionManager.open(s.path);
+				const entries = sm.getBranch();
+				// Find the last user message (iterate in reverse)
+				for (let i = entries.length - 1; i >= 0; i--) {
+					const entry = entries[i] as {
+						type: string;
+						message?: {
+							role: string;
+							content: unknown;
+						};
+					};
+					if (entry.type === "message" && entry.message?.role === "user") {
+						const c = entry.message.content;
+						if (typeof c === "string") {
+							lastMessage = c;
+						} else if (Array.isArray(c)) {
+							lastMessage = (c as Array<{ text?: string }>)
+								.filter((b) => "text" in b)
+								.map((b) => b.text ?? "")
+								.join(" ");
+						}
+						break;
+					}
+				}
+			} catch {
+				// fallback to firstMessage if open fails
+				lastMessage = s.firstMessage;
+			}
+			return {
+				file: s.path,
+				id: s.id,
+				name: s.name ?? "Untitled",
+				createdAt: s.created.getTime(),
+				lastMessage: lastMessage?.slice(0, 80),
+				lastActiveAt: s.modified.getTime(),
+			};
+		});
 	}
 
 	private async createAgentSessionFor(

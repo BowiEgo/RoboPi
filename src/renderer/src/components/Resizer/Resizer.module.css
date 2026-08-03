@@ -1,109 +1,44 @@
-/* ── 共享定位 ── */
-.handle {
-	position: absolute;
-	z-index: 10;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
+/* ── Resizer ::after hover/active highlight bar ── */
 
-.handle::before {
+.handle::after {
 	content: '';
 	position: absolute;
 	transition: background-color 0.15s ease;
+	border-radius: 9999px;
 }
 
-.handle:hover::before,
-.active::before {
-	background-color: var(--color-accent-periwinkle);
+.horizontal::after {
+	inset: 2px 6px;
+}
+
+.vertical::after {
+	inset: 6px 2px;
+}
+
+.handle:hover::after,
+.active::after {
+	background-color: var(--color-neutral-content);
 	opacity: 0.4;
 }
 
-/* ── 方向 — 尺寸与指针 ── */
-.horizontal {
-	height: 8px;
-	cursor: row-resize;
-}
+/* ── Grip icon container ── */
 
-.horizontal::before {
-	inset: 3px 0;
-}
-
-.vertical {
-	width: 10px;
-	cursor: col-resize;
-	flex-direction: column;
-}
-
-.vertical::before {
-	inset: 0 3px;
-}
-
-/* ── 位置 — 贴边与拉伸 ── */
-.positionTop {
-	top: -4px;
-	left: 0;
-	right: 0;
-}
-
-.positionBottom {
-	bottom: -4px;
-	left: 0;
-	right: 0;
-}
-
-.positionLeft {
-	left: -4px;
-	top: 0;
-	bottom: 0;
-}
-
-.positionRight {
-	right: -4px;
-	top: 0;
-	bottom: 0;
-}
-
-/* ── Bump 基础样式 ── */
-.bump {
-	background-color: var(--color-body);
-	opacity: 0.3;
+.grip {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 26px;
+	border-radius: var(--radius-sm);
+	background-color: var(--color-base-300);
+	z-index: 1;
 	transition:
-		opacity 0.2s ease,
-		background-color 0.2s ease,
-		transform 0.2s ease;
+		opacity 0.15s ease,
+		background-color 0.15s ease;
 }
 
-/* ── Bump 悬停态 ── */
-.handle:hover .bump,
-.active .bump {
-	opacity: 0.9;
-	background-color: var(--color-accent-periwinkle);
-}
-
-.horizontal:hover .bump,
-.horizontal.active .bump {
-	transform: scaleY(1.25);
-}
-
-.vertical:hover .bump,
-.vertical.active .bump {
-	transform: scaleX(1.25);
-}
-
-/* ── Bump 方向尺寸 ── */
-.horizontal .bump {
-	position: relative;
-	z-index: 1;
-	width: 44px;
-	height: 4px;
-	border-radius: 2px;
-}
-
-.vertical .bump {
-	position: relative;
-	z-index: 1;
-	width: 4px;
-	height: 44px;
-	border-radius: 2px;
+.handle:hover .grip,
+.active .grip {
+	opacity: 1;
+	background-color: var(--color-base-300);
 }

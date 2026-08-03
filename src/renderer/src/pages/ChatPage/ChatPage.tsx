@@ -6,13 +6,11 @@ import { useLocale } from "@/contexts/LocaleContext";
 import Resizer from "@/components/Resizer/Resizer";
 import Search from "@/components/Search/Search";
 
-import styles from "./ChatPage.module.css";
-
 import ChatPanel, { type ChatTag } from "./ChatPanel/ChatPanel";
+import SessionList from "./SessionList/SessionList";
 
 interface ChatPageProps {
 	sidebarHeader?: JSX.Element;
-	sidebarContent: JSX.Element;
 	sidebarBottom?: JSX.Element;
 	children?: JSX.Element;
 	defaultWidth?: number;
@@ -49,39 +47,43 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 	]);
 
 	return (
-		<div class={styles.layout}>
-			<aside
-				class={styles.drawer}
-				style={{ width: `${drawerWidth()}px` }}
-				aria-label={t("chat.drawerLabel")}
-			>
-				{props.sidebarHeader && (
-					<div class={styles.drawerHeader}>{props.sidebarHeader}</div>
-				)}
-				<div class={styles.drawerContent}>
-					<Search />
-					{props.sidebarContent}
-				</div>
-				{props.sidebarBottom && (
-					<div class={styles.drawerBottom}>{props.sidebarBottom}</div>
-				)}
+		<div class="flex h-full overflow-hidden bg-base-100">
+			<div class="relative flex-shrink-0" style={{ width: `${drawerWidth()}px` }}>
+				<aside
+					class="flex flex-col h-full pt-3 overflow-hidden select-none border-r border-base-300"
+					aria-label={t("chat.drawerLabel")}
+				>
+					{props.sidebarHeader && (
+						<div class="flex items-center gap-2 px-4 text-[15px] font-medium font-display text-base-content shrink-0">
+							{props.sidebarHeader}
+						</div>
+					)}
+					<div class="flex-1 p-3 text-base-content">
+						<Search />
+						<SessionList />
+					</div>
+					{props.sidebarBottom && (
+						<div class="shrink-0">{props.sidebarBottom}</div>
+					)}
+				</aside>
 				<Resizer
 					value={drawerWidth()}
 					min={minW()}
 					max={maxW()}
-					orientation="horizontal"
 					position="right"
-					handle={false}
 					onChange={(v) => setDrawerWidth(v)}
 				/>
-			</aside>
+			</div>
 
-			<main class={styles.main} aria-label={t("chat.contentLabel")}>
+			<main
+				class="flex-1 flex flex-col overflow-hidden text-base-content ml-2.5"
+				aria-label={t("chat.contentLabel")}
+			>
 				<ChatPanel
 					header={
 						<span>
 							{loading()
-								? t("status.starting") + "..."
+								? `${t("status.starting")}...`
 								: activeName() || "RoboPi"}
 						</span>
 					}

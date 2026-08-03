@@ -25,7 +25,7 @@ const SettingsPage: Component = () => {
 					{LOCALES.map((l) => (
 						<button
 							type="button"
-							class={`${styles.localeBtn} ${locale() === l.id ? styles.localeBtnActive : ""}`}
+							class={`btn btn-outline btn-sm ${locale() === l.id ? "btn-active" : ""}`}
 							onClick={() => setLocale(l.id)}
 						>
 							{t(l.labelKey)}

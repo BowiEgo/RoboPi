@@ -1,7 +1,5 @@
 import { type Component, createSignal } from "solid-js";
 
-import styles from "./TitleBar.module.css";
-
 const TitleBarWin: Component = () => {
 	const [isMaximized] = createSignal(false);
 
@@ -10,11 +8,15 @@ const TitleBarWin: Component = () => {
 	const onClose = () => window.api.close();
 
 	return (
-		<div class={styles.winBar}>
-			<div class={styles.dragRegion} />
-			<div class={styles.controls}>
+		<div class="relative flex items-center justify-end shrink-0 bg-base-300 select-none">
+			{/* Draggable region */}
+			<div class="absolute inset-0 right-25" style="-webkit-app-region: drag" />
+
+			{/* Window controls */}
+			<div class="flex items-center h-full" style="-webkit-app-region: no-drag">
 				<button
-					class={`${styles.controlBtn} ${styles.minimize}`}
+					type="button"
+					class="flex items-center justify-center w-9.5 h-full border-none bg-transparent text-base-content/55 hover:text-base-content hover:bg-base-300 transition"
 					onClick={onMinimize}
 					aria-label="Minimize"
 				>
@@ -23,7 +25,8 @@ const TitleBarWin: Component = () => {
 					</svg>
 				</button>
 				<button
-					class={`${styles.controlBtn} ${styles.maximize}`}
+					type="button"
+					class="flex items-center justify-center w-9.5 h-full border-none bg-transparent text-base-content/55 hover:text-base-content hover:bg-base-300 transition"
 					onClick={onMaximize}
 					aria-label={isMaximized() ? "Restore" : "Maximize"}
 				>
@@ -41,7 +44,8 @@ const TitleBarWin: Component = () => {
 					</svg>
 				</button>
 				<button
-					class={`${styles.controlBtn} ${styles.close}`}
+					type="button"
+					class="flex items-center justify-center w-[38px] h-full border-none bg-transparent text-base-content/55 hover:text-white hover:bg-[#e81123] transition"
 					onClick={onClose}
 					aria-label="Close"
 				>

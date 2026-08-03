@@ -1,13 +1,9 @@
+import { Send } from "lucide-solid";
 import { type Component, createSignal } from "solid-js";
 
 import { useLocale } from "@/contexts/LocaleContext";
 
-import Icon from "@/components/Icon";
 import Resizer from "@/components/Resizer/Resizer";
-
-import msgIcon from "@/assets/icons/message.svg?raw";
-
-import styles from "./Composer.module.css";
 
 export interface AgentConfig {
 	model?: string;
@@ -33,7 +29,6 @@ const THINKING_LABELS: Record<string, string> = {
 
 function shortenModel(model: string | undefined): string {
 	if (!model) return "—";
-	// 提取最后一个路径段作为简短名称
 	const parts = model.split("/");
 	return parts[parts.length - 1] ?? model;
 }
@@ -98,65 +93,66 @@ const Composer: Component<ComposerProps> = (props) => {
 
 	return (
 		<div
-			class={`${styles.composer} ${isFocused() ? styles.focused : ""} rounded-md`}
+			class={`flex flex-col w-[90%] my-1 mb-3 rounded border border-base-300 ${isFocused() ? "border-accent" : ""}`}
 			style={{ height: `${height()}px` }}
 			onFocusIn={() => setIsFocused(true)}
 			onFocusOut={() => setIsFocused(false)}
 		>
-			<Resizer
-				value={height()}
-				min={minH}
-				max={maxH}
-				orientation="vertical"
-				onChange={(v) => setHeight(v)}
-			/>
+			<div class="h-full aura aura-rainbow duration-6000">
+				<div class="card h-full bg-base-100 shadow-sm">
+					<Resizer
+						value={height()}
+						min={minH}
+						max={maxH}
+						position="top"
+						grip={false}
+						onChange={(v) => setHeight(v)}
+					/>
 
-			{/* Toolbar */}
-			<div class={styles.toolbar}>
-				<button class={styles.toolBtn} type="button">
-					{statusLabel(cfg()?.status, t)}
-				</button>
-				<span class={styles.toolSep} />
-				<button class={styles.toolBtn} type="button">
-					{shortenModel(cfg()?.model)}
-				</button>
-				<span class={styles.toolSep} />
-				<button class={styles.toolBtn} type="button">
-					{t("composer.prompt")}
-				</button>
-				<span class={styles.toolSep} />
-				<button class={styles.toolBtn} type="button">
-					{thinkingLabel(cfg()?.thinkingLevel, t)}
-				</button>
-			</div>
+					{/* Toolbar */}
+					<div class="flex items-center gap-1 px-4 py-2 shrink-0 min-h-9">
+						<button class="btn btn-ghost btn-xs" type="button">
+							{statusLabel(cfg()?.status, t)}
+						</button>
+						<span class="w-px h-4 bg-base-300/25 shrink-0" />
+						<button class="btn btn-ghost btn-xs" type="button">
+							{shortenModel(cfg()?.model)}
+						</button>
+						<span class="w-px h-4 bg-base-300/25 shrink-0" />
+						<button class="btn btn-ghost btn-xs" type="button">
+							{t("composer.prompt")}
+						</button>
+						<span class="w-px h-4 bg-base-300/25 shrink-0" />
+						<button class="btn btn-ghost btn-xs" type="button">
+							{thinkingLabel(cfg()?.thinkingLevel, t)}
+						</button>
+					</div>
 
-			{/* Input Area */}
-			<div class={styles.inputArea}>
-				<textarea
-					ref={textareaRef}
-					class={styles.input}
-					placeholder={t("composer.placeholder")}
-					value={inputText()}
-					onInput={(e) => setInputText(e.currentTarget.value)}
-					onKeyDown={handleKeyDown}
-					onFocus={() => setIsFocused(true)}
-					onBlur={() => setIsFocused(false)}
-				/>
-				<button
-					class={`${styles.sendBtn} rounded-full`}
-					type="button"
-					onClick={send}
-					disabled={!inputText().trim()}
-				>
-					<span class={styles.sendIcon}>
-						<Icon raw={msgIcon} />
-					</span>
-				</button>
-			</div>
+					{/* Input Area */}
+					<div class="flex-1 flex items-center gap-2 mx-4 px-2 py-1 pl-3 rounded bg-base-100 border border-transparent overflow-hidden">
+						<textarea
+							ref={textareaRef}
+							class="flex-1 min-h-6 border-none outline-none bg-transparent text-base-content font-display text-base leading-relaxed resize-none overflow-y-auto"
+							placeholder={t("composer.placeholder")}
+							value={inputText()}
+							onInput={(e) => setInputText(e.currentTarget.value)}
+							onKeyDown={handleKeyDown}
+							onFocus={() => setIsFocused(true)}
+							onBlur={() => setIsFocused(false)}
+						/>
+						<button
+							class="btn btn-circle btn-primary"
+							type="button"
+							onClick={send}
+							disabled={!inputText().trim()}
+						>
+							<Send class="w-4 h-4" />
+						</button>
+					</div>
 
-			{/* Footer */}
-			<div class={styles.footer}>
-				<span class={styles.footerMeta} />
+					{/* Footer */}
+					<div class="flex items-center justify-between gap-1 px-4 py-2 shrink-0 min-h-9" />
+				</div>
 			</div>
 		</div>
 	);

@@ -6,14 +6,14 @@
 	font-family: var(--font-display);
 	font-size: var(--text-display-lg);
 	font-weight: 500;
-	color: var(--color-on-dark);
+	color: var(--color-neutral-content);
 	margin-bottom: var(--space-sm);
 }
 
 .desc {
 	font-family: var(--font-display);
 	font-size: var(--text-body-md);
-	color: var(--color-body);
+	color: color-mix(in srgb, var(--color-base-content) 70%, transparent);
 	margin-bottom: var(--space-3xl);
 }
 
@@ -27,7 +27,7 @@
 	font-weight: 500;
 	text-transform: uppercase;
 	letter-spacing: 0.55px;
-	color: var(--color-body);
+	color: color-mix(in srgb, var(--color-base-content) 70%, transparent);
 	margin-bottom: var(--space-md);
 }
 
@@ -38,10 +38,10 @@
 
 .localeBtn {
 	padding: var(--space-sm) var(--space-lg);
-	border: 1px solid var(--color-surface-dark-soft);
+	border: 1px solid var(--color-base-300);
 	border-radius: var(--radius-sm);
 	background-color: transparent;
-	color: var(--color-on-dark);
+	color: var(--color-neutral-content);
 	font-family: var(--font-display);
 	font-size: var(--text-body-md);
 	cursor: pointer;
@@ -51,12 +51,12 @@
 }
 
 .localeBtn:hover {
-	background-color: var(--color-surface-dark-soft);
-	border-color: var(--color-accent-periwinkle);
+	background-color: var(--color-base-300);
+	border-color: var(--color-accent);
 }
 
 .localeBtnActive {
-	background-color: var(--color-surface-dark-soft);
-	border-color: var(--color-accent-periwinkle);
-	color: var(--color-accent-periwinkle);
+	background-color: var(--color-base-300);
+	border-color: var(--color-accent);
+	color: var(--color-accent);
 }

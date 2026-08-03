@@ -1,3 +1,4 @@
+import { Plus } from "lucide-solid";
 import {
 	type Component,
 	createEffect,
@@ -8,12 +9,6 @@ import {
 	onMount,
 	Show,
 } from "solid-js";
-
-import Icon from "@/components/Icon";
-
-import plusIcon from "@/assets/icons/plus.svg?raw";
-
-import styles from "./ChatPanel.module.css";
 
 import Composer, { type AgentConfig } from "../Composer/Composer";
 import ChatBubble, { type ChatBubbleProps } from "./ChatBubble";
@@ -29,19 +24,15 @@ interface ChatPanelProps {
 	header?: JSX.Element;
 	tags?: ChatTag[];
 	children?: JSX.Element;
-	/** 当前会话 ID */
 	sessionId?: string;
-	/** 初始消息列表（从会话历史加载） */
 	initialMessages?: ChatBubbleProps[];
-	/** 切换到新会话时清空消息 */
 	resetKey?: string;
-	/** 委托父组件处理发送（用于延迟创建会话等场景） */
-	onSend?: (text: string) => Promise<unknown> | void;
+	onSend?: (text: string) => Promise<unknown> | undefined;
 }
 
-import { getAgentIpc } from "@/agent/ipc";
-
 import { AgentMessageType, isValidMessageType } from "@shared/agent-types";
+
+import { getAgentIpc } from "@/agent/ipc";
 
 function now(): string {
 	return new Date().toLocaleTimeString("zh-CN", {
@@ -57,8 +48,6 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 	const [agentConfig, setAgentConfig] = createSignal<AgentConfig>({});
 	let dialogRef: HTMLDivElement | undefined;
 
-	// 会话切换时重新加载消息（仅响应 resetKey，不响应 sessionId）
-	// sessionId 变化但 resetKey 不变 = 延迟创建会话场景，保留 ChatPanel 内已有的气泡
 	let prevKey: string | undefined;
 	createEffect(() => {
 		const key = props.resetKey;
@@ -72,20 +61,19 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 		}
 	});
 
-	// Auto-scroll to bottom when messages change
 	createEffect(() => {
 		const contentSnap = messages()
 			.map((m) => m.content)
 			.join("");
 		void contentSnap;
 		if (dialogRef) {
+			const el = dialogRef;
 			requestAnimationFrame(() => {
-				dialogRef!.scrollTop = dialogRef!.scrollHeight;
+				el.scrollTop = el.scrollHeight;
 			});
 		}
 	});
 
-	// ── Subscribe to Agent Host messages ──
 	onMount(() => {
 		const agent = getAgentIpc();
 		if (!agent) return;
@@ -148,7 +136,12 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 					if (!text) return;
 					setMessages((prev) =>
 						prev.map((m) =>
-							m.streaming ? { ...m, thinking: (m.thinking ?? "") + text } : m,
+							m.streaming
+								? {
+										...m,
+										thinking: (m.thinking ?? "") + text,
+									}
+								: m,
 						),
 					);
 					break;
@@ -206,7 +199,6 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 	function handleSend(text: string) {
 		if (!text.trim()) return;
 
-		// 1. Add user message
 		const userId = String(++nextId);
 		setMessages((prev) => [
 			...prev,
@@ -218,7 +210,6 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 			},
 		]);
 
-		// 2. Add empty agent bubble
 		const agentId = String(++nextId);
 		setMessages((prev) => [
 			...prev,
@@ -232,7 +223,6 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 			},
 		]);
 
-		// 3. Delegate to parent or send directly
 		if (props.onSend) {
 			props.onSend(text.trim());
 		} else {
@@ -252,7 +242,6 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 		}
 	}
 
-	/** Mock streaming reply for when Agent Host is unavailable */
 	function mockStreamReply(agentId: string) {
 		const thinking =
 			"analyzing user input...\n" +
@@ -298,26 +287,26 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 	}
 
 	return (
-		<div class={styles.layout}>
-			<header class={styles.header}>
+		<div class="flex flex-col items-center h-full overflow-hidden">
+			<header class="flex shrink-0 items-center justify-between w-full gap-4 px-4 py-3 border-b border-base-300 font-medium text-base font-display text-base-content">
 				{props.header}
 				{props.tags && props.tags.length > 0 && (
-					<div class={styles.tags}>
+					<div class="flex items-center gap-2 ml-auto">
 						<For each={props.tags}>
 							{(tag) =>
 								tag.type === "action" ? (
 									<button
 										type="button"
-										class={styles.actionBtn}
+										class="btn btn-ghost btn-sm"
 										onClick={() => tag.onClick?.(tag.id)}
 									>
-										<span class={styles.actionIcon}>
-											<Icon raw={plusIcon} />
-										</span>
+										<Plus class="w-3 h-3" />
 										{tag.label}
 									</button>
 								) : (
-									<span class={styles.tag}>{tag.label}</span>
+									<span class="inline-flex items-center px-2.5 py-0.75 border border-base-300 rounded bg-base-200 text-base-content/50 font-mono text-[11px] leading-snug whitespace-nowrap">
+										{tag.label}
+									</span>
 								)
 							}
 						</For>
@@ -325,10 +314,15 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 				)}
 			</header>
 
-			<main class={styles.dialog} ref={dialogRef}>
+			<main
+				class="flex-1 w-full flex flex-col gap-1 overflow-y-auto p-4 text-base-content scroll-smooth"
+				ref={dialogRef}
+			>
 				<Show when={messages().length === 0} fallback={null}>
 					{props.children ?? (
-						<div class={styles.emptyHint}>Send a message to start</div>
+						<div class="flex items-center justify-center flex-1 text-base-content/30 text-sm">
+							Send a message to start
+						</div>
 					)}
 				</Show>
 				<For each={messages()}>

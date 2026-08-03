@@ -1,157 +1,39 @@
-/* ═══════════════════════════════════════════════════════════════════
-   CSS 变量参考 — Color Tokens
-   ═══════════════════════════════════════════════════════════════════
-   以下是所有主题共用的颜色令牌说明。
-   每个主题（together.css / opencode.css）在各自的作用域中覆写具体色值。
-
-   ── 基础颜色 ──
-   --color-primary         主要前景色，用于按钮/卡片品牌色块
-   --color-on-primary      主要前景色上的文字/图标色
-   --color-ink             主要文字色，正文、标题默认
-   --color-ink-deep        深层文字色，极高对比度场景
-   --color-body            次要文字色，辅助说明、占位符、元信息
-   --color-mute            静默色，禁用状态、低优先级文字
-   --color-stone           最浅的辅助文字/图标色
-   --color-ash             边框/次要分割线色
-   --color-hairline        分割线色，列表分隔、浅色边框
-   --color-hairline-strong 强调分割线色，更明显的分隔
-
-   ── 表面颜色 ──
-   --color-canvas             主要画布色，内容区背景
-   --color-canvas-dark        深色画布色，导航栏/主背景深色区域
-   --color-surface-soft       软表面色，面板头部、次要容器背景
-   --color-surface-card       卡片表面色，卡片组件背景
-   --color-surface-dark-soft  深色软表面色，侧边栏/暗色卡片
-   --color-surface-dark-elevated  深色抬高表面色，弹窗/下拉菜单浮层
-   --color-on-dark            深色背景上的文字色
-   --color-on-dark-mute       深色背景上的次要文字色
-   --color-on                 通用表面文字色，根据当前表面自动适配
-
-   ── 语义色 ──
-   --color-accent             品牌强调色（主色调），按钮/链接/焦点指示
-   --color-accent-hover       品牌色悬停态，hover 加深
-   --color-accent-active      品牌色激活态，按下更深
-   --color-warning            警告色，警示信息、中等严重度
-   --color-danger             危险色，错误信息、删除操作
-   --color-success            成功色，成功提示、完成状态
-   --color-accent-orange      品牌强调色（橙色映射），装饰/高亮
-   --color-accent-magenta     品牌强调色（品红映射），装饰/高亮
-   --color-accent-periwinkle  品牌强调色（淡紫映射），组件兼容
-   --color-accent-mint        品牌强调色（薄荷映射），组件兼容
-
-   ── 布局映射 ──
-   --sidebar-bg             侧边栏背景
-   --sidebar-border         侧边栏外边框
-   --sidebar-header-border  侧边栏头部下边框
-   --sidebar-text           侧边栏文字
-   --sidebar-hover-bg       侧边栏导航项悬停背景
-   --sidebar-active-bg      侧边栏导航项激活态背景
-   --main-bg                主内容区背景
-   --main-text              主内容区文字
-   --gradient-brand         品牌渐变，Logo/装饰条/加载动画
-   --resizer-color          面板分隔条默认色（透明即隐藏）
-   --resizer-hover-color    面板分隔条悬停高亮色
-   ═══════════════════════════════════════════════════════════════════ */
-
 @import 'tailwindcss';
-
-/* ── Design Tokens → Tailwind v4 Theme ── */
-@theme {
-	/* Colors */
-	--color-primary: #000000;
-	--color-on-primary: #ffffff;
-	--color-ink: #000000;
-	--color-body: #999999;
-	--color-hairline: #ebebeb;
-	--color-canvas: #ffffff;
-	--color-canvas-dark: #010120;
-	--color-surface-soft: #1a1a2e;
-	--color-surface-dark-soft: #313641;
-	--color-on-dark: #ffffff;
-	--color-on: var(--color-on-dark);
-	--color-surface-card: #f1eeee;
-	--color-ink-deep: #0f0000;
-	--color-charcoal: #302c2c;
-	--color-mute: #646262;
-	--color-stone: #6e6e73;
-	--color-ash: #9a9898;
-	--color-on-dark-mute: #9a9898;
-	--color-hairline-strong: #646262;
-	--color-surface-dark-elevated: #302c2c;
-
-	--color-accent-orange: #fc4c02;
-	--color-accent-magenta: #ef2cc1;
-	--color-accent-periwinkle: #bdbbff;
-	--color-accent-mint: #c8f6f9;
-
-	/* Font families */
-	--font-display: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-	--font-mono:
-		'JetBrains Mono', 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
-
-	/* Font sizes mapped to design tokens */
-	--text-display-xxl: 64px;
-	--text-display-xl: 40px;
-	--text-display-lg: 28px;
-	--text-display-md: 22px;
-	--text-body-lg: 18px;
-	--text-body-md: 16px;
-	--text-caption: 14px;
-	--text-mono-button: 16px;
-	--text-mono-eyebrow: 11px;
-	--text-mono-label: 11px;
-	--text-mono-caption: 10px;
-
-	/* Border radius */
-	--radius-xs: 3.25px;
-	--radius-sm: 4px;
-	--radius-md: 8px;
-
-	/* Spacing */
-	--spacing-xxs: 2px;
-	--spacing-xs: 4px;
-	--spacing-sm: 8px;
-	--spacing-md: 12px;
-	--spacing-lg: 16px;
-	--spacing-xl: 20px;
-	--spacing-2xl: 24px;
-	--spacing-3xl: 32px;
-	--spacing-4xl: 44px;
-	--spacing-5xl: 48px;
-	--spacing-6xl: 55.2px;
-}
-
-/* ── Scrollbar Utilities ── */
-@utility scrollbar-theme {
-	&::-webkit-scrollbar {
-		width: 6px;
-		height: 6px;
-	}
-
-	&::-webkit-scrollbar-track {
-		background: transparent;
-	}
-
-	&::-webkit-scrollbar-thumb {
-		background: var(--color-surface-dark-soft);
-		border-radius: 3px;
-		transition: background 0.15s ease;
-	}
-
-	&::-webkit-scrollbar-thumb:hover {
-		background: var(--color-accent-periwinkle);
-		opacity: 0.6;
-	}
-
-	&::-webkit-scrollbar-corner {
-		background: transparent;
-	}
-}
-
-@utility scrollbar-hidden {
-	&::-webkit-scrollbar {
-		display: none;
-	}
-	-ms-overflow-style: none;
-	scrollbar-width: none;
+@plugin 'daisyui' {
+	themes:
+		light --default,
+		dark --prefersdark,
+		cupcake,
+		bumblebee,
+		emerald,
+		corporate,
+		synthwave,
+		retro,
+		cyberpunk,
+		valentine,
+		halloween,
+		garden,
+		forest,
+		aqua,
+		lofi,
+		pastel,
+		fantasy,
+		wireframe,
+		black,
+		luxury,
+		dracula,
+		cmyk,
+		autumn,
+		business,
+		acid,
+		lemonade,
+		night,
+		coffee,
+		winter,
+		dim,
+		nord,
+		sunset,
+		caramellatte,
+		abyss,
+		silk;
 }

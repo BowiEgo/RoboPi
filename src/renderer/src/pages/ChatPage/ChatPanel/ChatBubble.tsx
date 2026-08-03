@@ -2,9 +2,9 @@ import { type Component, createMemo, createSignal, For, Show } from "solid-js";
 
 import { useLocale } from "@/contexts/LocaleContext";
 
-import styles from "./ChatBubble.module.css";
+import "./ChatBubble.css";
 
-// ── Types ──────────────────────────────────────────────
+// ── Types ──
 
 export interface FileAttachment {
 	name: string;
@@ -21,11 +21,10 @@ export interface ChatBubbleProps {
 	thinking?: string;
 	timestamp?: string;
 	avatar?: string;
-	/** 是否正在流式输出中，显示打字光标 */
 	streaming?: boolean;
 }
 
-// ── Helpers ────────────────────────────────────────────
+// ── Helpers ──
 
 function formatFileSize(bytes: number): string {
 	if (bytes < 1024) return `${bytes} B`;
@@ -47,7 +46,7 @@ function fileIcon(type?: string): string {
 	return "📄";
 }
 
-// ── Simple Markdown Renderer ───────────────────────────
+// ── Markdown parser ──
 
 interface MdToken {
 	type:
@@ -73,7 +72,6 @@ function parseMarkdown(raw: string): MdToken[] {
 	while (i < lines.length) {
 		const line = lines[i];
 
-		// Code block
 		if (line.trim().startsWith("```")) {
 			const lang = line.trim().slice(3).trim();
 			const codeLines: string[] = [];
@@ -87,29 +85,29 @@ function parseMarkdown(raw: string): MdToken[] {
 				content: codeLines.join("\n"),
 				lang: lang || undefined,
 			});
-			i++; // skip closing ```
+			i++;
 			continue;
 		}
 
-		// HR
 		if (/^\s*[-*_]{3,}\s*$/.test(line)) {
 			tokens.push({ type: "hr" });
 			i++;
 			continue;
 		}
 
-		// Blockquote
 		if (line.trim().startsWith("> ")) {
 			const quoteLines: string[] = [];
 			while (i < lines.length && lines[i].trim().startsWith("> ")) {
 				quoteLines.push(lines[i].trim().slice(2));
 				i++;
 			}
-			tokens.push({ type: "blockquote", content: quoteLines.join("\n") });
+			tokens.push({
+				type: "blockquote",
+				content: quoteLines.join("\n"),
+			});
 			continue;
 		}
 
-		// Heading
 		const hMatch = line.match(/^(#{1,4})\s+(.+)/);
 		if (hMatch) {
 			const level = hMatch[1].length;
@@ -121,7 +119,6 @@ function parseMarkdown(raw: string): MdToken[] {
 			continue;
 		}
 
-		// Unordered list
 		if (/^\s*[-*+]\s+/.test(line)) {
 			const items: string[] = [];
 			while (i < lines.length && /^\s*[-*+]\s+/.test(lines[i])) {
@@ -132,7 +129,6 @@ function parseMarkdown(raw: string): MdToken[] {
 			continue;
 		}
 
-		// Ordered list
 		if (/^\s*\d+\.\s+/.test(line)) {
 			const items: string[] = [];
 			while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) {
@@ -143,7 +139,6 @@ function parseMarkdown(raw: string): MdToken[] {
 			continue;
 		}
 
-		// Paragraph (collect consecutive non-empty, non-special lines)
 		if (line.trim() !== "") {
 			const pLines: string[] = [];
 			while (
@@ -169,7 +164,6 @@ function parseMarkdown(raw: string): MdToken[] {
 	return tokens;
 }
 
-/** Strip markdown syntax to get plain text for screen readers */
 function stripMarkdown(text: string): string {
 	return text
 		.replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1")
@@ -178,36 +172,26 @@ function stripMarkdown(text: string): string {
 		.trim();
 }
 
-/** Render inline markdown: bold, italic, inline code, links, images */
 function renderInline(text: string): string {
-	const html = text
-		// Escape HTML
+	return text
 		.replace(/&/g, "&amp;")
 		.replace(/</g, "&lt;")
 		.replace(/>/g, "&gt;")
-		// Images
 		.replace(
 			/!\[([^\]]*)\]\(([^)]+)\)/g,
 			'<img src="$2" alt="$1" class="md-img" />',
 		)
-		// Links
 		.replace(
 			/\[([^\]]+)\]\(([^)]+)\)/g,
 			'<a href="$2" target="_blank" rel="noopener">$1</a>',
 		)
-		// Bold + italic
 		.replace(/\*\*\*(.+?)\*\*\*/g, "<strong><em>$1</em></strong>")
-		// Bold
 		.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-		// Italic
 		.replace(/\*(.+?)\*/g, "<em>$1</em>")
-		// Inline code
 		.replace(/`([^`]+)`/g, "<code>$1</code>");
-
-	return html;
 }
 
-// ── Component ──────────────────────────────────────────
+// ── Component ──
 
 const ChatBubble: Component<ChatBubbleProps> = (props) => {
 	const { t } = useLocale();
@@ -225,56 +209,49 @@ const ChatBubble: Component<ChatBubbleProps> = (props) => {
 
 	return (
 		<div
-			class={styles.bubbleRow}
-			classList={{
-				[styles.userRow]: isUser(),
-				[styles.agentRow]: !isUser(),
-			}}
+			class={`flex gap-3 py-3 w-full ${isUser() ? "flex-row-reverse" : "flex-row"}`}
 		>
 			{/* Avatar */}
-			<div class={styles.avatar}>
+			<div class="shrink-0 w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-base-300 mt-0.5">
 				<Show
 					when={props.avatar}
 					fallback={
-						<span class={styles.avatarPlaceholder}>
-							{isUser() ? "👤" : "🤖"}
-						</span>
+						<span class="text-base leading-none">{isUser() ? "👤" : "🤖"}</span>
 					}
 				>
-					<img src={props.avatar!} alt="" class={styles.avatarImg} />
+					<img src={props.avatar} alt="" class="w-full h-full object-cover" />
 				</Show>
 			</div>
 
-			{/* Bubble content */}
+			{/* Bubble */}
 			<div
-				class={styles.bubble}
-				classList={{
-					[styles.userBubble]: isUser(),
-					[styles.agentBubble]: !isUser(),
-					[styles.streamingBubble]: props.streaming,
-				}}
+				class={`flex flex-col max-w-[75%] min-w-15 rounded-lg px-4 py-3 wrap-break-word ${isUser() ? "bg-primary text-primary-content rounded-br-sm" : "bg-base-200 text-base-content rounded-bl-sm"} ${props.streaming ? "streaming-bubble" : ""}`}
 			>
-				{/* ── File attachments (user only) ── */}
+				{/* File attachments */}
 				<Show when={isUser() && hasFiles()}>
-					<div class={styles.fileList}>
+					<div class="flex flex-col gap-2 mb-2 pb-2 border-b border-white/20">
 						<For each={props.files}>
 							{(file) => (
-								<div class={styles.fileItem}>
-									<span class={styles.fileIcon}>{fileIcon(file.type)}</span>
-									<div class={styles.fileInfo}>
-										<span class={styles.fileName}>{file.name}</span>
+								<div class="flex items-center gap-2 px-2 py-1 bg-white/15 rounded transition-colors hover:bg-white/25">
+									<span class="text-lg leading-none shrink-0">
+										{fileIcon(file.type)}
+									</span>
+									<div class="flex flex-col min-w-0 flex-1">
+										<span class="text-sm font-medium truncate">
+											{file.name}
+										</span>
 										<Show when={file.size !== undefined}>
-											<span class={styles.fileSize}>
-												{formatFileSize(file.size!)}
+											<span class="text-[10px] opacity-70">
+												{formatFileSize(file.size ?? 0)}
 											</span>
 										</Show>
 									</div>
 									<Show when={file.preview}>
-										<div class={styles.filePreview}>
+										<div class="shrink-0 w-10 h-10 rounded-xs overflow-hidden border border-white/20">
 											<img
 												src={file.preview}
 												alt={file.name}
-												class={styles.filePreviewImg}
+												class="w-full h-full object-cover"
 											/>
 										</div>
 									</Show>
@@ -284,96 +261,96 @@ const ChatBubble: Component<ChatBubbleProps> = (props) => {
 					</div>
 				</Show>
 
-				{/* ── Thinking process (agent only) ── */}
+				{/* Thinking process */}
 				<Show when={!isUser() && hasThinking()}>
-					<div class={styles.thinkingSection}>
+					<div class="mb-2 rounded border border-base-300 overflow-hidden">
 						<button
 							type="button"
-							class={styles.thinkingToggle}
+							class="btn btn-ghost btn-xs w-full justify-start gap-1"
 							onClick={() => setThinkingOpen((v) => !v)}
 						>
-							<span class={styles.thinkingChevron}>
+							<span class="text-[10px] leading-none shrink-0">
 								{thinkingOpen() ? "▾" : "▸"}
 							</span>
-							<span class={styles.thinkingLabel}>{t("chat.thinking")}</span>
+							<span>{t("chat.thinking")}</span>
 						</button>
 						<Show when={thinkingOpen()}>
-							<div class={styles.thinkingContent}>{props.thinking}</div>
+							<div class="p-2 font-mono text-[10px] text-base-content/50 whitespace-pre-wrap leading-relaxed bg-base-200 border-t border-base-300 max-h-[200px] overflow-y-auto">
+								{props.thinking}
+							</div>
 						</Show>
 					</div>
 				</Show>
 
-				{/* ── Main content ── */}
-				<div class={styles.content}>
+				{/* Main content */}
+				<div class="text-base leading-relaxed">
 					<Show
 						when={!isUser()}
-						fallback={
-							/* User content: plain text with line breaks */
-							<p class={styles.userText}>{props.content}</p>
-						}
+						fallback={<p class="whitespace-pre-wrap m-0">{props.content}</p>}
 					>
-						{/* Agent content: rendered Markdown */}
-						<div class={styles.markdown}>
+						<div class="flex flex-col gap-2 md-content">
 							<For each={parsedContent()}>
 								{(token) => {
 									switch (token.type) {
 										case "h1":
 											return (
 												<h1
-													class={styles.mdH1}
-													aria-label={stripMarkdown(token.content!)}
-													innerHTML={renderInline(token.content!)}
+													class="text-[28px] font-semibold leading-tight my-2 text-base-content"
+													aria-label={stripMarkdown(token.content ?? "")}
+													innerHTML={renderInline(token.content ?? "")}
 												/>
 											);
 										case "h2":
 											return (
 												<h2
-													class={styles.mdH2}
-													aria-label={stripMarkdown(token.content!)}
-													innerHTML={renderInline(token.content!)}
+													class="text-[22px] font-semibold leading-snug my-2 pb-1 border-b border-base-300 text-base-content"
+													aria-label={stripMarkdown(token.content ?? "")}
+													innerHTML={renderInline(token.content ?? "")}
 												/>
 											);
 										case "h3":
 											return (
 												<h3
-													class={styles.mdH3}
-													aria-label={stripMarkdown(token.content!)}
-													innerHTML={renderInline(token.content!)}
+													class="text-lg font-semibold leading-snug my-1 text-base-content"
+													aria-label={stripMarkdown(token.content ?? "")}
+													innerHTML={renderInline(token.content ?? "")}
 												/>
 											);
 										case "h4":
 											return (
 												<h4
-													class={styles.mdH4}
-													aria-label={stripMarkdown(token.content!)}
-													innerHTML={renderInline(token.content!)}
+													class="text-base font-semibold leading-snug my-1 text-base-content/70"
+													aria-label={stripMarkdown(token.content ?? "")}
+													innerHTML={renderInline(token.content ?? "")}
 												/>
 											);
 										case "p":
 											return (
 												<p
-													class={styles.mdP}
-													innerHTML={renderInline(token.content!)}
+													class="m-0 leading-relaxed"
+													innerHTML={renderInline(token.content ?? "")}
 												/>
 											);
 										case "code_block":
 											return (
-												<div class={styles.codeBlock}>
+												<div class="rounded border border-base-300 overflow-hidden bg-base-200">
 													<Show when={token.lang}>
-														<div class={styles.codeLang}>{token.lang}</div>
+														<div class="px-3 py-1 font-mono text-[11px] text-base-content/50 uppercase tracking-wider bg-base-300 border-b border-base-300">
+															{token.lang}
+														</div>
 													</Show>
-													<pre class={styles.codePre}>
+													<pre class="m-0 p-3 overflow-x-auto font-mono text-[10px] leading-relaxed text-base-content whitespace-pre">
 														<code>{token.content}</code>
 													</pre>
 												</div>
 											);
 										case "li":
 											return (
-												<ul class={styles.mdUl}>
+												<ul class="m-0 pl-5">
 													<For each={token.items}>
 														{(item) => (
 															<li
-																class={styles.mdLi}
+																class="leading-relaxed"
 																innerHTML={renderInline(item)}
 															/>
 														)}
@@ -381,12 +358,14 @@ const ChatBubble: Component<ChatBubbleProps> = (props) => {
 												</ul>
 											);
 										case "hr":
-											return <hr class={styles.mdHr} />;
+											return (
+												<hr class="border-none border-t border-base-300 my-2" />
+											);
 										case "blockquote":
 											return (
 												<blockquote
-													class={styles.mdBlockquote}
-													innerHTML={renderInline(token.content!)}
+													class="m-0 px-3 py-1 border-l-[3px] border-primary bg-base-200 rounded-r-sm italic text-base-content/70 leading-relaxed"
+													innerHTML={renderInline(token.content ?? "")}
 												/>
 											);
 										default:
@@ -398,14 +377,20 @@ const ChatBubble: Component<ChatBubbleProps> = (props) => {
 					</Show>
 				</div>
 
-				{/* ── Timestamp ── */}
+				{/* Timestamp */}
 				<Show when={props.timestamp}>
-					<div class={styles.timestamp}>{props.timestamp}</div>
+					<div
+						class={`mt-1 text-[10px] text-right ${isUser() ? "text-primary-content/55" : "text-base-content/55"}`}
+					>
+						{props.timestamp}
+					</div>
 				</Show>
 
-				{/* ── Streaming cursor ── */}
+				{/* Streaming cursor */}
 				<Show when={props.streaming}>
-					<span class={styles.streamingCursor} />
+					<span
+						class={`inline-block w-2 h-4 ml-0.5 mt-1 rounded-[1px] align-text-bottom cursor-blink ${isUser() ? "bg-primary-content" : "bg-primary"}`}
+					/>
 				</Show>
 			</div>
 		</div>
