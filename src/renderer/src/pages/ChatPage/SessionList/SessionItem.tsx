@@ -1,3 +1,4 @@
+import { Ellipsis } from "lucide-solid";
 import {
 	type Component,
 	createEffect,
@@ -5,8 +6,6 @@ import {
 	onCleanup,
 	Show,
 } from "solid-js";
-
-import { Ellipsis } from "lucide-solid";
 
 import { useLocale } from "@/contexts/LocaleContext";
 
@@ -110,14 +109,14 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 		>
 			{/* Checkbox — only visible in edit mode */}
 			{props.selectionMode && (
-					<input
-						type="checkbox"
-						class="checkbox checkbox-xs checkbox-primary"
-						checked={props.selected}
-						aria-label={props.label}
-						tabIndex={-1}
-					/>
-				)}
+				<input
+					type="checkbox"
+					class="checkbox checkbox-xs checkbox-primary"
+					checked={props.selected}
+					aria-label={props.label}
+					tabIndex={-1}
+				/>
+			)}
 
 			{/* Content */}
 			<div class="list-col-grow min-w-0 flex flex-col">
@@ -135,9 +134,7 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 							type="text"
 							class="w-full text-sm bg-base-100 border border-primary rounded px-1 py-0.5 outline-none"
 							value={editingName() ?? ""}
-							onInput={(e) =>
-								setEditingName(e.currentTarget.value)
-							}
+							onInput={(e) => setEditingName(e.currentTarget.value)}
 							onBlur={commitRename}
 							onKeyDown={(e) => {
 								if (e.key === "Enter") commitRename();

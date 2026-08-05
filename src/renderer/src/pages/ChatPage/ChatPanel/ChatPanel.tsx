@@ -2,6 +2,7 @@ import { Plus } from "lucide-solid";
 import {
 	type Component,
 	createEffect,
+	createMemo,
 	createSignal,
 	For,
 	type JSX,
@@ -196,6 +197,77 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 		onCleanup(unsub);
 	});
 
+	// ── Test data (shows when session is empty) ──
+	const TEST_MESSAGES: ChatBubbleProps[] = [
+		{
+			id: "test-1",
+			role: "user",
+			content: "Hello! Can you help me analyze this image?",
+			files: [
+				{
+					name: "screenshot.png",
+					size: 245760,
+					type: "image/png",
+					preview:
+						"https://img.daisyui.com/images/profile/demo/kenobee@192.webp",
+				},
+				{ name: "data.json", size: 1024, type: "application/json" },
+			],
+			timestamp: "14:30",
+		},
+		{
+			id: "test-2",
+			role: "agent",
+			content:
+				'Sure! Here is a **markdown** response:\n\n## Analysis\n\n- ✅ The image looks good\n- ✅ The JSON is valid\n\n```json\n{"status": "ok"}\n```\n\n> Tip: always validate your data.',
+			thinking:
+				"1. Check the image format...\n2. Parse JSON structure...\n3. All valid, generating reply...",
+			timestamp: "14:30",
+		},
+		{
+			id: "test-3",
+			role: "user",
+			content: "What about code review?",
+			timestamp: "14:31",
+		},
+		{
+			id: "test-4",
+			role: "agent",
+			content: "",
+			thinking: "Analyzing the code review request...",
+			streaming: true,
+			timestamp: "14:31",
+		},
+		{
+			id: "test-5",
+			role: "agent",
+			content:
+				"Here is the code review result:\n\n1. **Naming**: variables are well-named\n2. **Structure**: consider extracting the `parse` function\n3. **Performance**: the loop at line 42 could",
+			thinking:
+				"Scanning repository...\nAnalyzing code patterns...\nFound 3 suggestions...",
+			streaming: true,
+			timestamp: "14:32",
+		},
+	];
+
+	const [isTestMode, setIsTestMode] = createSignal(false);
+	let savedMessages: ChatBubbleProps[] = [];
+
+	function toggleTestMessages() {
+		if (isTestMode()) {
+			setIsTestMode(false);
+			setMessages([...savedMessages]);
+		} else {
+			savedMessages = [...messages()];
+			setIsTestMode(true);
+			setMessages([...TEST_MESSAGES]);
+		}
+	}
+
+	const hasStreaming = createMemo(() =>
+		messages().some((m) => m.role === "agent" && m.streaming),
+	);
+
 	function handleSend(text: string) {
 		if (!text.trim()) return;
 
@@ -312,6 +384,13 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 						</For>
 					</div>
 				)}
+				<button
+					type="button"
+					class={`btn btn-xs ml-auto ${isTestMode() ? "btn-primary" : "btn-outline"}`}
+					onClick={toggleTestMessages}
+				>
+					🧪 {isTestMode() ? "Clear" : "Test"}
+				</button>
 			</header>
 
 			<main
@@ -326,7 +405,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 					)}
 				</Show>
 				<For each={messages()}>
-					{(msg) => (
+					{(msg, index) => (
 						<ChatBubble
 							id={msg.id}
 							role={msg.role}
@@ -341,7 +420,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 				</For>
 			</main>
 
-			<Composer onSend={handleSend} agentConfig={agentConfig()} />
+			<Composer onSend={handleSend} agentConfig={agentConfig()} rainbow={hasStreaming()} />
 		</div>
 	);
 };

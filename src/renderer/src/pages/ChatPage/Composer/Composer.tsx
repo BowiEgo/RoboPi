@@ -15,6 +15,7 @@ export interface AgentConfig {
 interface ComposerProps {
 	onSend?: (text: string) => void;
 	agentConfig?: AgentConfig;
+	rainbow?: boolean;
 }
 
 const THINKING_LABELS: Record<string, string> = {
@@ -93,24 +94,26 @@ const Composer: Component<ComposerProps> = (props) => {
 
 	return (
 		<div
-			class={`flex flex-col w-[90%] my-1 mb-3 rounded border border-base-300 ${isFocused() ? "border-accent" : ""}`}
+			class={`flex flex-col w-[90%] my-1 mb-3 rounded-xl border-base-300 relative ${isFocused() ? "border-accent" : ""} ${!props.rainbow ? "border" : ""}`}
 			style={{ height: `${height()}px` }}
 			onFocusIn={() => setIsFocused(true)}
 			onFocusOut={() => setIsFocused(false)}
 		>
-			<div class="h-full aura aura-rainbow duration-6000">
-				<div class="card h-full bg-base-100 shadow-sm">
-					<Resizer
-						value={height()}
-						min={minH}
-						max={maxH}
-						position="top"
-						grip={false}
-						onChange={(v) => setHeight(v)}
-					/>
+			<Resizer
+				value={height()}
+				min={minH}
+				max={maxH}
+				position="top"
+				grip={false}
+				onChange={(v) => setHeight(v)}
+			/>
 
+			<div
+				class={`h-full ${props.rainbow ? "aura aura-rainbow duration-6000" : ""}`}
+			>
+				<div class="card h-full bg-base-100 shadow-sm">
 					{/* Toolbar */}
-					<div class="flex items-center gap-1 px-4 py-2 shrink-0 min-h-9">
+					<div class="flex items-center gap-1 px-4 py-2 shrink-0 min-h-9 border-b-1 border-base-300 bg-base-200">
 						<button class="btn btn-ghost btn-xs" type="button">
 							{statusLabel(cfg()?.status, t)}
 						</button>
