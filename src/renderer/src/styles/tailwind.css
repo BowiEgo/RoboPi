@@ -2,6 +2,9 @@
 
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
+/* Force Tailwind to scan dynamic class values */
+@source './safelist.ts';
+
 /* ── Global composite utilities ── */
 @utility bg-app {
 	background-color: var(--color-base-100);
@@ -70,6 +73,11 @@
 	--color-surface-1: oklch(97% 0.005 260);
 	--color-surface-2: oklch(94% 0.01 260);
 	--color-surface-3: oklch(90% 0.015 260);
+
+	--color-card-0: oklch(80% 0.05 260);
+	--color-card-1: oklch(75% 0.1 260);
+	--color-card-2: oklch(70% 0.2 260);
+	--color-card-3: oklch(65% 0.25 260);
 
 	/* Borders */
 	--color-surface-border: oklch(88% 0.03 260);

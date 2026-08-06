@@ -5,29 +5,21 @@ import { useAgent } from "@/agent/useAgent";
 import { useLocale } from "@/contexts/LocaleContext";
 
 import SessionItem, { type SessionItemProps } from "./SessionItem";
-import { cx } from "@/utils/cx";
+import { define } from "@/utils/cx";
 
-const C = {
-	root: { display: "flex flex-col" },
-	header: { display: "flex items-center", spacing: "gap-2 px-1 py-2" },
-	headerIcon: { display: "flex items-center justify-center", sizing: "w-4 h-4", color: "text-base-content/60" },
-	headerTitle: {
-		sizing: "flex-1",
-		text: "text-xs font-semibold uppercase tracking-wider",
-		color: "text-base-content/60",
-	},
-	headerCount: { text: "text-xs", color: "text-base-content/40" },
-	actions: { display: "flex items-center", spacing: "gap-1", interaction: "relative" },
-	menuDropdown: {
-		display: "absolute flex flex-col",
-		spacing: "right-0 top-full z-50 mt-1 py-1 min-w-32",
-		interaction: "bg-base-200 rounded-md shadow-lg border border-base-300",
-	},
-	list: { display: "list", interaction: "bg-app rounded-box" },
-	empty: { text: "text-xs", spacing: "px-1 py-4", interaction: "text-center", color: "text-base-content/40" },
-	selectionBar: { display: "flex items-center justify-between", spacing: "px-1 py-2" },
-	selectionText: { text: "text-xs", color: "text-base-content/60" },
-};
+// ── Layout ──
+
+const root = define({ base: "flex flex-col" });
+const header = define({ base: "flex items-center gap-2 px-1 py-2" });
+const headerIcon = "flex items-center justify-center w-4 h-4";
+const headerTitle = "flex-1 text-xs font-semibold uppercase tracking-wider";
+const headerCount = "text-xs";
+const actions = "flex items-center gap-1 relative";
+const menuDropdown = "absolute right-0 top-full z-50 mt-1 flex flex-col py-1 min-w-32 rounded-md shadow-lg border";
+const list = "list rounded-box";
+const empty = "text-xs px-1 py-4 text-center";
+const selectionBar = "flex items-center justify-between px-1 py-2";
+const selectionText = "text-xs";
 
 const SessionList: Component = () => {
 	const { t } = useLocale();
@@ -71,18 +63,18 @@ const SessionList: Component = () => {
 	}
 
 	return (
-		<section class={cx(C.root)}>
-			<header class={cx(C.header)}>
-				<span class={cx(C.headerIcon)}>
+		<section class={root()}>
+			<header class={header()}>
+				<span class={`${headerIcon} text-base-content/60 dark:text-white/60`}>
 					<MessageCircle />
 				</span>
-				<span class={cx(C.headerTitle)}>{t("chat.sessions")}</span>
-				<span class={cx(C.headerCount)}>{sessions().length}</span>
-				<div class={cx(C.actions)}>
+				<span class={`${headerTitle} text-base-content/60 dark:text-white/60`}>{t("chat.sessions")}</span>
+				<span class={`${headerCount} text-base-content/40 dark:text-white/40`}>{sessions().length}</span>
+				<div class={actions}>
 					{selectionMode() ? (
 						<button
 							type="button"
-							class="btn btn-ghost btn-sm btn-square text-error"
+							class="btn btn-ghost btn-sm btn-square text-error dark:text-white"
 							aria-label={t("chat.deleteSelected")}
 							disabled={selected().size === 0}
 							onClick={bulkDelete}
@@ -92,16 +84,16 @@ const SessionList: Component = () => {
 					) : (
 						<button
 							type="button"
-							class="btn btn-ghost btn-sm btn-square"
+							class="btn btn-ghost btn-sm btn-square text-base-content/60 dark:text-white/50"
 							aria-label={t("chat.addSession")}
 							onClick={() => createSession()}
 						>
-							<Plus />
+							<Plus class="scale-75" />
 						</button>
 					)}
 					<button
 						type="button"
-						class="btn btn-ghost btn-sm btn-square"
+						class="btn btn-ghost btn-sm btn-square text-base-content/60 dark:text-white/50"
 						aria-label="Session list menu"
 						onClick={(e) => {
 							e.stopPropagation();
@@ -111,10 +103,10 @@ const SessionList: Component = () => {
 						<Ellipsis class="w-4 h-4" />
 					</button>
 					<Show when={menuOpen()}>
-						<div ref={menuRef} class={cx(C.menuDropdown)}>
+						<div ref={menuRef} class={`${menuDropdown} bg-app border-card`}>
 							<button
 								type="button"
-								class="btn btn-ghost btn-sm justify-start rounded-none"
+								class="btn btn-ghost btn-sm justify-start rounded-none text-card-btn"
 								onClick={enterSelectionMode}
 							>
 								{t("chat.edit")}
@@ -123,8 +115,12 @@ const SessionList: Component = () => {
 					</Show>
 				</div>
 			</header>
-			<div class={cx(C.list)} role="tablist">
-				<Show when={sessions().length > 0} fallback={<div class={cx(C.empty)}>{t("chat.noSessions")}</div>}>
+
+			<div class={`${list} bg-app`} role="tablist">
+				<Show
+					when={sessions().length > 0}
+					fallback={<div class={`${empty} text-base-content/40`}>{t("chat.noSessions")}</div>}
+				>
 					<For each={sessions()}>
 						{(item: SessionItemProps) => (
 							<SessionItem
@@ -149,9 +145,10 @@ const SessionList: Component = () => {
 					</For>
 				</Show>
 			</div>
+
 			<Show when={selectionMode()}>
-				<div class={cx(C.selectionBar)}>
-					<span class={cx(C.selectionText)}>
+				<div class={selectionBar}>
+					<span class={`${selectionText} text-base-content/60`}>
 						{selected().size} {t("chat.selected")}
 					</span>
 					<button type="button" class="btn btn-ghost btn-xs" onClick={exitSelectionMode}>

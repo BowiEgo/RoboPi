@@ -1,51 +1,37 @@
-# Code Style — Class Composition
+# Code Style — Tailwind Class Composition
 
 ## Overview
 
-All Tailwind/daisyUI classes are defined in a structured `C` object and composed via the `cx()` helper from `@/utils/cx`. This separates display/spacing/color/dark-mode concerns and keeps JSX clean.
+Semantic utility classes defined in `tailwind.css` via `@utility` → used directly in JSX. No `dark:`, no `cx()`, no safelist needed.
 
-## Structure
+## Semantic Tokens (defined in `tailwind.css`)
 
-```ts
-const C = {
-  elementName: {
-    display?: string;      // flex, grid, block, positioning
-    spacing?: string;      // padding, margin, gap, z-index
-    interaction?: string;  // border, radius, shadow, hover/focus states
-    sizing?: string;       // width, height, min/max, overflow
-    text?: string;         // font, text size, weight, line-height
-    color?: string | Record<string, string>;      // light mode colors
-    colorDark?: string | Record<string, string>;  // dark mode colors (auto-prefixed with dark:)
-  };
-};
-```
+| Utility | Light | Dark |
+|---|---|---|
+| `bg-card` | white / base-100 | gray-900 dark |
+| `bg-card-active` | primary/15 | primary/25 |
+| `bg-card-hover` | base-300/50 | white/6 |
+| `text-card-title` | near-black | near-white |
+| `text-card-title-active` | white | white |
+| `text-card-subtitle` | muted gray | muted light |
+| `text-card-subtitle-active` | lighter muted | lighter |
+| `text-card-btn` | dark | light |
+| `border-card` | light gray | dark gray |
 
 ## Usage
 
 ```tsx
-import { cx } from "@/utils/cx";
-
-// Simple element
-<div class={cx(C.checkbox)} />
-
-// Element with states — picks matching key from color/colorDark
-<div class={cx(C.row, { active: isActive, idle: !isActive })} />
+// No dark:, no cx(), no C object — just semantic classes
+<div class={`${rowBase} ${active ? "bg-card-active text-card-title-active" : "hover:bg-card-hover text-card-title"}`}>
 ```
 
-## Example
+## Adding a New Token
 
-```ts
-const C = {
-  row: {
-    display: "list-row items-center",
-    spacing: "gap-2 px-3 py-2 mb-2",
-    interaction: "cursor-pointer rounded-md transition-colors",
-    color: { active: "bg-primary/80", idle: "hover:bg-base-300/30" },
-    colorDark: { active: "bg-primary/60", idle: "" },
-  },
-};
-```
+In `tailwind.css`:
 
-```tsx
-<div class={cx(C.row, { active: props.active, idle: !props.active })} />
+```css
+@utility my-new-token {
+  color: oklch(18% 0.03 260);
+  @variant dark { color: oklch(94% 0.005 260); }
+}
 ```

@@ -365,7 +365,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 				</For>
 				<div
 					class="pointer-events-none absolute bottom-0 left-0 right-0 h-1/3 backdrop-blur-md
- bg-gradient-to-b from-transparent to-white/60 dark:to-gray-900/60"
+ bg-gradient-to-b from-transparent to-color-base-100 dark:to-gray-900/60"
 					style="mask-image: linear-gradient(to top, black 30%, transparent 100%);
  -webkit-mask-image: linear-gradient(to top, black 30%, transparent 100%);"
 				/>

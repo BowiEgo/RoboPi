@@ -3,7 +3,7 @@ import { type Component, createEffect, createSignal, onCleanup, Show } from "sol
 
 import { useLocale } from "@/contexts/LocaleContext";
 
-import { cx } from "@/utils/cx";
+import { define } from "@/utils/cx";
 
 export interface SessionItemProps {
 	id: string;
@@ -21,47 +21,24 @@ export interface SessionItemProps {
 	onRename?: (id: string, name: string) => void;
 }
 
-const C = {
-	row: {
-		display: "list-row items-center",
-		spacing: "gap-2 px-3 py-2 mb-2",
-		interaction: "cursor-pointer rounded-md transition-colors",
-		color: { active: "bg-primary/80", idle: "hover:bg-base-300/30" },
-		colorDark: { active: "bg-primary/60", idle: "" },
-	},
-	checkbox: { display: "checkbox checkbox-xs checkbox-primary" },
-	content: { display: "list-col-grow flex flex-col", sizing: "min-w-0" },
-	titleRow: { display: "flex items-center", spacing: "gap-2" },
-	title: {
-		text: "text-sm font-medium truncate",
-		color: { active: "text-neutral-100", idle: "text-neutral-500" },
-		colorDark: { active: "text-white/80", idle: "text-white/80" },
-	},
-	time: { text: "text-[10px] ml-auto", color: "text-base-content/30" },
-	subtitle: {
-		display: "list-col-wrap",
-		text: "text-xs",
-		color: { active: "text-neutral-300", idle: "text-neutral-400" },
-		colorDark: { active: "text-neutral-300", idle: "text-neutral-300" },
-	},
-	ellipsisWrapper: { display: "relative shrink-0 self-center" },
-	ellipsisBtn: { display: "btn btn-ghost btn-xs btn-square", color: "dark:text-white" },
-	renameInput: {
-		sizing: "w-full",
-		text: "text-sm",
-		interaction: "bg-app border border-primary rounded px-1 py-0.5 outline-none",
-	},
-	menuDropdown: {
-		display: "absolute flex flex-col",
-		spacing: "right-0 top-full z-50 mt-1 py-1 min-w-36",
-		interaction: "bg-base-200 rounded-md shadow-lg border border-base-300",
-		colorDark: "border-gray-700",
-	},
-	menuSeparator: { sizing: "h-px", spacing: "my-1", interaction: "bg-base-300" },
-	deleteBanner: { display: "flex items-center", spacing: "gap-2 px-3 py-2", interaction: "bg-base-200 rounded-md" },
-	deleteBannerText: { sizing: "flex-1", text: "text-xs", color: "text-base-content/70" },
-	deleteBannerActions: { display: "flex items-center", spacing: "gap-1" },
-};
+// ── Layout ──
+
+const row = define({ base: "list-row items-center gap-2 px-3 py-2 mb-2 cursor-pointer rounded-md transition-colors" });
+const content = "list-col-grow flex flex-col min-w-0";
+const titleRow = "flex items-center gap-2";
+const titleText = "text-sm font-medium truncate";
+const timeText = "text-[10px] ml-auto";
+const subtitleText = "list-col-wrap text-xs";
+const ellipsisWrapper = "relative shrink-0 self-center";
+const ellipsisBtn = "btn btn-ghost btn-xs btn-square";
+const menuDropdown = "absolute right-0 top-full z-50 mt-1 flex flex-col py-1 min-w-36 rounded-md shadow-lg border";
+const menuSeparator = "h-px my-1";
+const deleteBanner = "flex items-center gap-2 px-3 py-2 rounded-md";
+const renameInput = "w-full text-sm border rounded px-1 py-0.5 outline-none";
+const deleteBannerText = "flex-1 text-xs";
+const deleteBannerActions = "flex items-center gap-1";
+
+// ── Component ──
 
 const SessionItem: Component<SessionItemProps> = (props) => {
 	const { t } = useLocale();
@@ -104,11 +81,11 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 	}
 
 	const [editingName, setEditingName] = createSignal<string | null>(null);
-	let renameInput: HTMLInputElement | undefined;
+	let renameEl: HTMLInputElement | undefined;
 	createEffect(() => {
-		if (editingName() !== null && renameInput) {
-			renameInput.focus();
-			renameInput.select();
+		if (editingName() !== null && renameEl) {
+			renameEl.focus();
+			renameEl.select();
 		}
 	});
 	function commitRename() {
@@ -119,7 +96,7 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 
 	return (
 		<div
-			class={cx(C.row, { active: props.active ?? false, idle: !(props.active ?? false) })}
+			class={`${row()} ${props.active ? "bg-primary/70 dark:bg-primary/55" : "hover:bg-gray-200 dark:hover:bg-gray-500"}`}
 			role="tab"
 			tabIndex={props.active ? 0 : -1}
 			onClick={() => props.onClick?.(props.id)}
@@ -128,23 +105,31 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 			}}
 		>
 			{props.selectionMode && (
-				<input type="checkbox" class={cx(C.checkbox)} checked={props.selected} aria-label={props.label} tabIndex={-1} />
+				<input
+					type="checkbox"
+					class="checkbox checkbox-xs checkbox-primary"
+					checked={props.selected}
+					aria-label={props.label}
+					tabIndex={-1}
+				/>
 			)}
 
-			<div class={cx(C.content)}>
-				<div class={cx(C.titleRow)}>
+			<div class={content}>
+				<div class={titleRow}>
 					<Show
 						when={editingName() !== null}
 						fallback={
-							<span class={cx(C.title, { active: props.active ?? false, idle: !(props.active ?? false) })}>
+							<span
+								class={`${titleText} ${props.active ? "text-white/90 dark:text-white/80" : "text-gray-500 dark:text-gray-200"}`}
+							>
 								{props.label}
 							</span>
 						}
 					>
 						<input
-							ref={renameInput}
+							ref={renameEl}
 							type="text"
-							class={cx(C.renameInput)}
+							class={`${renameInput} bg-app border-primary`}
 							value={editingName() ?? ""}
 							onInput={(e) => setEditingName(e.currentTarget.value)}
 							onBlur={commitRename}
@@ -155,25 +140,42 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 							onClick={(e) => e.stopPropagation()}
 						/>
 					</Show>
-					{props.time && <span class={cx(C.time)}>{props.time}</span>}
+					{props.time && (
+						<span
+							class={`${timeText} text-base-content/30 ${props.active ? "text-white/80 dark:text-white/60" : "text-gray-400 dark:text-gray-300"}`}
+						>
+							{props.time}
+						</span>
+					)}
 				</div>
 				{props.subtitle && (
-					<p class={cx(C.subtitle, { active: props.active ?? false, idle: !(props.active ?? false) })}>
+					<p
+						class={`${subtitleText} ${props.active ? "text-white/70 dark:text-white/50" : "text-gray-400 dark:text-gray-400"}`}
+					>
 						{props.subtitle}
 					</p>
 				)}
 			</div>
 
-			<div class={cx(C.ellipsisWrapper)}>
-				<button type="button" class={cx(C.ellipsisBtn)} aria-label="Session menu" onClick={toggleMenu}>
+			<div class={ellipsisWrapper}>
+				<button
+					type="button"
+					class={`${ellipsisBtn} ${props.active ? "text-white/70 dark:text-white/50 hover:bg-primary/75" : "text-gray-400 dark:text-gray-400"}`}
+					aria-label="Session menu"
+					onClick={toggleMenu}
+				>
 					<Ellipsis class="w-4 h-4" />
 				</button>
 				<Show when={menuOpen()}>
-					<div ref={menuRef} class={cx(C.menuDropdown)}>
-						<button type="button" class="btn btn-ghost btn-sm justify-start rounded-none" onClick={handleRename}>
+					<div ref={menuRef} class={`${menuDropdown} bg-app-elevated border-card`}>
+						<button
+							type="button"
+							class="btn btn-ghost btn-sm justify-start rounded-none text-card-btn"
+							onClick={handleRename}
+						>
 							{t("chat.rename")}
 						</button>
-						<div class={cx(C.menuSeparator)} />
+						<div class={`${menuSeparator} border-card`} />
 						<button
 							type="button"
 							class="btn btn-ghost btn-sm justify-start rounded-none text-error"
@@ -199,9 +201,9 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 			</Show>
 
 			<Show when={pendingDelete()}>
-				<div class={cx(C.deleteBanner)}>
-					<span class={cx(C.deleteBannerText)}>{t("chat.deleteActiveHint")}</span>
-					<div class={cx(C.deleteBannerActions)}>
+				<div class={`${deleteBanner} bg-card-hover`}>
+					<span class={`${deleteBannerText} text-card-subtitle`}>{t("chat.deleteActiveHint")}</span>
+					<div class={deleteBannerActions}>
 						<button
 							type="button"
 							class="btn btn-ghost btn-xs"
