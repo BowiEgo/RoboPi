@@ -56,15 +56,15 @@ function statusLabel(status: string | undefined, t: (key: string) => string): st
 const C = {
 	dropdownBtn: {
 		display: "btn btn-ghost btn-xs",
-		interaction: "rounded-lg shadow-md mr-3",
-		color: "bg-app text-base-content",
-		colorDark: "bg-gray-700 text-amber-50",
+		interaction: "rounded-lg mr-3 transition-none border-1",
+		color: "bg-app-raised text-base-content border-neutral-content/40 dark:text-white/70",
 	},
 	dropdownMenu: {
-		display: "dropdown-content menu flex flex-col flex-nowrap",
-		interaction: "bg-neutral text-neutral-content rounded-box shadow-xl",
+		display: "dropdown-content menu flex flex-col flex-nowrap mb-2",
+		interaction: "bg-neutral text-neutral-content rounded-box shadow-xl border-1",
 		spacing: "z-1 p-2",
 		sizing: "max-h-48 overflow-y-auto",
+		color: "border-primary/20",
 	},
 	toolbar: {
 		display: "absolute flex items-center",
@@ -75,28 +75,25 @@ const C = {
 		display: "flex items-center",
 		sizing: "flex-1 overflow-hidden",
 		spacing: "gap-2 mx-4 px-2 py-1 pl-3",
-		interaction: "rounded border border-transparent",
 		color: "",
 	},
 	textarea: {
 		display: "border-none outline-none bg-transparent resize-none",
 		sizing: "flex-1 min-h-6 overflow-y-auto",
 		text: "font-display text-base leading-relaxed",
-		color: "",
 	},
 	sendBtn: { display: "btn btn-circle btn-primary" },
 	wrapper: {
 		display: "absolute flex flex-col",
 		sizing: "w-[70%]",
 		spacing: "bottom-[6%]",
-		interaction: "rounded-3xl shadow-xl border-2",
-		color: "border-base-200 input-field",
-		colorDark: "border-gray-700",
+		interaction: "rounded-3xl shadow-xl border-1",
+		color: "input-field border-base-200 dark:border-gray-700",
 	},
 	wrapperFocused: { interaction: "border-accent" },
 	aura: { display: "flex flex-col", sizing: "h-full", interaction: "rounded-3xl" },
-	card: { display: "card", interaction: "rounded-3xl", sizing: "h-full", color: "bg-input" },
-	footer: { display: "flex items-center justify-between", sizing: "shrink-0", spacing: "gap-1 px-4 py-2" },
+	card: { display: "card", sizing: "h-full", interaction: "rounded-3xl", color: "bg-base-100 dark:bg-gray-900" },
+	footer: { display: "flex items-center justify-between", sizing: "shrink-0", spacing: "px-4 py-2" },
 };
 
 interface DropdownItem {
@@ -219,7 +216,7 @@ const Composer: Component<ComposerProps> = (props) => {
 		>
 			<Resizer value={height()} min={minH} max={maxH} position="top" grip={false} onChange={(v) => setHeight(v)} />
 			<Toolbar cfg={cfg()} t={t} />
-			<div class={`${cx(C.aura)} ${props.rainbow ? "aura aura-xs aura-rainbow duration-6000" : ""}`}>
+			<div class={`${cx(C.aura)} ${"aura aura-xs aura-rainbow duration-6000"}`}>
 				<div class={cx(C.card)}>
 					<InputArea
 						inputText={inputText()}

@@ -223,7 +223,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 		}
 	}
 
-	const hasStreaming = createMemo(() => messages().some((m) => m.role === "agent" && m.streaming));
+	const _hasStreaming = createMemo(() => messages().some((m) => m.role === "agent" && m.streaming));
 
 	function handleSend(text: string) {
 		if (!text.trim()) return;
@@ -309,19 +309,23 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 
 	return (
 		<div class="relative flex flex-col items-center h-full overflow-hidden">
-			<header class="flex shrink-0 items-center justify-between w-full gap-4 px-4 py-3  dark:border-gray-700 font-medium text-base font-display text-base-content">
+			<header class="absolute flex shrink-0 items-center justify-between w-full gap-4 px-4 py-3  dark:border-gray-700 font-medium text-base font-display bg-transparent! text-base-content dark:text-gray-300 z-1">
 				{props.header}
 				{props.tags && props.tags.length > 0 && (
 					<div class="flex items-center gap-2 ml-auto">
 						<For each={props.tags}>
 							{(tag) =>
 								tag.type === "action" ? (
-									<button type="button" class="btn btn-ghost btn-sm" onClick={() => tag.onClick?.(tag.id)}>
+									<button
+										type="button"
+										class="btn btn-ghost btn-sm text-base-content dark:text-gray-300"
+										onClick={() => tag.onClick?.(tag.id)}
+									>
 										<Plus class="w-3 h-3" />
 										{tag.label}
 									</button>
 								) : (
-									<span class="inline-flex items-center px-2.5 py-0.75 border border-base-300 rounded bg-base-200 text-base-content/50 font-mono text-[11px] leading-snug whitespace-nowrap">
+									<span class="inline-flex items-center px-2.5 py-0.75 border border-base-300 rounded bg-gray-300/10 text-base-content/80 font-mono text-[11px] leading-snug whitespace-nowrap dark:bg-gray-700 dark:border-gray-500 dark:text-gray-300">
 										{tag.label}
 									</span>
 								)
@@ -331,7 +335,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 				)}
 				<button
 					type="button"
-					class={`btn btn-xs ml-auto ${isTestMode() ? "btn-primary" : "btn-outline"}`}
+					class={`btn btn-xs ml-auto ${isTestMode() ? "btn-primary" : "btn-outline dark:bg-white"}`}
 					onClick={toggleTestMessages}
 				>
 					🧪 {isTestMode() ? "Clear" : "Test"}
@@ -339,7 +343,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 			</header>
 
 			<main
-				class="flex-1 w-full flex flex-col gap-1 overflow-y-auto px-4 pb-[20%] text-base-content scroll-smooth"
+				class="flex-1 w-full flex flex-col gap-1 overflow-y-auto px-4 pt-12 pb-[20%] text-base-content scroll-smooth z-0"
 				ref={dialogRef}
 			>
 				<Show when={messages().length === 0} fallback={null}>
@@ -364,14 +368,20 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 					)}
 				</For>
 				<div
+					class="pointer-events-none absolute top-0 left-0 right-0 h-1/12 backdrop-blur-md
+ bg-linear-to-b from-base-100 to-transparent dark:from-gray-900/60 dark:to-transparent"
+					style="mask-image: linear-gradient(to bottom, black 30%, transparent 100%);
+ -webkit-mask-image: linear-gradient(to bottom, black 30%, transparent 100%);"
+				/>
+				<div
 					class="pointer-events-none absolute bottom-0 left-0 right-0 h-1/3 backdrop-blur-md
- bg-gradient-to-b from-transparent to-color-base-100 dark:to-gray-900/60"
+ bg-linear-to-b from-transparent to-base-100 dark:to-gray-900/60"
 					style="mask-image: linear-gradient(to top, black 30%, transparent 100%);
  -webkit-mask-image: linear-gradient(to top, black 30%, transparent 100%);"
 				/>
 			</main>
 
-			<Composer onSend={handleSend} agentConfig={agentConfig()} rainbow={hasStreaming()} />
+			<Composer onSend={handleSend} agentConfig={agentConfig()} rainbow={true} />
 		</div>
 	);
 };

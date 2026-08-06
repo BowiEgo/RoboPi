@@ -2,12 +2,23 @@ import { type Component, createMemo, createSignal, type JSX } from "solid-js";
 
 import { useAgent } from "@/agent/useAgent";
 import { useLocale } from "@/contexts/LocaleContext";
+import { define } from "@/utils/cx";
 
 import Resizer from "@/components/Resizer/Resizer";
 import Search from "@/components/Search/Search";
 
 import ChatPanel, { type ChatTag } from "./ChatPanel/ChatPanel";
 import SessionList from "./SessionList/SessionList";
+
+// ── Layout ──
+
+const root = define({ base: "flex h-full overflow-hidden" });
+const drawer = "relative shrink-0";
+const aside = "flex flex-col h-full pt-3 overflow-hidden select-none";
+const sidebarHeader = "flex items-center gap-2 px-4 text-[15px] font-medium font-display shrink-0";
+const sidebarContent = "flex-1 p-3";
+const sidebarBottom = "shrink-0";
+const main = define({ base: "flex-1 flex flex-col overflow-hidden ml-2.5" });
 
 interface ChatPageProps {
 	sidebarHeader?: JSX.Element;
@@ -39,22 +50,22 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 	]);
 
 	return (
-		<div class="flex h-full overflow-hidden bg-app">
-			<div class="relative shrink-0" style={{ width: `${drawerWidth()}px` }}>
+		<div class={`${root()} bg-app`}>
+			<div class={drawer} style={{ width: `${drawerWidth()}px` }}>
 				<aside
-					class="flex flex-col h-full pt-3 overflow-hidden select-none border-r-glow text-primary/20 dark:text-gray-700"
+					class={`${aside} border-r-glow text-primary/20 dark:text-gray-700`}
 					aria-label={t("chat.drawerLabel")}
 				>
 					{props.sidebarHeader && (
-						<div class="flex items-center gap-2 px-4 text-[15px] font-medium font-display text-base-content shrink-0">
+						<div class={`${sidebarHeader} text-base-content`}>
 							{props.sidebarHeader}
 						</div>
 					)}
-					<div class="flex-1 p-3 text-base-content">
+					<div class={`${sidebarContent} text-base-content`}>
 						<Search />
 						<SessionList />
 					</div>
-					{props.sidebarBottom && <div class="shrink-0">{props.sidebarBottom}</div>}
+					{props.sidebarBottom && <div class={sidebarBottom}>{props.sidebarBottom}</div>}
 				</aside>
 				<Resizer
 					value={drawerWidth()}
@@ -66,7 +77,7 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 				/>
 			</div>
 
-			<main class="flex-1 flex flex-col overflow-hidden text-base-content ml-2.5" aria-label={t("chat.contentLabel")}>
+			<main class={`${main()} text-base-content`} aria-label={t("chat.contentLabel")}>
 				<ChatPanel
 					header={<span>{loading() ? `${t("status.starting")}...` : activeName() || "RoboPi"}</span>}
 					tags={tags()}

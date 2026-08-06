@@ -26,7 +26,7 @@ interface MainLayoutProps {
 
 // ── Layout ──
 
-const root = define({ base: "flex flex-col w-screen h-screen overflow-hidden" });
+const root = define({ base: "flex flex-col w-screen h-screen overflow-hidden pt-8 bg-app" });
 const body = define({ base: "flex flex-1 overflow-hidden" });
 const nav = define({
 	base: "flex flex-col items-center select-none shrink-0 w-20 transition-[width] pt-6 py-3 px-1 gap-1",

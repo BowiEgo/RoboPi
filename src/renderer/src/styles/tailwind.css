@@ -15,7 +15,7 @@
 }
 
 @utility bg-app-raised {
-	background-color: var(--color-base-100);
+	background-color: var(--color-base-200);
 
 	@variant dark {
 		background-color: var(--color-gray-800);

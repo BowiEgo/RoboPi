@@ -178,10 +178,9 @@ function renderInline(text: string): string {
 
 // ── Class constants ──
 
-const CHAT_BUBBLE_WRAPPER = "chat-bubble max-w-full [&::before]:hidden rounded-xl";
+const CHAT_BUBBLE_WRAPPER = "chat-bubble max-w-full [&::before]:hidden rounded-xl dark:bg-gray-600";
 const CHAT_BUBBLE_PRIMARY = "chat-bubble-primary";
 const BUBBLE_OUTER_LAYOUT = "max-w-[75%]";
-const BUBBLE_AURA = "aura aura-rainbow duration-6000";
 const CONTENT_AREA = "text-base leading-relaxed";
 const USER_TEXT = "whitespace-pre-wrap m-0";
 const STREAMING_CURSOR = "inline-block w-2 h-4 ml-0.5 rounded-[1px] bg-primary animate-pulse align-text-bottom";
@@ -401,9 +400,7 @@ const ChatBubble: Component<ChatBubbleProps> = (props) => {
 			<TimeHeader timestamp={props.timestamp} />
 
 			{/* Bubble */}
-			<div
-				class={`${BUBBLE_OUTER_LAYOUT} ${isUser() ? "col-start-1" : "col-start-2"} ${!isUser() && props.streaming ? BUBBLE_AURA : ""}`}
-			>
+			<div class={`${BUBBLE_OUTER_LAYOUT} ${isUser() ? "col-start-1" : "col-start-2"} ${!isUser()}`}>
 				<div class={`${CHAT_BUBBLE_WRAPPER} ${isUser() ? CHAT_BUBBLE_PRIMARY : ""}`}>
 					<Show when={isUser()}>
 						<FileSection files={props.files} />

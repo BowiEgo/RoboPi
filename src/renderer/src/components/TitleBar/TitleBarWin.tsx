@@ -8,7 +8,7 @@ const TitleBarWin: Component = () => {
 	const onClose = () => window.api.close();
 
 	return (
-		<div class="relative flex items-center justify-end shrink-0 bg-base-300 select-none">
+		<div class="absolute flex items-center justify-end shrink-0 bg-transparent select-none">
 			{/* Draggable region */}
 			<div class="absolute inset-0 right-25" style="-webkit-app-region: drag" />
 
@@ -31,16 +31,7 @@ const TitleBarWin: Component = () => {
 					aria-label={isMaximized() ? "Restore" : "Maximize"}
 				>
 					<svg width="10" height="10" viewBox="0 0 10 10">
-						<rect
-							x="1.5"
-							y="1.5"
-							width="7"
-							height="7"
-							rx="1"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="1.2"
-						/>
+						<rect x="1.5" y="1.5" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.2" />
 					</svg>
 				</button>
 				<button
@@ -50,12 +41,7 @@ const TitleBarWin: Component = () => {
 					aria-label="Close"
 				>
 					<svg width="10" height="10" viewBox="0 0 10 10">
-						<path
-							d="M1 1L9 9M9 1L1 9"
-							stroke="currentColor"
-							stroke-width="1.2"
-							stroke-linecap="round"
-						/>
+						<path d="M1 1L9 9M9 1L1 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
 					</svg>
 				</button>
 			</div>
