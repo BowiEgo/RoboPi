@@ -26,6 +26,7 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 		messages,
 		resetKey,
 		loading,
+		agentConfig,
 		createSession,
 		handleSend,
 	} = useAgent();
@@ -47,10 +48,13 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 	]);
 
 	return (
-		<div class="flex h-full overflow-hidden bg-base-100">
-			<div class="relative flex-shrink-0" style={{ width: `${drawerWidth()}px` }}>
+		<div class="flex h-full overflow-hidden bg-app">
+			<div
+				class="relative flex-shrink-0"
+				style={{ width: `${drawerWidth()}px` }}
+			>
 				<aside
-					class="flex flex-col h-full pt-3 overflow-hidden select-none border-r border-base-300"
+					class="flex flex-col h-full pt-3 overflow-hidden select-none border-r border-base-300 dark:border-gray-700"
 					aria-label={t("chat.drawerLabel")}
 				>
 					{props.sidebarHeader && (
@@ -89,6 +93,7 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 					}
 					tags={tags()}
 					sessionId={activeId() ?? undefined}
+					agentConfig={agentConfig()}
 					initialMessages={messages()}
 					resetKey={resetKey()}
 					onSend={handleSend}

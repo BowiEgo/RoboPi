@@ -1,13 +1,9 @@
 import { Ellipsis } from "lucide-solid";
-import {
-	type Component,
-	createEffect,
-	createSignal,
-	onCleanup,
-	Show,
-} from "solid-js";
+import { type Component, createEffect, createSignal, onCleanup, Show } from "solid-js";
 
 import { useLocale } from "@/contexts/LocaleContext";
+
+import { cx } from "@/utils/cx";
 
 export interface SessionItemProps {
 	id: string;
@@ -25,10 +21,50 @@ export interface SessionItemProps {
 	onRename?: (id: string, name: string) => void;
 }
 
+const C = {
+	row: {
+		display: "list-row items-center",
+		spacing: "gap-2 px-3 py-2 mb-2",
+		interaction: "cursor-pointer rounded-md transition-colors",
+		color: { active: "bg-primary/80", idle: "hover:bg-base-300/30" },
+		colorDark: { active: "bg-primary/60", idle: "" },
+	},
+	checkbox: { display: "checkbox checkbox-xs checkbox-primary" },
+	content: { display: "list-col-grow flex flex-col", sizing: "min-w-0" },
+	titleRow: { display: "flex items-center", spacing: "gap-2" },
+	title: {
+		text: "text-sm font-medium truncate",
+		color: { active: "text-neutral-100", idle: "text-neutral-500" },
+		colorDark: { active: "text-white/80", idle: "text-white/80" },
+	},
+	time: { text: "text-[10px] ml-auto", color: "text-base-content/30" },
+	subtitle: {
+		display: "list-col-wrap",
+		text: "text-xs",
+		color: { active: "text-neutral-300", idle: "text-neutral-400" },
+		colorDark: { active: "text-neutral-300", idle: "text-neutral-300" },
+	},
+	ellipsisWrapper: { display: "relative shrink-0 self-center" },
+	ellipsisBtn: { display: "btn btn-ghost btn-xs btn-square", color: "dark:text-white" },
+	renameInput: {
+		sizing: "w-full",
+		text: "text-sm",
+		interaction: "bg-app border border-primary rounded px-1 py-0.5 outline-none",
+	},
+	menuDropdown: {
+		display: "absolute flex flex-col",
+		spacing: "right-0 top-full z-50 mt-1 py-1 min-w-36",
+		interaction: "bg-base-200 rounded-md shadow-lg border border-base-300",
+		colorDark: "border-gray-700",
+	},
+	menuSeparator: { sizing: "h-px", spacing: "my-1", interaction: "bg-base-300" },
+	deleteBanner: { display: "flex items-center", spacing: "gap-2 px-3 py-2", interaction: "bg-base-200 rounded-md" },
+	deleteBannerText: { sizing: "flex-1", text: "text-xs", color: "text-base-content/70" },
+	deleteBannerActions: { display: "flex items-center", spacing: "gap-1" },
+};
+
 const SessionItem: Component<SessionItemProps> = (props) => {
 	const { t } = useLocale();
-
-	// ── Menu (replaces context menu) ──
 	const [menuOpen, setMenuOpen] = createSignal(false);
 	const [pendingDelete, setPendingDelete] = createSignal(false);
 	let menuRef: HTMLDivElement | undefined;
@@ -37,32 +73,22 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 		e.stopPropagation();
 		setMenuOpen((v) => !v);
 	}
-
 	function closeMenu() {
 		setMenuOpen(false);
 	}
-
 	function onDocClick() {
 		closeMenu();
 	}
-
 	createEffect(() => {
-		if (menuOpen()) {
-			document.addEventListener("click", onDocClick);
-		} else {
-			document.removeEventListener("click", onDocClick);
-		}
+		if (menuOpen()) document.addEventListener("click", onDocClick);
+		else document.removeEventListener("click", onDocClick);
 	});
-
-	onCleanup(() => {
-		document.removeEventListener("click", onDocClick);
-	});
+	onCleanup(() => document.removeEventListener("click", onDocClick));
 
 	function handleRename() {
 		closeMenu();
 		setTimeout(() => setEditingName(props.label), 50);
 	}
-
 	function handleDelete() {
 		closeMenu();
 		if (props.active) {
@@ -72,34 +98,28 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 		}
 		props.onDeleteImmediate?.(props.id);
 	}
-
 	function confirmDeleteActive() {
 		setPendingDelete(false);
 		props.onDeleteImmediate?.(props.id);
 	}
 
-	// ── Rename ──
 	const [editingName, setEditingName] = createSignal<string | null>(null);
 	let renameInput: HTMLInputElement | undefined;
-
 	createEffect(() => {
 		if (editingName() !== null && renameInput) {
 			renameInput.focus();
 			renameInput.select();
 		}
 	});
-
 	function commitRename() {
 		const name = editingName();
-		if (name?.trim() && name.trim() !== props.label) {
-			props.onRename?.(props.id, name.trim());
-		}
+		if (name?.trim() && name.trim() !== props.label) props.onRename?.(props.id, name.trim());
 		setEditingName(null);
 	}
 
 	return (
 		<div
-			class={`list-row items-center gap-2 px-3 py-2 cursor-pointer rounded-md transition-colors ${props.active ? "bg-primary/10" : "hover:bg-base-300/50"}`}
+			class={cx(C.row, { active: props.active ?? false, idle: !(props.active ?? false) })}
 			role="tab"
 			tabIndex={props.active ? 0 : -1}
 			onClick={() => props.onClick?.(props.id)}
@@ -107,24 +127,16 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 				if (e.key === "Enter") props.onClick?.(props.id);
 			}}
 		>
-			{/* Checkbox — only visible in edit mode */}
 			{props.selectionMode && (
-				<input
-					type="checkbox"
-					class="checkbox checkbox-xs checkbox-primary"
-					checked={props.selected}
-					aria-label={props.label}
-					tabIndex={-1}
-				/>
+				<input type="checkbox" class={cx(C.checkbox)} checked={props.selected} aria-label={props.label} tabIndex={-1} />
 			)}
 
-			{/* Content */}
-			<div class="list-col-grow min-w-0 flex flex-col">
-				<div class="flex items-center gap-2">
+			<div class={cx(C.content)}>
+				<div class={cx(C.titleRow)}>
 					<Show
 						when={editingName() !== null}
 						fallback={
-							<span class="text-sm font-medium truncate text-base-content">
+							<span class={cx(C.title, { active: props.active ?? false, idle: !(props.active ?? false) })}>
 								{props.label}
 							</span>
 						}
@@ -132,7 +144,7 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 						<input
 							ref={renameInput}
 							type="text"
-							class="w-full text-sm bg-base-100 border border-primary rounded px-1 py-0.5 outline-none"
+							class={cx(C.renameInput)}
 							value={editingName() ?? ""}
 							onInput={(e) => setEditingName(e.currentTarget.value)}
 							onBlur={commitRename}
@@ -143,44 +155,25 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 							onClick={(e) => e.stopPropagation()}
 						/>
 					</Show>
-					{props.time && (
-						<span class="text-[10px] text-base-content/30 ml-auto">
-							{props.time}
-						</span>
-					)}
+					{props.time && <span class={cx(C.time)}>{props.time}</span>}
 				</div>
 				{props.subtitle && (
-					<p class="list-col-wrap text-xs text-base-content/40">
+					<p class={cx(C.subtitle, { active: props.active ?? false, idle: !(props.active ?? false) })}>
 						{props.subtitle}
 					</p>
 				)}
 			</div>
 
-			{/* Ellipsis menu button */}
-			<div class="relative shrink-0 self-center">
-				<button
-					type="button"
-					class="btn btn-ghost btn-xs btn-square"
-					aria-label="Session menu"
-					onClick={toggleMenu}
-				>
+			<div class={cx(C.ellipsisWrapper)}>
+				<button type="button" class={cx(C.ellipsisBtn)} aria-label="Session menu" onClick={toggleMenu}>
 					<Ellipsis class="w-4 h-4" />
 				</button>
-
-				{/* Menu dropdown */}
 				<Show when={menuOpen()}>
-					<div
-						ref={menuRef}
-						class="absolute right-0 top-full z-50 mt-1 flex flex-col py-1 min-w-36 bg-base-200 rounded-md shadow-lg border border-base-300"
-					>
-						<button
-							type="button"
-							class="btn btn-ghost btn-sm justify-start rounded-none"
-							onClick={handleRename}
-						>
+					<div ref={menuRef} class={cx(C.menuDropdown)}>
+						<button type="button" class="btn btn-ghost btn-sm justify-start rounded-none" onClick={handleRename}>
 							{t("chat.rename")}
 						</button>
-						<div class="h-px bg-base-300 my-1" />
+						<div class={cx(C.menuSeparator)} />
 						<button
 							type="button"
 							class="btn btn-ghost btn-sm justify-start rounded-none text-error"
@@ -192,7 +185,6 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 				</Show>
 			</div>
 
-			{/* Delete confirm */}
 			<Show when={props.confirmDelete}>
 				<button
 					type="button"
@@ -206,13 +198,10 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 				</button>
 			</Show>
 
-			{/* Active session delete banner */}
 			<Show when={pendingDelete()}>
-				<div class="flex items-center gap-2 px-3 py-2 bg-base-200 rounded-md">
-					<span class="flex-1 text-xs text-base-content/70">
-						{t("chat.deleteActiveHint")}
-					</span>
-					<div class="flex items-center gap-1">
+				<div class={cx(C.deleteBanner)}>
+					<span class={cx(C.deleteBannerText)}>{t("chat.deleteActiveHint")}</span>
+					<div class={cx(C.deleteBannerActions)}>
 						<button
 							type="button"
 							class="btn btn-ghost btn-xs"

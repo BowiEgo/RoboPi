@@ -5,18 +5,33 @@ import { useAgent } from "@/agent/useAgent";
 import { useLocale } from "@/contexts/LocaleContext";
 
 import SessionItem, { type SessionItemProps } from "./SessionItem";
+import { cx } from "@/utils/cx";
+
+const C = {
+	root: { display: "flex flex-col" },
+	header: { display: "flex items-center", spacing: "gap-2 px-1 py-2" },
+	headerIcon: { display: "flex items-center justify-center", sizing: "w-4 h-4", color: "text-base-content/60" },
+	headerTitle: {
+		sizing: "flex-1",
+		text: "text-xs font-semibold uppercase tracking-wider",
+		color: "text-base-content/60",
+	},
+	headerCount: { text: "text-xs", color: "text-base-content/40" },
+	actions: { display: "flex items-center", spacing: "gap-1", interaction: "relative" },
+	menuDropdown: {
+		display: "absolute flex flex-col",
+		spacing: "right-0 top-full z-50 mt-1 py-1 min-w-32",
+		interaction: "bg-base-200 rounded-md shadow-lg border border-base-300",
+	},
+	list: { display: "list", interaction: "bg-app rounded-box" },
+	empty: { text: "text-xs", spacing: "px-1 py-4", interaction: "text-center", color: "text-base-content/40" },
+	selectionBar: { display: "flex items-center justify-between", spacing: "px-1 py-2" },
+	selectionText: { text: "text-xs", color: "text-base-content/60" },
+};
 
 const SessionList: Component = () => {
 	const { t } = useLocale();
-	const {
-		sessions,
-		activeId,
-		createSession,
-		switchSession,
-		deleteSession,
-		renameSession,
-	} = useAgent();
-
+	const { sessions, activeId, createSession, switchSession, deleteSession, renameSession } = useAgent();
 	const [confirmDelete, setConfirmDelete] = createSignal<string | null>(null);
 	const [selectionMode, setSelectionMode] = createSignal(false);
 	const [selected, setSelected] = createSignal<Set<string>>(new Set());
@@ -34,46 +49,36 @@ const SessionList: Component = () => {
 			}, 3000);
 		}
 	}
-
 	function toggleSelect(id: string) {
 		setSelected((prev) => {
-			const next = new Set<string>(prev);
-			if (next.has(id)) next.delete(id);
-			else next.add(id);
-			return next;
+			const n = new Set(prev);
+			n.has(id) ? n.delete(id) : n.add(id);
+			return n;
 		});
 	}
-
 	function enterSelectionMode() {
 		setMenuOpen(false);
 		setSelectionMode(true);
-		setSelected(new Set<string>());
+		setSelected(new Set());
 	}
-
 	function exitSelectionMode() {
 		setSelectionMode(false);
-		setSelected(new Set<string>());
+		setSelected(new Set());
 	}
-
 	function bulkDelete() {
-		const ids = selected();
-		for (const id of ids) {
-			deleteSession(id);
-		}
+		for (const id of selected()) deleteSession(id);
 		exitSelectionMode();
 	}
 
 	return (
-		<section class="flex flex-col">
-			<header class="flex items-center gap-2 px-1 py-2">
-				<span class="flex items-center justify-center w-4 h-4 text-base-content/60">
+		<section class={cx(C.root)}>
+			<header class={cx(C.header)}>
+				<span class={cx(C.headerIcon)}>
 					<MessageCircle />
 				</span>
-				<span class="flex-1 text-xs font-semibold uppercase tracking-wider text-base-content/60">
-					{t("chat.sessions")}
-				</span>
-				<span class="text-xs text-base-content/40">{sessions().length}</span>
-				<div class="flex items-center gap-1 relative">
+				<span class={cx(C.headerTitle)}>{t("chat.sessions")}</span>
+				<span class={cx(C.headerCount)}>{sessions().length}</span>
+				<div class={cx(C.actions)}>
 					{selectionMode() ? (
 						<button
 							type="button"
@@ -105,12 +110,8 @@ const SessionList: Component = () => {
 					>
 						<Ellipsis class="w-4 h-4" />
 					</button>
-
 					<Show when={menuOpen()}>
-						<div
-							ref={menuRef}
-							class="absolute right-0 top-full z-50 mt-1 flex flex-col py-1 min-w-32 bg-base-200 rounded-md shadow-lg border border-base-300"
-						>
+						<div ref={menuRef} class={cx(C.menuDropdown)}>
 							<button
 								type="button"
 								class="btn btn-ghost btn-sm justify-start rounded-none"
@@ -122,16 +123,8 @@ const SessionList: Component = () => {
 					</Show>
 				</div>
 			</header>
-
-			<div class="list bg-base-100 rounded-box" role="tablist">
-				<Show
-					when={sessions().length > 0}
-					fallback={
-						<div class="text-xs text-base-content/40 px-1 py-4 text-center">
-							{t("chat.noSessions")}
-						</div>
-					}
-				>
+			<div class={cx(C.list)} role="tablist">
+				<Show when={sessions().length > 0} fallback={<div class={cx(C.empty)}>{t("chat.noSessions")}</div>}>
 					<For each={sessions()}>
 						{(item: SessionItemProps) => (
 							<SessionItem
@@ -145,32 +138,23 @@ const SessionList: Component = () => {
 								selectionMode={selectionMode()}
 								selected={selected().has(item.id)}
 								onClick={() => {
-									if (selectionMode()) {
-										toggleSelect(item.id);
-									} else {
-										switchSession(item.id);
-									}
+									if (selectionMode()) toggleSelect(item.id);
+									else switchSession(item.id);
 								}}
 								onDelete={() => handleDelete(item.id)}
-								onDeleteImmediate={(id: string) => deleteSession(id)}
+								onDeleteImmediate={(id) => deleteSession(id)}
 								onRename={(id, name) => renameSession(id, name)}
 							/>
 						)}
 					</For>
 				</Show>
 			</div>
-
-			{/* Cancel selection */}
 			<Show when={selectionMode()}>
-				<div class="flex items-center justify-between px-1 py-2">
-					<span class="text-xs text-base-content/60">
+				<div class={cx(C.selectionBar)}>
+					<span class={cx(C.selectionText)}>
 						{selected().size} {t("chat.selected")}
 					</span>
-					<button
-						type="button"
-						class="btn btn-ghost btn-xs"
-						onClick={exitSelectionMode}
-					>
+					<button type="button" class="btn btn-ghost btn-xs" onClick={exitSelectionMode}>
 						{t("chat.cancel")}
 					</button>
 				</div>

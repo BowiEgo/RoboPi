@@ -37,8 +37,7 @@ function fileIcon(type?: string): string {
 	if (type.startsWith("video/")) return "🎬";
 	if (type.startsWith("audio/")) return "🎵";
 	if (type.includes("pdf")) return "📑";
-	if (type.includes("zip") || type.includes("tar") || type.includes("gzip"))
-		return "📦";
+	if (type.includes("zip") || type.includes("tar") || type.includes("gzip")) return "📦";
 	if (type.includes("javascript") || type.includes("typescript")) return "📜";
 	if (type.includes("json")) return "📋";
 	if (type.includes("html") || type.includes("css")) return "🌐";
@@ -48,16 +47,7 @@ function fileIcon(type?: string): string {
 // ── Markdown parser ──
 
 interface MdToken {
-	type:
-		| "h1"
-		| "h2"
-		| "h3"
-		| "h4"
-		| "p"
-		| "code_block"
-		| "li"
-		| "hr"
-		| "blockquote";
+	type: "h1" | "h2" | "h3" | "h4" | "p" | "code_block" | "li" | "hr" | "blockquote";
 	content?: string;
 	lang?: string;
 	items?: string[];
@@ -172,10 +162,7 @@ function renderInline(text: string): string {
 		.replace(/&/g, "&amp;")
 		.replace(/</g, "&lt;")
 		.replace(/>/g, "&gt;")
-		.replace(
-			/!\[([^\]]*)\]\(([^)]+)\)/g,
-			'<img src="$2" alt="$1" class="max-w-full rounded" />',
-		)
+		.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="max-w-full rounded" />')
 		.replace(
 			/\[([^\]]+)\]\(([^)]+)\)/g,
 			'<a href="$2" target="_blank" rel="noopener" class="text-primary underline underline-offset-2 hover:opacity-80">$1</a>',
@@ -188,6 +175,33 @@ function renderInline(text: string): string {
 			"<code class='bg-base-300 text-primary rounded px-1 py-0.5 font-mono text-[0.9em]'>$1</code>",
 		);
 }
+
+// ── Class constants ──
+
+const CHAT_BUBBLE_WRAPPER = "chat-bubble max-w-full [&::before]:hidden rounded-xl";
+const CHAT_BUBBLE_PRIMARY = "chat-bubble-primary";
+const BUBBLE_OUTER_LAYOUT = "max-w-[75%]";
+const BUBBLE_AURA = "aura aura-rainbow duration-6000";
+const CONTENT_AREA = "text-base leading-relaxed";
+const USER_TEXT = "whitespace-pre-wrap m-0";
+const STREAMING_CURSOR = "inline-block w-2 h-4 ml-0.5 rounded-[1px] bg-primary animate-pulse align-text-bottom";
+const _FILE_LIST = "flex flex-col gap-2 mb-2 pb-2 border-b border-white/20";
+const _FILE_ITEM = "flex items-center gap-2 px-2 py-1 bg-white/15 rounded transition-colors hover:bg-white/25";
+const _FILE_ICON = "text-lg leading-none shrink-0";
+const _FILE_META = "flex flex-col min-w-0 flex-1";
+const _FILE_NAME = "text-sm font-medium truncate";
+const _FILE_SIZE = "text-[10px] opacity-70";
+const _FILE_PREVIEW = "shrink-0 w-10 h-10 rounded-xs overflow-hidden border border-white/20";
+const _THINKING_WRAPPER = "mb-2 rounded border border-base-300 overflow-hidden";
+const _THINKING_TOGGLE = "btn btn-ghost btn-xs w-full justify-start gap-1";
+const _THINKING_CONTENT =
+	"p-2 font-mono text-[10px] text-base-content/50 whitespace-pre-wrap leading-relaxed bg-base-200 border-t border-base-300 max-h-[200px] overflow-y-auto";
+const _CODE_BLOCK = "rounded border border-base-300 overflow-hidden bg-base-200";
+const _CODE_LANG =
+	"px-3 py-1 font-mono text-[11px] text-base-content/50 uppercase tracking-wider bg-base-300 border-b border-base-300";
+const _CODE_PRE = "m-0 p-3 overflow-x-auto font-mono text-[10px] leading-relaxed text-base-content whitespace-pre";
+const _BLOCKQUOTE =
+	"m-0 px-3 py-1 border-l-[3px] border-primary bg-base-200 rounded-r-sm italic text-base-content/70 leading-relaxed";
 
 // ── Sub-components ──
 
@@ -235,24 +249,16 @@ const FileSection: Component<FileSectionProps> = (props) => (
 			<For each={props.files}>
 				{(file) => (
 					<div class="flex items-center gap-2 px-2 py-1 bg-white/15 rounded transition-colors hover:bg-white/25">
-						<span class="text-lg leading-none shrink-0">
-							{fileIcon(file.type)}
-						</span>
+						<span class="text-lg leading-none shrink-0">{fileIcon(file.type)}</span>
 						<div class="flex flex-col min-w-0 flex-1">
 							<span class="text-sm font-medium truncate">{file.name}</span>
 							<Show when={file.size !== undefined}>
-								<span class="text-[10px] opacity-70">
-									{formatFileSize(file.size ?? 0)}
-								</span>
+								<span class="text-[10px] opacity-70">{formatFileSize(file.size ?? 0)}</span>
 							</Show>
 						</div>
 						<Show when={file.preview}>
 							<div class="shrink-0 w-10 h-10 rounded-xs overflow-hidden border border-white/20">
-								<img
-									src={file.preview}
-									alt={file.name}
-									class="w-full h-full object-cover"
-								/>
+								<img src={file.preview} alt={file.name} class="w-full h-full object-cover" />
 							</div>
 						</Show>
 					</div>
@@ -272,14 +278,8 @@ interface ThinkingBlockProps {
 const ThinkingBlock: Component<ThinkingBlockProps> = (props) => (
 	<Show when={props.thinking && props.thinking.trim().length > 0}>
 		<div class="mb-2 rounded border border-base-300 overflow-hidden">
-			<button
-				type="button"
-				class="btn btn-ghost btn-xs w-full justify-start gap-1"
-				onClick={props.onToggle}
-			>
-				<span class="text-[10px] leading-none shrink-0">
-					{props.open ? "▾" : "▸"}
-				</span>
+			<button type="button" class="btn btn-ghost btn-xs w-full justify-start gap-1" onClick={props.onToggle}>
+				<span class="text-[10px] leading-none shrink-0">{props.open ? "▾" : "▸"}</span>
 				<span>{props.label}</span>
 			</button>
 			<Show when={props.open}>
@@ -334,12 +334,7 @@ const MarkdownSection: Component<MarkdownSectionProps> = (props) => (
 							/>
 						);
 					case "p":
-						return (
-							<p
-								class="m-0 leading-relaxed"
-								innerHTML={renderInline(token.content ?? "")}
-							/>
-						);
+						return <p class="m-0 leading-relaxed" innerHTML={renderInline(token.content ?? "")} />;
 					case "code_block":
 						return (
 							<div class="rounded border border-base-300 overflow-hidden bg-base-200">
@@ -356,11 +351,7 @@ const MarkdownSection: Component<MarkdownSectionProps> = (props) => (
 					case "li":
 						return (
 							<ul class="m-0 pl-5">
-								<For each={token.items}>
-									{(item) => (
-										<li class="leading-relaxed" innerHTML={renderInline(item)} />
-									)}
-								</For>
+								<For each={token.items}>{(item) => <li class="leading-relaxed" innerHTML={renderInline(item)} />}</For>
 							</ul>
 						);
 					case "hr":
@@ -387,9 +378,7 @@ interface BubbleFooterProps {
 
 const BubbleFooter: Component<BubbleFooterProps> = (props) => (
 	<Show when={props.timestamp}>
-		<div class="chat-footer opacity-50">
-			{props.isUser ? "Delivered" : ""}
-		</div>
+		<div class="chat-footer opacity-50">{props.isUser ? "Delivered" : ""}</div>
 	</Show>
 );
 
@@ -413,11 +402,9 @@ const ChatBubble: Component<ChatBubbleProps> = (props) => {
 
 			{/* Bubble */}
 			<div
-				class={`max-w-[75%] ${isUser() ? "col-start-1" : "col-start-2"} ${!isUser() && props.streaming ? "aura aura-rainbow duration-6000" : ""}`}
+				class={`${BUBBLE_OUTER_LAYOUT} ${isUser() ? "col-start-1" : "col-start-2"} ${!isUser() && props.streaming ? BUBBLE_AURA : ""}`}
 			>
-				<div
-					class={`chat-bubble max-w-full [&::before]:hidden rounded-xl ${isUser() ? "chat-bubble-primary" : ""}`}
-				>
+				<div class={`${CHAT_BUBBLE_WRAPPER} ${isUser() ? CHAT_BUBBLE_PRIMARY : ""}`}>
 					<Show when={isUser()}>
 						<FileSection files={props.files} />
 					</Show>
@@ -431,30 +418,25 @@ const ChatBubble: Component<ChatBubbleProps> = (props) => {
 						/>
 					</Show>
 
-					<div class="text-base leading-relaxed">
+					<div class={CONTENT_AREA}>
 						<Show
 							when={!isUser()}
 							fallback={
-								<p class="whitespace-pre-wrap m-0">
+								<p class={USER_TEXT}>
 									{props.content}
 									<Show when={props.streaming}>
-										<span class="inline-block w-2 h-4 ml-0.5 rounded-[1px] bg-primary animate-pulse align-text-bottom" />
+										<span class={STREAMING_CURSOR} />
 									</Show>
 								</p>
 							}
 						>
 							<Show
 								when={props.streaming}
-								fallback={
-									<MarkdownSection
-										content={props.content}
-										tokens={parsedContent() ?? []}
-									/>
-								}
+								fallback={<MarkdownSection content={props.content} tokens={parsedContent() ?? []} />}
 							>
-								<p class="whitespace-pre-wrap m-0">
+								<p class={USER_TEXT}>
 									{props.content}
-									<span class="inline-block w-2 h-4 ml-0.5 rounded-[1px] bg-primary animate-pulse align-text-bottom" />
+									<span class={STREAMING_CURSOR} />
 								</p>
 							</Show>
 						</Show>

@@ -6,6 +6,7 @@ import { useLocale } from "@/contexts/LocaleContext";
 import TitleBar from "@/components/TitleBar/TitleBar";
 
 import NavMenuList from "./NavMenuList";
+import { cx } from "@/utils/cx";
 
 export interface NavItem {
 	id: string;
@@ -23,34 +24,49 @@ interface MainLayoutProps {
 	children: JSX.Element;
 }
 
+const C = {
+	root: { display: "flex flex-col", sizing: "w-screen h-screen overflow-hidden" },
+	body: { display: "flex", sizing: "flex-1 overflow-hidden" },
+	nav: {
+		display: "flex flex-col items-center select-none",
+		sizing: "shrink-0 w-14.5 transition-[width]",
+		spacing: "pt-6 py-3 px-1 gap-1",
+		color: "border-r border-base-300 bg-app",
+		colorDark: "border-gray-700",
+	},
+	navExpanded: { sizing: "w-52" },
+	navTop: { display: "flex items-center justify-center", sizing: "w-18 h-8 shrink-0", spacing: "mb-4.5" },
+	navBottom: { display: "mt-auto flex flex-col items-center", sizing: "w-full" },
+	toggle: {
+		display: "flex items-center justify-center",
+		sizing: "w-full",
+		spacing: "py-2 mt-2",
+		interaction: "rounded-box transition-colors",
+		color: "hover:bg-primary/20",
+	},
+	main: { display: "flex flex-col", sizing: "flex-1 overflow-hidden", color: "bg-app text-base-content" },
+};
+
 const MainLayout: Component<MainLayoutProps> = (props) => {
 	const { t } = useLocale();
 	const [expanded, setExpanded] = createSignal(false);
 
-	return (
-		<div class="flex flex-col w-screen h-screen overflow-hidden">
-			<TitleBar />
-			<div class="flex flex-1 overflow-hidden">
-				<nav
-					class={`flex flex-col items-center w-20 h-full shrink-0 pt-6 border-r border-base-300 bg-base-300 py-3 px-1 select-none gap-1 transition-[width] ${expanded() ? "w-52" : "w-14.5"}`}
-					aria-label={t("nav.pageNav")}
-				>
-					{props.navTop && (
-						<div class="flex items-center justify-center w-18 h-8 shrink-0 mb-4.5">
-							{props.navTop}
-						</div>
-					)}
+	const navClass = () => `${cx(C.nav)} ${expanded() ? cx(C.navExpanded) : ""}`;
 
+	return (
+		<div class={cx(C.root)}>
+			<TitleBar />
+			<div class={cx(C.body)}>
+				<nav class={navClass()} aria-label={t("nav.pageNav")}>
+					{props.navTop && <div class={cx(C.navTop)}>{props.navTop}</div>}
 					<NavMenuList
 						items={props.topNavItems}
 						activeNav={props.activeNav}
 						expanded={expanded()}
 						onSelect={props.onNavSelect}
 					/>
-
 					{props.bottomNavItems.length > 0 && (
-						<div class="mt-auto flex flex-col items-center w-full">
-							<div class="w-6 h-px bg-base-300 my-1 opacity-50" />
+						<div class={cx(C.navBottom)}>
 							<NavMenuList
 								items={props.bottomNavItems}
 								activeNav={props.activeNav}
@@ -59,26 +75,16 @@ const MainLayout: Component<MainLayoutProps> = (props) => {
 							/>
 						</div>
 					)}
-
-					{/* Expand / collapse toggle */}
 					<button
 						type="button"
-						class="flex items-center justify-center w-full py-2 mt-2 rounded-box hover:bg-primary/20 transition-colors"
+						class={cx(C.toggle)}
 						aria-label={expanded() ? "Collapse sidebar" : "Expand sidebar"}
 						onClick={() => setExpanded((v) => !v)}
 					>
-						{expanded() ? (
-							<ChevronLeft class="w-4 h-4" />
-						) : (
-							<ChevronRight class="w-4 h-4" />
-						)}
+						{expanded() ? <ChevronLeft class="w-4 h-4" /> : <ChevronRight class="w-4 h-4" />}
 					</button>
 				</nav>
-
-				<main
-					class="flex-1 flex flex-col overflow-hidden bg-base-100 text-base-content"
-					aria-label={t("nav.pageContent")}
-				>
+				<main class={cx(C.main)} aria-label={t("nav.pageContent")}>
 					{props.children}
 				</main>
 			</div>

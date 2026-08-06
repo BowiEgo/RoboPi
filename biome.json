@@ -10,7 +10,8 @@
 	},
 	"formatter": {
 		"enabled": true,
-		"indentStyle": "tab"
+		"indentStyle": "tab",
+		"lineWidth": 120
 	},
 	"linter": {
 		"enabled": true,
@@ -63,7 +64,10 @@
 							"@/assets/**",
 							":BLANK_LINE:",
 
-							["./**/*.css", "../**/*.css"],
+							[
+								"./**/*.css",
+								"../**/*.css"
+							],
 							":BLANK_LINE:",
 
 							":PATH:",

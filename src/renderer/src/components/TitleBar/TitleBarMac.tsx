@@ -8,7 +8,7 @@ import type { Component } from "solid-js";
 const TitleBarMac: Component = () => {
 	return (
 		<div
-			class="h-8 shrink-0 bg-base-300 select-none"
+			class="h-8 shrink-0 bg-app select-none"
 			style="-webkit-app-region: drag"
 		/>
 	);

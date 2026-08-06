@@ -11,11 +11,16 @@
  * 任意组件 import { useAgent } 获取同一个实例，无需 props 传递。
  */
 
-import { AgentMessageType, isValidMessageType } from "@shared/agent-types";
+import {
+	AgentMessageType,
+	type AgentReadyPayload,
+	isValidMessageType,
+} from "@shared/agent-types";
 import { createMemo, createSignal, onCleanup, onMount } from "solid-js";
 
 import type { SessionItemProps } from "@/pages/ChatPage/SessionList/SessionItem";
 import type { ChatBubbleProps } from "@/pages/ChatPage/ChatPanel/ChatBubble";
+import type { AgentConfig } from "@/pages/ChatPage/Composer/Composer";
 
 import { getAgentIpc } from "./ipc";
 
@@ -115,6 +120,7 @@ function createAgentStore() {
 	const [messages, setMessages] = createSignal<ChatBubbleProps[]>([]);
 	const [resetKey, setResetKey] = createSignal("");
 	const [loading, setLoading] = createSignal(false);
+	const [agentConfig, setAgentConfig] = createSignal<AgentConfig>({});
 	let pendingMessage: string | null = null;
 
 	const agent = getAgentIpc();
@@ -131,6 +137,38 @@ function createAgentStore() {
 			if (!msg?.type || !isValidMessageType(msg.type)) return;
 
 			switch (msg.type) {
+				case AgentMessageType.AgentReady: {
+					const p = msg.payload as AgentReadyPayload;
+					setAgentConfig({
+						model: p.model,
+						thinkingLevel: p.thinkingLevel,
+						availableModels: p.availableModels,
+						status: "idle",
+					});
+					break;
+				}
+
+				case AgentMessageType.AgentConfig: {
+					const p = msg.payload as AgentConfig;
+					setAgentConfig((prev) => ({ ...prev, ...p }));
+					break;
+				}
+
+				case AgentMessageType.AgentStatus: {
+					const p = msg.payload as {
+						status?: string;
+						model?: string;
+						thinkingLevel?: string;
+					};
+					setAgentConfig((prev) => ({
+						...prev,
+						status: p.status,
+						model: p.model ?? prev.model,
+						thinkingLevel: p.thinkingLevel ?? prev.thinkingLevel,
+					}));
+					break;
+				}
+
 				case AgentMessageType.SessionSwitched: {
 					const p = msg.payload as {
 						sessionId: string;
@@ -225,6 +263,14 @@ function createAgentStore() {
 			type: AgentMessageType.SessionList,
 			payload: {},
 		});
+
+		// 主动拉取当前 agent 配置（防止 AgentReady 已先于 listener 触发）
+		agent.send({
+			id: "init-config",
+			type: AgentMessageType.AgentConfig,
+			payload: {},
+		});
+
 		onCleanup(unsub);
 	});
 
@@ -369,6 +415,7 @@ function createAgentStore() {
 		switchSession,
 		deleteSession,
 		renameSession,
+		agentConfig,
 		handleSend,
 	};
 }

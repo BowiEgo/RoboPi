@@ -28,6 +28,7 @@ interface ChatPanelProps {
 	sessionId?: string;
 	initialMessages?: ChatBubbleProps[];
 	resetKey?: string;
+	agentConfig?: AgentConfig;
 	onSend?: (text: string) => Promise<unknown> | undefined;
 }
 
@@ -46,8 +47,9 @@ let nextId = 0;
 
 const ChatPanel: Component<ChatPanelProps> = (props) => {
 	const [messages, setMessages] = createSignal<ChatBubbleProps[]>([]);
-	const [agentConfig, setAgentConfig] = createSignal<AgentConfig>({});
 	let dialogRef: HTMLDivElement | undefined;
+
+	const agentConfig = () => props.agentConfig ?? {};
 
 	let prevKey: string | undefined;
 	createEffect(() => {
@@ -96,42 +98,6 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 			if (!msg?.type || !isValidMessageType(msg.type)) return;
 
 			switch (msg.type) {
-				case AgentMessageType.AgentReady: {
-					const ready = msg.payload as {
-						model?: string;
-						thinkingLevel?: string;
-						availableModels?: string[];
-					};
-					setAgentConfig({
-						model: ready.model,
-						thinkingLevel: ready.thinkingLevel,
-						availableModels: ready.availableModels,
-						status: "idle",
-					});
-					break;
-				}
-
-				case AgentMessageType.AgentConfig: {
-					const cfg = msg.payload as AgentConfig;
-					setAgentConfig((prev) => ({ ...prev, ...cfg }));
-					break;
-				}
-
-				case AgentMessageType.AgentStatus: {
-					const st = msg.payload as {
-						status?: string;
-						model?: string;
-						thinkingLevel?: string;
-					};
-					setAgentConfig((prev) => ({
-						...prev,
-						status: st.status,
-						model: st.model ?? prev.model,
-						thinkingLevel: st.thinkingLevel ?? prev.thinkingLevel,
-					}));
-					break;
-				}
-
 				case AgentMessageType.ThinkingUpdate: {
 					const { text } = msg.payload;
 					if (!text) return;
@@ -151,11 +117,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 				case AgentMessageType.ChatChunk: {
 					const { delta, kind } = msg.payload;
 					if (!delta || kind !== "content") return;
-					setMessages((prev) =>
-						prev.map((m) =>
-							m.streaming ? { ...m, content: m.content + delta } : m,
-						),
-					);
+					setMessages((prev) => prev.map((m) => (m.streaming ? { ...m, content: m.content + delta } : m)));
 					break;
 				}
 
@@ -208,8 +170,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 					name: "screenshot.png",
 					size: 245760,
 					type: "image/png",
-					preview:
-						"https://img.daisyui.com/images/profile/demo/kenobee@192.webp",
+					preview: "https://img.daisyui.com/images/profile/demo/kenobee@192.webp",
 				},
 				{ name: "data.json", size: 1024, type: "application/json" },
 			],
@@ -220,8 +181,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 			role: "agent",
 			content:
 				'Sure! Here is a **markdown** response:\n\n## Analysis\n\n- ✅ The image looks good\n- ✅ The JSON is valid\n\n```json\n{"status": "ok"}\n```\n\n> Tip: always validate your data.',
-			thinking:
-				"1. Check the image format...\n2. Parse JSON structure...\n3. All valid, generating reply...",
+			thinking: "1. Check the image format...\n2. Parse JSON structure...\n3. All valid, generating reply...",
 			timestamp: "14:30",
 		},
 		{
@@ -243,8 +203,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 			role: "agent",
 			content:
 				"Here is the code review result:\n\n1. **Naming**: variables are well-named\n2. **Structure**: consider extracting the `parse` function\n3. **Performance**: the loop at line 42 could",
-			thinking:
-				"Scanning repository...\nAnalyzing code patterns...\nFound 3 suggestions...",
+			thinking: "Scanning repository...\nAnalyzing code patterns...\nFound 3 suggestions...",
 			streaming: true,
 			timestamp: "14:32",
 		},
@@ -264,9 +223,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 		}
 	}
 
-	const hasStreaming = createMemo(() =>
-		messages().some((m) => m.role === "agent" && m.streaming),
-	);
+	const hasStreaming = createMemo(() => messages().some((m) => m.role === "agent" && m.streaming));
 
 	function handleSend(text: string) {
 		if (!text.trim()) return;
@@ -316,9 +273,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 
 	function mockStreamReply(agentId: string) {
 		const thinking =
-			"analyzing user input...\n" +
-			"matching response template: markdown demo\n" +
-			"generating reply...";
+			"analyzing user input...\n" + "matching response template: markdown demo\n" + "generating reply...";
 
 		const fullContent =
 			"Got your message! Here is a **Markdown** reply example:\n\n" +
@@ -335,9 +290,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 			"How can I help you?";
 
 		setTimeout(() => {
-			setMessages((prev) =>
-				prev.map((m) => (m.id === agentId ? { ...m, thinking } : m)),
-			);
+			setMessages((prev) => prev.map((m) => (m.id === agentId ? { ...m, thinking } : m)));
 
 			let charIdx = 0;
 			const total = fullContent.length;
@@ -347,11 +300,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 				const done = charIdx >= total;
 				const chunk = fullContent.slice(0, charIdx);
 
-				setMessages((prev) =>
-					prev.map((m) =>
-						m.id === agentId ? { ...m, content: chunk, streaming: !done } : m,
-					),
-				);
+				setMessages((prev) => prev.map((m) => (m.id === agentId ? { ...m, content: chunk, streaming: !done } : m)));
 
 				if (done) clearInterval(timer);
 			}, 16);
@@ -359,19 +308,15 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 	}
 
 	return (
-		<div class="flex flex-col items-center h-full overflow-hidden">
-			<header class="flex shrink-0 items-center justify-between w-full gap-4 px-4 py-3 border-b border-base-300 font-medium text-base font-display text-base-content">
+		<div class="relative flex flex-col items-center h-full overflow-hidden">
+			<header class="flex shrink-0 items-center justify-between w-full gap-4 px-4 py-3  dark:border-gray-700 font-medium text-base font-display text-base-content">
 				{props.header}
 				{props.tags && props.tags.length > 0 && (
 					<div class="flex items-center gap-2 ml-auto">
 						<For each={props.tags}>
 							{(tag) =>
 								tag.type === "action" ? (
-									<button
-										type="button"
-										class="btn btn-ghost btn-sm"
-										onClick={() => tag.onClick?.(tag.id)}
-									>
+									<button type="button" class="btn btn-ghost btn-sm" onClick={() => tag.onClick?.(tag.id)}>
 										<Plus class="w-3 h-3" />
 										{tag.label}
 									</button>
@@ -394,7 +339,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 			</header>
 
 			<main
-				class="flex-1 w-full flex flex-col gap-1 overflow-y-auto p-4 text-base-content scroll-smooth"
+				class="flex-1 w-full flex flex-col gap-1 overflow-y-auto px-4 pb-[20%] text-base-content scroll-smooth"
 				ref={dialogRef}
 			>
 				<Show when={messages().length === 0} fallback={null}>
@@ -405,7 +350,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 					)}
 				</Show>
 				<For each={messages()}>
-					{(msg, index) => (
+					{(msg, _index) => (
 						<ChatBubble
 							id={msg.id}
 							role={msg.role}
@@ -418,6 +363,12 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 						/>
 					)}
 				</For>
+				<div
+					class="pointer-events-none absolute bottom-0 left-0 right-0 h-1/3 backdrop-blur-md
+ bg-gradient-to-b from-transparent to-white/60 dark:to-gray-900/60"
+					style="mask-image: linear-gradient(to top, black 30%, transparent 100%);
+ -webkit-mask-image: linear-gradient(to top, black 30%, transparent 100%);"
+				/>
 			</main>
 
 			<Composer onSend={handleSend} agentConfig={agentConfig()} rainbow={hasStreaming()} />
