@@ -1,7 +1,7 @@
 import { For } from "solid-js";
 
 import type { NavItem } from "./MainLayout";
-import { cx } from "@/utils/cx";
+import { define } from "@/utils/cx";
 
 interface NavMenuListProps {
 	items: NavItem[];
@@ -10,61 +10,50 @@ interface NavMenuListProps {
 	onSelect: (item: NavItem) => void;
 }
 
-// ── Class constants ──
+// ── Layout ──
 
-const C = {
-	menu: { display: "menu", sizing: "w-full" },
-	menuCollapsed: { display: "items-center" },
-	item: {
-		interaction: "rounded-box mb-3 transition-colors",
-		color: {
-			active: "bg-primary text-primary-content",
-			idle: "hover:bg-primary/20 active:bg-primary/30 focus-visible:bg-primary/20",
-		},
-	},
-	btn: {
-		interaction: "rounded-box outline-none",
-		color: "bg-transparent active:bg-transparent focus-visible:bg-transparent",
-	},
-	btnExpanded: { display: "flex items-center", sizing: "w-full", spacing: "gap-3 px-3 py-2" },
-	btnCollapsed: { display: "tooltip tooltip-right flex items-center justify-center", sizing: "w-10 h-10" },
-	icon: { display: "flex items-center justify-center", sizing: "w-5 h-5" },
-	iconExpanded: { sizing: "shrink-0" },
-	label: { text: "text-sm font-medium truncate" },
-};
+const menu = define({ base: "menu w-full" });
+const item = "rounded-box mb-3 transition-colors";
+const btn = "rounded-box outline-none";
+const btnExpanded = "flex items-center w-full gap-3 px-3 py-2";
+const btnCollapsed = "tooltip tooltip-right flex items-center justify-center w-10 h-10";
+const icon = "flex items-center justify-center w-5 h-5";
+const label = "text-sm font-medium truncate";
 
 export default function NavMenuList(props: NavMenuListProps) {
-	const menuClass = () => `${cx(C.menu)} ${props.expanded ? "" : cx(C.menuCollapsed)}`;
-	const itemClass = (id: string) => `${cx(C.item, { active: props.activeNav === id, idle: props.activeNav !== id })}`;
-
 	return (
-		<ul class={menuClass()}>
+		<ul class={`${menu()} ${props.expanded ? "" : "items-center"}`}>
 			<For each={props.items}>
-				{(item) => (
-					<li class={itemClass(item.id)}>
-						{props.expanded ? (
-							<button
-								type="button"
-								class={`${cx(C.btn)} ${cx(C.btnExpanded)}`}
-								aria-label={item.label}
-								onClick={() => props.onSelect(item)}
-							>
-								<span class={`${cx(C.icon)} ${cx(C.iconExpanded)}`}>{item.icon}</span>
-								<span class={cx(C.label)}>{item.label}</span>
-							</button>
-						) : (
-							<button
-								type="button"
-								class={`${cx(C.btn)} ${cx(C.btnCollapsed)}`}
-								data-tip={item.label}
-								aria-label={item.label}
-								onClick={() => props.onSelect(item)}
-							>
-								<span class={cx(C.icon)}>{item.icon}</span>
-							</button>
-						)}
-					</li>
-				)}
+				{(navItem) => {
+					const active = props.activeNav === navItem.id;
+					return (
+						<li
+							class={`${item} ${active ? "bg-primary text-primary-content" : "hover:bg-primary/20 active:bg-primary/30 focus-visible:bg-primary/20 dark:text-white/70"}`}
+						>
+							{props.expanded ? (
+								<button
+									type="button"
+									class={`${btn} ${btnExpanded} bg-transparent active:bg-transparent focus-visible:bg-transparent`}
+									aria-label={navItem.label}
+									onClick={() => props.onSelect(navItem)}
+								>
+									<span class={`${icon} shrink-0`}>{navItem.icon}</span>
+									<span class={label}>{navItem.label}</span>
+								</button>
+							) : (
+								<button
+									type="button"
+									class={`${btn} ${btnCollapsed} bg-transparent active:bg-transparent focus-visible:bg-transparent`}
+									data-tip={navItem.label}
+									aria-label={navItem.label}
+									onClick={() => props.onSelect(navItem)}
+								>
+									<span class={icon}>{navItem.icon}</span>
+								</button>
+							)}
+						</li>
+					);
+				}}
 			</For>
 		</ul>
 	);

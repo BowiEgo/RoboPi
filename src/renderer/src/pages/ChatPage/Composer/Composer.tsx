@@ -76,12 +76,13 @@ const C = {
 		sizing: "flex-1 overflow-hidden",
 		spacing: "gap-2 mx-4 px-2 py-1 pl-3",
 		interaction: "rounded border border-transparent",
+		color: "",
 	},
 	textarea: {
 		display: "border-none outline-none bg-transparent resize-none",
 		sizing: "flex-1 min-h-6 overflow-y-auto",
 		text: "font-display text-base leading-relaxed",
-		color: "input-field",
+		color: "",
 	},
 	sendBtn: { display: "btn btn-circle btn-primary" },
 	wrapper: {
@@ -89,7 +90,7 @@ const C = {
 		sizing: "w-[70%]",
 		spacing: "bottom-[6%]",
 		interaction: "rounded-3xl shadow-xl border-2",
-		color: "border-base-200",
+		color: "border-base-200 input-field",
 		colorDark: "border-gray-700",
 	},
 	wrapperFocused: { interaction: "border-accent" },

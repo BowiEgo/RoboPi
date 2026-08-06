@@ -20,20 +20,11 @@ interface ChatPageProps {
 
 const ChatPage: Component<ChatPageProps> = (props) => {
 	const { t } = useLocale();
-	const {
-		activeId,
-		activeName,
-		messages,
-		resetKey,
-		loading,
-		agentConfig,
-		createSession,
-		handleSend,
-	} = useAgent();
+	const { activeId, activeName, messages, resetKey, loading, agentConfig, createSession, handleSend } = useAgent();
 
 	const minW = () => props.minWidth ?? 180;
 	const maxW = () => props.maxWidth ?? 600;
-	const [drawerWidth, setDrawerWidth] = createSignal(props.defaultWidth ?? 260);
+	const [drawerWidth, setDrawerWidth] = createSignal(props.defaultWidth ?? 300);
 
 	const tags = createMemo<ChatTag[]>(() => [
 		{ id: "context", label: "上下文：0.0% / 1.0M ↑ 0 ↓ 0" },
@@ -49,12 +40,9 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 
 	return (
 		<div class="flex h-full overflow-hidden bg-app">
-			<div
-				class="relative flex-shrink-0"
-				style={{ width: `${drawerWidth()}px` }}
-			>
+			<div class="relative shrink-0" style={{ width: `${drawerWidth()}px` }}>
 				<aside
-					class="flex flex-col h-full pt-3 overflow-hidden select-none border-r border-base-300 dark:border-gray-700"
+					class="flex flex-col h-full pt-3 overflow-hidden select-none border-r-glow text-primary/20 dark:text-gray-700"
 					aria-label={t("chat.drawerLabel")}
 				>
 					{props.sidebarHeader && (
@@ -66,31 +54,21 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 						<Search />
 						<SessionList />
 					</div>
-					{props.sidebarBottom && (
-						<div class="shrink-0">{props.sidebarBottom}</div>
-					)}
+					{props.sidebarBottom && <div class="shrink-0">{props.sidebarBottom}</div>}
 				</aside>
 				<Resizer
 					value={drawerWidth()}
 					min={minW()}
 					max={maxW()}
 					position="right"
+					grip={false}
 					onChange={(v) => setDrawerWidth(v)}
 				/>
 			</div>
 
-			<main
-				class="flex-1 flex flex-col overflow-hidden text-base-content ml-2.5"
-				aria-label={t("chat.contentLabel")}
-			>
+			<main class="flex-1 flex flex-col overflow-hidden text-base-content ml-2.5" aria-label={t("chat.contentLabel")}>
 				<ChatPanel
-					header={
-						<span>
-							{loading()
-								? `${t("status.starting")}...`
-								: activeName() || "RoboPi"}
-						</span>
-					}
+					header={<span>{loading() ? `${t("status.starting")}...` : activeName() || "RoboPi"}</span>}
 					tags={tags()}
 					sessionId={activeId() ?? undefined}
 					agentConfig={agentConfig()}

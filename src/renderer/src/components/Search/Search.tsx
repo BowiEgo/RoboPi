@@ -14,7 +14,7 @@ const C = {
 		spacing: "px-3",
 		interaction: "rounded-lg border cursor-text shadow-sm",
 		color:
-			"border-base-300 dark:border-none bg-input hover:border-base-600 focus-within:border-primary/45 focus-within:ring-primary/15",
+			"border-base-300 dark:border-none input-field hover:border-base-600 focus-within:border-primary/45 focus-within:ring-primary/15",
 	},
 	icon: {
 		display: "flex items-center justify-center",
@@ -27,7 +27,6 @@ const C = {
 		sizing: "flex-1 min-w-0 h-full",
 		spacing: "px-2",
 		text: "text-xs leading-none",
-		color: "input-field",
 	},
 	shortcut: {
 		display: "flex items-center",
