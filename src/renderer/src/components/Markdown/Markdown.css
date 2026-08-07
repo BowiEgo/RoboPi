@@ -1,0 +1,50 @@
+/* ═══════════════════════════════════════════════════════════════
+   Markdown.css — Styles for rendered markdown content
+   
+   These styles target the HTML output of markdown-it + Shiki,
+   complementing the inline classes set by the custom renderer rules.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Shiki code block styling ── */
+.md-content .md-code-block .shiki {
+	tab-size: 2;
+}
+
+/* ── Shiki theme tweaks to blend with daisyUI ── */
+.md-content .md-code-block {
+	/* Ensure code block background works with daisyUI themes */
+	--shiki-bg: var(--color-base-200);
+}
+
+/* ── Inline links inside markdown ── */
+.md-content a {
+	transition: opacity 0.15s ease;
+}
+
+/* ── Nested list spacing ── */
+.md-content ul ul,
+.md-content ol ol,
+.md-content ul ol,
+.md-content ol ul {
+	margin-top: 0;
+	margin-bottom: 0;
+}
+
+/* ── Code block scrollbar (match app style) ── */
+.md-content .md-code-block pre::-webkit-scrollbar {
+	height: 4px;
+}
+
+.md-content .md-code-block pre::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.md-content .md-code-block pre::-webkit-scrollbar-thumb {
+	background: var(--color-base-300);
+	border-radius: 2px;
+}
+
+/* ── Streaming cursor compatibility ── */
+.md-content.streaming {
+	/* Allow inline cursor animation alongside rendered content */
+}
