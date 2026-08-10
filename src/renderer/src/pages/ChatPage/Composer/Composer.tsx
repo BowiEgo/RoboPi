@@ -59,13 +59,7 @@ const C = {
 		interaction: "rounded-lg mr-3 transition-none border-1",
 		color: "bg-app-raised text-base-content border-neutral-content/40 dark:text-white/70",
 	},
-	dropdownMenu: {
-		display: "dropdown-content menu flex flex-col flex-nowrap mb-2",
-		interaction: "bg-neutral text-neutral-content rounded-box shadow-xl border-1",
-		spacing: "z-1 p-2",
-		sizing: "max-h-48 overflow-y-auto",
-		color: "border-primary/20",
-	},
+
 	toolbar: {
 		display: "absolute flex items-center",
 		sizing: "w-full shrink-0 min-h-9",
@@ -96,6 +90,8 @@ const C = {
 	footer: { display: "flex items-center justify-between", sizing: "shrink-0", spacing: "px-4 py-2" },
 };
 
+let _ddCounter = 0;
+
 interface DropdownItem {
 	label: string;
 	active?: boolean;
@@ -106,22 +102,38 @@ interface DropdownMenuProps {
 	items: DropdownItem[];
 }
 
-const DropdownMenu: Component<DropdownMenuProps> = (props) => (
-	<div class="dropdown dropdown-top group">
-		<button tabIndex={0} class={cx(C.dropdownBtn)} type="button">
-			{props.label}
-		</button>
-		<ul tabIndex={-1} class={cx(C.dropdownMenu)} style={{ width: props.width ?? "18rem" }}>
-			<For each={props.items}>
-				{(item) => (
-					<li>
-						<a class={item.active ? "active" : ""}>{item.label}</a>
-					</li>
-				)}
-			</For>
-		</ul>
-	</div>
-);
+const DropdownMenu: Component<DropdownMenuProps> = (props) => {
+	// eslint-disable-next-line solidjs/reactivity
+	const anchorId = () => `dd-${++_ddCounter}`;
+	const id = anchorId();
+
+	return (
+		<>
+			<button
+				popovertarget={id}
+				style={{ 'anchor-name': `--${id}` }}
+				class={cx(C.dropdownBtn)}
+				type="button"
+			>
+				{props.label}
+			</button>
+			<ul
+				class={`dropdown dropdown-top menu flex flex-col flex-nowrap mb-2 bg-neutral text-neutral-content rounded-box shadow-xl border-1 z-1 p-2 max-h-48 overflow-y-auto border-primary/20`}
+				popover
+				id={id}
+				style={{ 'position-anchor': `--${id}`, width: props.width ?? '18rem' }}
+			>
+				<For each={props.items}>
+					{(item) => (
+						<li>
+							<a class={item.active ? 'active' : ''}>{item.label}</a>
+						</li>
+					)}
+				</For>
+			</ul>
+		</>
+	);
+};
 
 interface ToolbarProps {
 	cfg?: AgentConfig;
