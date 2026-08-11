@@ -240,7 +240,7 @@ const Markdown: Component<MarkdownProps> = (props) => {
 		return md.render(props.content);
 	});
 
-	return <div class="md-content flex flex-col gap-2" innerHTML={html()} />;
+	return <div class="md-content flex flex-col gap-2 select-text" innerHTML={html()} />;
 };
 
 export default Markdown;

@@ -1,4 +1,4 @@
-import { Bot, RefreshCw, User } from "lucide-solid";
+import { Bot, Copy, RefreshCw, User } from "lucide-solid";
 import { type Component, createSignal, For, Show } from "solid-js";
 
 import { useLocale } from "@/contexts/LocaleContext";
@@ -50,11 +50,11 @@ function fileIcon(type?: string): string {
 
 // ── Class constants ──
 
-const CHAT_BUBBLE_WRAPPER = "chat-bubble max-w-full [&::before]:hidden rounded-xl";
+const CHAT_BUBBLE_WRAPPER = "chat-bubble max-w-full [&::before]:hidden rounded-xl select-text";
 const CHAT_BUBBLE_PRIMARY = "chat-bubble-primary text-primary-content";
-const BUBBLE_OUTER_LAYOUT = "max-w-[75%]";
+const BUBBLE_OUTER_LAYOUT = "";
 const CONTENT_AREA = "text-base leading-relaxed";
-const USER_TEXT = "whitespace-pre-wrap m-0";
+const USER_TEXT = "whitespace-pre-wrap m-0 select-text";
 const STREAMING_CURSOR = "inline-block w-2 h-4 ml-0.5 rounded-[1px] animate-pulse align-text-bottom";
 // ── Sub-components ──
 
@@ -151,11 +151,24 @@ const ThinkingBlock: Component<ThinkingBlockProps> = (props) => (
 interface BubbleFooterProps {
 	timestamp?: string;
 	isUser: boolean;
+	onCopy?: () => void;
 }
 
 const BubbleFooter: Component<BubbleFooterProps> = (props) => (
 	<Show when={props.timestamp}>
-		<div class="chat-footer opacity-50">{props.isUser ? "Delivered" : ""}</div>
+		<div class="chat-footer opacity-50 flex items-center gap-2">
+			{props.isUser ? "Delivered" : ""}
+			<Show when={props.isUser && props.onCopy}>
+				<button
+					type="button"
+					class="btn btn-ghost btn-xs text-base-content"
+					onClick={props.onCopy}
+					aria-label="Copy message"
+				>
+					<Copy class="w-3 h-3" />
+				</button>
+			</Show>
+		</div>
 	</Show>
 );
 
@@ -173,7 +186,7 @@ const ChatBubble: Component<ChatBubbleProps> = (props) => {
 			<TimeHeader timestamp={props.timestamp} />
 
 			{/* Bubble + retry */}
-			<div class={`flex items-center gap-2 ${isUser() ? "col-start-1" : "col-start-2"}`}>
+			<div class={`flex items-center gap-2 ${isUser() ? "col-start-1 max-w-[45%]" : "col-start-2 max-w-[75%]"}`}>
 				<Show when={props.onRetry && isUser()}>
 					<button
 						type="button"
@@ -185,43 +198,47 @@ const ChatBubble: Component<ChatBubbleProps> = (props) => {
 					</button>
 				</Show>
 				<div class={`${BUBBLE_OUTER_LAYOUT}`}>
-				<div class={`${CHAT_BUBBLE_WRAPPER} ${isUser() ? CHAT_BUBBLE_PRIMARY : ""}`}>
-					<Show when={isUser()}>
-						<FileSection files={props.files} />
-					</Show>
-
-					<Show when={!isUser()}>
-						<ThinkingBlock
-							thinking={props.thinking}
-							open={thinkingOpen()}
-							onToggle={() => setThinkingOpen((v) => !v)}
-							label={t("chat.thinking")}
-						/>
-					</Show>
-
-					<div class={CONTENT_AREA}>
-						<Show
-							when={!isUser()}
-							fallback={
-								<p class={USER_TEXT}>
-									{props.content}
-									<Show when={props.streaming}>
-										<span class={STREAMING_CURSOR} />
-									</Show>
-								</p>
-							}
-						>
-							<Markdown content={props.content} streaming={props.streaming} />
-							<Show when={props.streaming}>
-								<span class={STREAMING_CURSOR} />
-							</Show>
+					<div class={`${CHAT_BUBBLE_WRAPPER} ${isUser() ? CHAT_BUBBLE_PRIMARY : ""}`}>
+						<Show when={isUser()}>
+							<FileSection files={props.files} />
 						</Show>
+
+						<Show when={!isUser()}>
+							<ThinkingBlock
+								thinking={props.thinking}
+								open={thinkingOpen()}
+								onToggle={() => setThinkingOpen((v) => !v)}
+								label={t("chat.thinking")}
+							/>
+						</Show>
+
+						<div class={CONTENT_AREA}>
+							<Show
+								when={!isUser()}
+								fallback={
+									<p class={USER_TEXT}>
+										{props.content}
+										<Show when={props.streaming}>
+											<span class={STREAMING_CURSOR} />
+										</Show>
+									</p>
+								}
+							>
+								<Markdown content={props.content} streaming={props.streaming} />
+								<Show when={props.streaming}>
+									<span class={STREAMING_CURSOR} />
+								</Show>
+							</Show>
+						</div>
 					</div>
-				</div>
 				</div>
 			</div>
 
-			<BubbleFooter timestamp={props.timestamp} isUser={isUser()} />
+			<BubbleFooter
+				timestamp={props.timestamp}
+				isUser={isUser()}
+				onCopy={isUser() ? () => navigator.clipboard.writeText(props.content) : undefined}
+			/>
 		</div>
 	);
 };
