@@ -119,6 +119,9 @@ const [resetKey, setResetKey] = createSignal("");
 const [loading, setLoading] = createSignal(false);
 const [agentConfig, setAgentConfig] = createSignal<AgentConfig>({});
 
+// Per-session message cache — preserves streaming content across session switches
+const sessionMsgCache = new Map<string, ChatBubbleProps[]>();
+
 let pendingMessage: string | null = null;
 let _storeReady = false;
 
@@ -176,7 +179,14 @@ if (agent && !_storeReady) {
 				};
 				setActiveId(p.sessionId);
 				setActiveName(p.name);
-				setMessages(p.messages ?? []);
+				// Prefer cached messages (may contain streaming progress not yet on disk).
+				// Keep cache entry alive — background streaming events may still write to it.
+				const cached = sessionMsgCache.get(p.sessionId);
+				if (cached && cached.length >= (p.messages?.length ?? 0)) {
+					setMessages(cached);
+				} else {
+					setMessages(p.messages ?? []);
+				}
 				setResetKey(p.sessionId + "-" + Date.now());
 				setLoading(false);
 				settle(msg.id, p);
@@ -251,6 +261,96 @@ if (agent && !_storeReady) {
 				fail(msg.id, new Error(message));
 				break;
 			}
+
+			// ── Streaming events ──
+
+			case AgentMessageType.ChatChunk: {
+				const { delta, kind, sessionId: sid } = msg.payload as {
+					delta?: string;
+					kind?: string;
+					sessionId?: string;
+				};
+				if (!delta || kind !== "content") return;
+				const applyChunk = (msgs: ChatBubbleProps[]) =>
+					msgs.map((m, i) =>
+						i === msgs.length - 1 && m.streaming
+							? { ...m, content: m.content + delta }
+							: m,
+					);
+				if (sid && sid !== activeId()) {
+					// Update cache for non-active session (generation continues in background)
+					const cached = sessionMsgCache.get(sid);
+					if (cached) sessionMsgCache.set(sid, applyChunk(cached));
+				} else {
+					setMessages(applyChunk);
+				}
+				break;
+			}
+
+			case AgentMessageType.ThinkingUpdate: {
+				const { text, sessionId: sid } = msg.payload as { text?: string; sessionId?: string };
+				if (!text) return;
+				const applyThink = (msgs: ChatBubbleProps[]) =>
+					msgs.map((m, i) =>
+						i === msgs.length - 1 && m.streaming
+							? { ...m, thinking: (m.thinking ?? "") + text }
+							: m,
+					);
+				if (sid && sid !== activeId()) {
+					const cached = sessionMsgCache.get(sid);
+					if (cached) sessionMsgCache.set(sid, applyThink(cached));
+				} else {
+					setMessages(applyThink);
+				}
+				break;
+			}
+
+			case AgentMessageType.ChatDone: {
+				const { content, thinking, sessionId: sid } = msg.payload as {
+					content?: string;
+					thinking?: string;
+					sessionId?: string;
+				};
+				const applyDone = (msgs: ChatBubbleProps[]) =>
+					msgs.map((m, i) =>
+						i === msgs.length - 1 && m.streaming
+							? {
+									...m,
+									content: content ?? m.content,
+									thinking: thinking ?? m.thinking,
+									streaming: false,
+								}
+							: m,
+					);
+				if (sid && sid !== activeId()) {
+					const cached = sessionMsgCache.get(sid);
+					if (cached) sessionMsgCache.set(sid, applyDone(cached));
+				} else {
+					setMessages(applyDone);
+				}
+				break;
+			}
+
+			case AgentMessageType.ChatError: {
+				const { message: errMsg, sessionId: sid } = msg.payload as { message?: string; sessionId?: string };
+				const applyError = (msgs: ChatBubbleProps[]) =>
+					msgs.map((m, i) =>
+						i === msgs.length - 1 && m.streaming
+							? {
+									...m,
+									content: m.content || `❌ Error: ${errMsg ?? "unknown"}`,
+									streaming: false,
+								}
+							: m,
+					);
+				if (sid && sid !== activeId()) {
+					const cached = sessionMsgCache.get(sid);
+					if (cached) sessionMsgCache.set(sid, applyError(cached));
+				} else {
+					setMessages(applyError);
+				}
+				break;
+			}
 		}
 	});
 
@@ -286,6 +386,24 @@ function createSession(name?: string) {
 async function handleSend(text: string): Promise<{ sessionId: string }> {
 	if (!agent) throw new Error("Agent not ready");
 
+	// Insert user bubble + agent placeholder into store messages
+	const now = new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+
+	setMessages((prev) => [
+		...prev,
+		{ id: "u-" + Date.now(), role: "user" as const, content: text, timestamp: now },
+		{
+			id: "a-" + (Date.now() + 1),
+			role: "agent" as const,
+			content: "",
+			thinking: "",
+			streaming: true,
+			timestamp: now,
+		},
+	]);
+
+	// Auto-scroll handled by ChatPanel reacting to messages signal
+
 	if (activeId()) {
 		agent.send({
 			id: "msg-" + Date.now(),
@@ -311,6 +429,10 @@ async function switchSession(
 	if (id === activeId()) {
 		return { sessionId: id, name: activeName(), messages: messages() };
 	}
+
+	// Save current session messages (preserve streaming progress)
+	const curId = activeId();
+	if (curId) sessionMsgCache.set(curId, messages());
 
 	setLoading(true);
 	const msgId = "switch-" + Date.now();

@@ -1,13 +1,10 @@
 import { Plus } from "lucide-solid";
 import {
 	type Component,
-	createEffect,
 	createMemo,
 	createSignal,
 	For,
 	type JSX,
-	onCleanup,
-	onMount,
 	Show,
 } from "solid-js";
 
@@ -32,134 +29,41 @@ interface ChatPanelProps {
 	onSend?: (text: string) => Promise<unknown> | undefined;
 }
 
-import { AgentMessageType, isValidMessageType } from "@shared/agent-types";
-
-import { getAgentIpc } from "@/agent/ipc";
-
-function now(): string {
-	return new Date().toLocaleTimeString("zh-CN", {
-		hour: "2-digit",
-		minute: "2-digit",
-	});
-}
-
-let nextId = 0;
-
 const ChatPanel: Component<ChatPanelProps> = (props) => {
-	const [messages, setMessages] = createSignal<ChatBubbleProps[]>([]);
 	let dialogRef: HTMLDivElement | undefined;
 
 	const agentConfig = () => props.agentConfig ?? {};
 
-	let prevKey: string | undefined;
-	createEffect(() => {
-		const key = props.resetKey;
-		if (key && key !== prevKey) {
-			prevKey = key;
-			if (props.initialMessages?.length) {
-				setMessages([...props.initialMessages]);
-			} else {
-				setMessages([]);
-			}
-		}
-	});
+	// Messages come directly from the store (via props.initialMessages).
+	// No local state — the store is the single source of truth.
+	const messages = () => props.initialMessages ?? [];
 
-	createEffect(() => {
-		const contentSnap = messages()
-			.map((m) => m.content)
-			.join("");
-		void contentSnap;
+	// Auto-scroll when messages change
+	let prevLen = 0;
+	const scrollToBottom = () => {
 		if (dialogRef) {
 			const el = dialogRef;
 			requestAnimationFrame(() => {
 				el.scrollTop = el.scrollHeight;
 			});
 		}
+	};
+
+	// Track message count for scroll trigger
+	const msgCount = createMemo(() => messages().length);
+	createMemo(() => {
+		const len = msgCount();
+		// Scroll when new messages arrive or content grows (streaming)
+		void messages()
+			.map((m) => m.content.length)
+			.join("");
+		if (len !== prevLen || len > 0) {
+			prevLen = len;
+			scrollToBottom();
+		}
 	});
 
-	onMount(() => {
-		const agent = getAgentIpc();
-		if (!agent) return;
-
-		const unsub = agent.onMessage((raw) => {
-			const msg = raw as {
-				type: string;
-				payload: {
-					sessionId?: string;
-					delta?: string;
-					kind?: string;
-					text?: string;
-					content?: string;
-					thinking?: string;
-					message?: string;
-				};
-			};
-
-			if (!msg?.type || !isValidMessageType(msg.type)) return;
-
-			switch (msg.type) {
-				case AgentMessageType.ThinkingUpdate: {
-					const { text } = msg.payload;
-					if (!text) return;
-					setMessages((prev) =>
-						prev.map((m) =>
-							m.streaming
-								? {
-										...m,
-										thinking: (m.thinking ?? "") + text,
-									}
-								: m,
-						),
-					);
-					break;
-				}
-
-				case AgentMessageType.ChatChunk: {
-					const { delta, kind } = msg.payload;
-					if (!delta || kind !== "content") return;
-					setMessages((prev) => prev.map((m) => (m.streaming ? { ...m, content: m.content + delta } : m)));
-					break;
-				}
-
-				case AgentMessageType.ChatDone: {
-					const { content, thinking } = msg.payload;
-					setMessages((prev) =>
-						prev.map((m) =>
-							m.streaming
-								? {
-										...m,
-										content: content ?? m.content,
-										thinking: thinking ?? m.thinking,
-										streaming: false,
-									}
-								: m,
-						),
-					);
-					break;
-				}
-
-				case AgentMessageType.ChatError: {
-					const { message: errMsg } = msg.payload;
-					setMessages((prev) =>
-						prev.map((m) =>
-							m.streaming
-								? {
-										...m,
-										content: m.content || `❌ Error: ${errMsg ?? "unknown"}`,
-										streaming: false,
-									}
-								: m,
-						),
-					);
-					break;
-				}
-			}
-		});
-
-		onCleanup(unsub);
-	});
-
-	// ── Test data (shows when session is empty) ──
+	// ── Test data ──
 	const TEST_MESSAGES: ChatBubbleProps[] = [
 		{
 			id: "test-1",
@@ -210,106 +114,31 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 	];
 
 	const [isTestMode, setIsTestMode] = createSignal(false);
-	let savedMessages: ChatBubbleProps[] = [];
 
 	function toggleTestMessages() {
-		if (isTestMode()) {
-			setIsTestMode(false);
-			setMessages([...savedMessages]);
-		} else {
-			savedMessages = [...messages()];
-			setIsTestMode(true);
-			setMessages([...TEST_MESSAGES]);
-		}
+		setIsTestMode((v) => !v);
 	}
 
-	const _hasStreaming = createMemo(() => messages().some((m) => m.role === "agent" && m.streaming));
+	const displayMessages = createMemo(() =>
+		isTestMode() ? TEST_MESSAGES : messages(),
+	);
+
+	const hasStreaming = createMemo(() =>
+		displayMessages().some((m) => m.role === "agent" && m.streaming),
+	);
 
 	function handleSend(text: string) {
 		if (!text.trim()) return;
-
-		const userId = String(++nextId);
-		setMessages((prev) => [
-			...prev,
-			{
-				id: userId,
-				role: "user" as const,
-				content: text.trim(),
-				timestamp: now(),
-			},
-		]);
-
-		const agentId = String(++nextId);
-		setMessages((prev) => [
-			...prev,
-			{
-				id: agentId,
-				role: "agent" as const,
-				content: "",
-				thinking: "",
-				streaming: true,
-				timestamp: now(),
-			},
-		]);
-
-		if (props.onSend) {
-			props.onSend(text.trim());
-		} else {
-			const agentIpc = getAgentIpc();
-			if (agentIpc) {
-				agentIpc.send({
-					id: agentId,
-					type: AgentMessageType.ChatSend,
-					payload: {
-						content: text.trim(),
-						sessionId: props.sessionId ?? "",
-					},
-				});
-			} else {
-				mockStreamReply(agentId);
-			}
-		}
+		// Delegate to the store — it inserts bubbles + sends IPC
+		props.onSend?.(text.trim());
 	}
 
-	function mockStreamReply(agentId: string) {
-		const thinking =
-			"analyzing user input...\n" + "matching response template: markdown demo\n" + "generating reply...";
-
-		const fullContent =
-			"Got your message! Here is a **Markdown** reply example:\n\n" +
-			"## Features\n\n" +
-			"- ✅ Supports **bold** and *italic*\n" +
-			"- ✅ Code highlight `inline code`\n" +
-			"- ✅ Code blocks\n\n" +
-			"```typescript\n" +
-			"const greet = (name: string): string => {\n" +
-			"  return `Hello, ${name}!`;\n" +
-			"};\n" +
-			"```\n\n" +
-			"> This is a blockquote for tips.\n\n" +
-			"How can I help you?";
-
-		setTimeout(() => {
-			setMessages((prev) => prev.map((m) => (m.id === agentId ? { ...m, thinking } : m)));
-
-			let charIdx = 0;
-			const total = fullContent.length;
-
-			const timer = setInterval(() => {
-				charIdx += 8;
-				const done = charIdx >= total;
-				const chunk = fullContent.slice(0, charIdx);
-
-				setMessages((prev) => prev.map((m) => (m.id === agentId ? { ...m, content: chunk, streaming: !done } : m)));
-
-				if (done) clearInterval(timer);
-			}, 16);
-		}, 800);
-	}
+	// Prevent sending while agent is streaming
+	void hasStreaming();
 
 	return (
 		<div class="relative flex flex-col items-center h-full overflow-hidden">
-			<header class="absolute flex shrink-0 items-center justify-between w-full gap-4 px-4 py-3  font-medium text-base font-display bg-transparent! text-base-content z-1">
+			<header class="absolute flex shrink-0 items-center justify-between w-full gap-4 px-4 py-3 font-medium text-base font-display bg-transparent! text-base-content z-1">
 				{props.header}
 				{props.tags && props.tags.length > 0 && (
 					<div class="flex items-center gap-2 ml-auto">
@@ -325,7 +154,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 										{tag.label}
 									</button>
 								) : (
-									<span class="inline-flex items-center px-2.5 py-0.75 border border-base-300 rounded base-200 text-base-content/70 font-mono text-[11px] leading-snug whitespace-nowrap">
+									<span class="inline-flex items-center px-2.5 py-0.75 border border-base-300 rounded bg-base-200 text-base-content/70 font-mono text-[11px] leading-snug whitespace-nowrap">
 										{tag.label}
 									</span>
 								)
@@ -346,15 +175,15 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 				class="flex-1 w-full flex flex-col gap-1 overflow-y-auto px-4 pt-12 pb-[20%] text-base-content scroll-smooth z-0"
 				ref={dialogRef}
 			>
-				<Show when={messages().length === 0} fallback={null}>
+				<Show when={displayMessages().length === 0} fallback={null}>
 					{props.children ?? (
 						<div class="flex items-center justify-center flex-1 text-base-content/30 text-sm">
 							Send a message to start
 						</div>
 					)}
 				</Show>
-				<For each={messages()}>
-					{(msg, _index) => (
+				<For each={displayMessages()}>
+					{(msg) => (
 						<ChatBubble
 							id={msg.id}
 							role={msg.role}
@@ -374,14 +203,18 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
  -webkit-mask-image: linear-gradient(to bottom, black 30%, transparent 100%);"
 				/>
 				<div
-					class="pointer-events-none absolute bottom-0 left-0 right-0 h-1/3 backdrop-blur-md
+					class="pointer-events-none absolute bottom-0 left-0 right-0 h-1/3 backdrop-blur-lg
  bg-linear-to-b from-transparent to-base-100"
 					style="mask-image: linear-gradient(to top, black 30%, transparent 100%);
  -webkit-mask-image: linear-gradient(to top, black 30%, transparent 100%);"
 				/>
 			</main>
 
-			<Composer onSend={handleSend} agentConfig={agentConfig()} rainbow={true} />
+			<Composer
+				onSend={handleSend}
+				agentConfig={agentConfig()}
+				rainbow={true}
+			/>
 		</div>
 	);
 };

@@ -65,6 +65,14 @@ export class SessionHost {
 	private generatingTitle = false;
 	private leafBeforeTitleGen: string | null = null;
 
+	// Background sessions — kept alive across switches so generation continues
+	private backgroundSessions = new Map<string, {
+		session: AgentSession;
+		manager: ReturnType<typeof SessionManager.open>;
+		name: string;
+		unsubscribe: () => void;
+	}>();
+
 	constructor(opts: SessionHostOptions) {
 		this.modelRuntime = opts.modelRuntime;
 		this.agentModelRef = opts.agentModelRef;
@@ -86,7 +94,7 @@ export class SessionHost {
 				this.currentSessionId = sm.getSessionId();
 				this.currentSessionName = mostRecent.name ?? "Untitled";
 				this.session = await this.createAgentSessionFor(sm);
-				this.subscribeToSession(this.session);
+				this.subscribeToSession(this.session, this.currentSessionId ?? "");
 				console.log(
 					`[AgentHost] Restored session: ${this.currentSessionId} (${this.currentSessionName})`,
 				);
@@ -96,7 +104,7 @@ export class SessionHost {
 				this.currentSessionId = sm.getSessionId();
 				this.currentSessionName = "Untitled";
 				this.session = await this.createAgentSessionFor(sm);
-				this.subscribeToSession(this.session);
+				this.subscribeToSession(this.session, this.currentSessionId ?? "");
 				console.log(
 					`[AgentHost] Created default session: ${this.currentSessionId}`,
 				);
@@ -109,7 +117,7 @@ export class SessionHost {
 				this.currentSessionId = sm.getSessionId();
 				this.currentSessionName = "Untitled";
 				this.session = await this.createAgentSessionFor(sm);
-				this.subscribeToSession(this.session);
+				this.subscribeToSession(this.session, this.currentSessionId ?? "");
 			}
 		}
 
@@ -150,7 +158,7 @@ export class SessionHost {
 			this.currentSessionId = sm.getSessionId();
 			this.currentSessionName = name;
 			this.needsTitleGen = true;
-			this.subscribeToSession(this.session);
+			this.subscribeToSession(this.session, this.currentSessionId ?? "");
 
 			postMessageToHost({
 				id: msgId,
@@ -199,7 +207,10 @@ export class SessionHost {
 		payload: { sessionId: string },
 	): Promise<void> {
 		try {
-			if (this.currentSessionId === payload.sessionId && this.session) {
+			const targetId = payload.sessionId;
+
+			// Same session — just return current messages
+			if (this.currentSessionId === targetId && this.session) {
 				const messages = this.currentSessionManager
 					? loadMessagesFromSession(this.currentSessionManager)
 					: [];
@@ -215,22 +226,65 @@ export class SessionHost {
 				return;
 			}
 
+			// ── Move current session to background (keep generation alive) ──
+			if (this.currentSessionId && this.session && this.unsubscribe) {
+				this.backgroundSessions.set(this.currentSessionId, {
+					session: this.session,
+					manager: this.currentSessionManager!,
+					name: this.currentSessionName ?? "Untitled",
+					unsubscribe: this.unsubscribe,
+				});
+				console.log(
+					`[AgentHost] Moved to background: ${this.currentSessionId}`,
+				);
+				// Detach from foreground without disposing
+				this.session = null;
+				this.currentSessionManager = null;
+				this.currentSessionId = null;
+				this.unsubscribe = null;
+			}
+
+			// ── Check if target is already running in background ──
+			const bg = this.backgroundSessions.get(targetId);
+			if (bg) {
+				this.session = bg.session;
+				this.currentSessionManager = bg.manager;
+				this.currentSessionId = targetId;
+				this.currentSessionName = bg.name;
+				this.unsubscribe = bg.unsubscribe;
+				this.backgroundSessions.delete(targetId);
+
+				const messages = loadMessagesFromSession(bg.manager);
+				postMessageToHost({
+					id: msgId,
+					type: AgentMessageType.SessionSwitched,
+					payload: {
+						sessionId: targetId,
+						name: bg.name,
+						messages,
+					},
+				});
+				console.log(
+					`[AgentHost] Brought to foreground: ${targetId} (${bg.name})`,
+				);
+				return;
+			}
+
+			// ── Load from disk ──
 			const dir = await this.getSessionsDir();
 			const all = await SessionManager.listAll(dir);
-			const target = all.find((s) => s.id === payload.sessionId);
+			const target = all.find((s) => s.id === targetId);
 			if (!target) {
 				postMessageToHost({
 					id: msgId,
 					type: AgentMessageType.SessionError,
 					payload: {
 						code: "NOT_FOUND",
-						message: `Session ${payload.sessionId} not found`,
+						message: `Session ${targetId} not found`,
 					},
 				});
 				return;
 			}
-
-			await this.closeCurrentSession();
 
 			const sm = SessionManager.open(target.path);
 			const sessionEntry = sm
@@ -243,7 +297,7 @@ export class SessionHost {
 			this.currentSessionId = sm.getSessionId();
 			this.currentSessionName = sessionEntry?.name ?? "Untitled";
 			this.session = await this.createAgentSessionFor(sm);
-			this.subscribeToSession(this.session);
+			this.subscribeToSession(this.session, this.currentSessionId);
 
 			const messages = loadMessagesFromSession(sm);
 			postMessageToHost({
@@ -539,7 +593,7 @@ export class SessionHost {
 			this.currentSessionId = sm.getSessionId();
 			this.currentSessionName = "Untitled";
 			this.session = await this.createAgentSessionFor(sm);
-			this.subscribeToSession(this.session);
+			this.subscribeToSession(this.session, this.currentSessionId ?? "");
 		} catch (err) {
 			console.error(
 				"[AgentHost] Failed to create default session, falling back to in-memory:",
@@ -550,13 +604,14 @@ export class SessionHost {
 			this.currentSessionId = sm.getSessionId();
 			this.currentSessionName = "Untitled";
 			this.session = await this.createAgentSessionFor(sm);
-			this.subscribeToSession(this.session);
+			this.subscribeToSession(this.session, this.currentSessionId ?? "");
 		}
 	}
 
 	private async closeCurrentSession(): Promise<void> {
 		this.unsubscribe?.();
 		this.unsubscribe = null;
+		const sid = this.currentSessionId;
 		if (this.session) {
 			try {
 				this.session.dispose();
@@ -568,15 +623,17 @@ export class SessionHost {
 		this.currentSessionManager = null;
 		this.currentSessionId = null;
 		this.currentSessionName = null;
+		// Also remove from background if present (belt-and-suspenders)
+		if (sid) this.backgroundSessions.delete(sid);
 	}
 
 	// ---- Event subscription ----
 
-	private subscribeToSession(s: AgentSession): void {
+	private subscribeToSession(s: AgentSession, sid: string): void {
 		this.unsubscribe = s.subscribe((event) => {
 			switch (event.type) {
 				case "message_update":
-					this.handleMessageUpdate(event);
+					this.handleMessageUpdate(event, sid);
 					break;
 				case "tool_execution_start":
 					this.handleToolExecutionStart(event);
@@ -585,7 +642,7 @@ export class SessionHost {
 					this.handleToolExecutionEnd(event);
 					break;
 				case "agent_end":
-					this.handleAgentEnd(event);
+					this.handleAgentEnd(event, sid);
 					break;
 			}
 		});
@@ -593,15 +650,16 @@ export class SessionHost {
 
 	private handleMessageUpdate(
 		event: Extract<AgentSessionEvent, { type: "message_update" }>,
+		sessionId: string,
 	): void {
-		if (this.generatingTitle) return; // suppress streaming during title generation
+		if (this.generatingTitle) return;
 		const { assistantMessageEvent } = event;
 		if (assistantMessageEvent.type === "text_delta") {
 			postMessageToHost({
 				id: uid(),
 				type: AgentMessageType.ChatChunk,
 				payload: {
-					sessionId: this.currentSessionId ?? "",
+					sessionId,
 					delta: assistantMessageEvent.delta,
 					kind: "content",
 				},
@@ -612,7 +670,7 @@ export class SessionHost {
 				id: uid(),
 				type: AgentMessageType.ThinkingUpdate,
 				payload: {
-					sessionId: this.currentSessionId ?? "",
+					sessionId,
 					text: assistantMessageEvent.delta,
 				},
 			});
@@ -633,6 +691,7 @@ export class SessionHost {
 
 	private handleAgentEnd(
 		event: Extract<AgentSessionEvent, { type: "agent_end" }>,
+		sessionId: string,
 	): void {
 		const newMessages = event.messages;
 		const lastAssistant = [...newMessages]
@@ -658,7 +717,7 @@ export class SessionHost {
 			id: uid(),
 			type: AgentMessageType.ChatDone,
 			payload: {
-				sessionId: this.currentSessionId ?? "",
+				sessionId,
 				content,
 				thinking: thinking || undefined,
 				usage: lastAssistant?.usage
@@ -669,6 +728,15 @@ export class SessionHost {
 					: undefined,
 			},
 		});
+
+		// If this is a background session that finished, clean it up
+		if (this.backgroundSessions.has(sessionId)) {
+			const bg = this.backgroundSessions.get(sessionId)!;
+			bg.unsubscribe();
+			try { bg.session.dispose(); } catch { /* ignore */ }
+			this.backgroundSessions.delete(sessionId);
+			return;
+		}
 
 		// Auto-generate title for the first reply of a new session
 		if (this.needsTitleGen && this.session) {
