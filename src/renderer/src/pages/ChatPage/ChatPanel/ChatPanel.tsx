@@ -1,12 +1,5 @@
 import { Plus } from "lucide-solid";
-import {
-	type Component,
-	createMemo,
-	createSignal,
-	For,
-	type JSX,
-	Show,
-} from "solid-js";
+import { type Component, createEffect, createMemo, createSignal, For, type JSX, Show } from "solid-js";
 
 import Composer, { type AgentConfig } from "../Composer/Composer";
 import ChatBubble, { type ChatBubbleProps } from "./ChatBubble";
@@ -30,7 +23,7 @@ interface ChatPanelProps {
 }
 
 const ChatPanel: Component<ChatPanelProps> = (props) => {
-	let dialogRef: HTMLDivElement | undefined;
+	let bottomRef: HTMLDivElement | undefined;
 
 	const agentConfig = () => props.agentConfig ?? {};
 
@@ -38,28 +31,33 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 	// No local state — the store is the single source of truth.
 	const messages = () => props.initialMessages ?? [];
 
-	// Auto-scroll when messages change
-	let prevLen = 0;
-	const scrollToBottom = () => {
-		if (dialogRef) {
-			const el = dialogRef;
-			requestAnimationFrame(() => {
-				el.scrollTop = el.scrollHeight;
+	// ── Scroll: instant to last user message on switch, smooth to bottom on streaming ──
+
+	let lastMsgId = "";
+	createEffect(() => {
+		const msgs = messages();
+		if (msgs.length === 0) return;
+		const latestId = msgs[msgs.length - 1].id ?? "";
+		if (latestId !== lastMsgId) {
+			lastMsgId = latestId;
+			// Session switch or new message → jump to last user message
+			queueMicrotask(() => {
+				const userBubbles = document.querySelectorAll('[data-role="user"]');
+				const lastUser = userBubbles[userBubbles.length - 1];
+				lastUser?.scrollIntoView({ block: "start" });
 			});
 		}
-	};
+	});
 
-	// Track message count for scroll trigger
-	const msgCount = createMemo(() => messages().length);
-	createMemo(() => {
-		const len = msgCount();
-		// Scroll when new messages arrive or content grows (streaming)
-		void messages()
-			.map((m) => m.content.length)
-			.join("");
-		if (len !== prevLen || len > 0) {
-			prevLen = len;
-			scrollToBottom();
+	// Smooth scroll to bottom while streaming
+	let lastContentLen = 0;
+	createEffect(() => {
+		const msgs = messages();
+		if (msgs.length === 0) return;
+		const len = msgs[msgs.length - 1].content.length;
+		if (len !== lastContentLen && msgs[msgs.length - 1].streaming) {
+			lastContentLen = len;
+			bottomRef?.scrollIntoView({ block: "end", behavior: "smooth" });
 		}
 	});
 
@@ -119,13 +117,9 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 		setIsTestMode((v) => !v);
 	}
 
-	const displayMessages = createMemo(() =>
-		isTestMode() ? TEST_MESSAGES : messages(),
-	);
+	const displayMessages = createMemo(() => (isTestMode() ? TEST_MESSAGES : messages()));
 
-	const hasStreaming = createMemo(() =>
-		displayMessages().some((m) => m.role === "agent" && m.streaming),
-	);
+	const hasStreaming = createMemo(() => displayMessages().some((m) => m.role === "agent" && m.streaming));
 
 	function handleSend(text: string) {
 		if (!text.trim()) return;
@@ -172,8 +166,8 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 			</header>
 
 			<main
-				class="flex-1 w-full flex flex-col gap-1 overflow-y-auto px-4 pt-12 pb-[20%] text-base-content scroll-smooth z-0"
-				ref={dialogRef}
+				class="flex-1 w-full flex flex-col gap-1 overflow-y-auto px-4 pt-12 pb-[20%] text-base-content z-0"
+				style="scroll-behavior: auto; scroll-padding-top: 64px"
 			>
 				<Show when={displayMessages().length === 0} fallback={null}>
 					{props.children ?? (
@@ -183,7 +177,8 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 					)}
 				</Show>
 				<For each={displayMessages()}>
-					{(msg) => (
+				{(msg) => (
+					<div data-role={msg.role}>
 						<ChatBubble
 							id={msg.id}
 							role={msg.role}
@@ -194,8 +189,10 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 							avatar={msg.avatar}
 							streaming={msg.streaming}
 						/>
+					</div>
 					)}
 				</For>
+
 				<div
 					class="pointer-events-none absolute top-0 left-0 right-0 h-1/12 backdrop-blur-md
  bg-linear-to-b from-base-100 to-transparent"
@@ -208,13 +205,16 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 					style="mask-image: linear-gradient(to top, black 30%, transparent 100%);
  -webkit-mask-image: linear-gradient(to top, black 30%, transparent 100%);"
 				/>
+
+				{/* Sentinel — scrollIntoView target */}
+				<div
+					ref={(el) => {
+						bottomRef = el;
+					}}
+				/>
 			</main>
 
-			<Composer
-				onSend={handleSend}
-				agentConfig={agentConfig()}
-				rainbow={true}
-			/>
+			<Composer onSend={handleSend} agentConfig={agentConfig()} rainbow={true} />
 		</div>
 	);
 };
