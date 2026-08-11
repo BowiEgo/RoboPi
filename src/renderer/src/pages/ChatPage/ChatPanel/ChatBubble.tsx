@@ -1,4 +1,4 @@
-import { Bot, User } from "lucide-solid";
+import { Bot, RefreshCw, User } from "lucide-solid";
 import { type Component, createSignal, For, Show } from "solid-js";
 
 import { useLocale } from "@/contexts/LocaleContext";
@@ -23,6 +23,8 @@ export interface ChatBubbleProps {
 	timestamp?: string;
 	avatar?: string;
 	streaming?: boolean;
+	/** When set, shows a retry button on user bubbles */
+	onRetry?: () => void;
 }
 
 // ── Helpers ──
@@ -170,8 +172,19 @@ const ChatBubble: Component<ChatBubbleProps> = (props) => {
 			<AvatarSlot avatar={props.avatar} isUser={isUser()} />
 			<TimeHeader timestamp={props.timestamp} />
 
-			{/* Bubble */}
-			<div class={`${BUBBLE_OUTER_LAYOUT} ${isUser() ? "col-start-1" : "col-start-2"} ${!isUser()}`}>
+			{/* Bubble + retry */}
+			<div class={`flex items-center gap-2 ${isUser() ? "col-start-1" : "col-start-2"}`}>
+				<Show when={props.onRetry && isUser()}>
+					<button
+						type="button"
+						class="btn btn-circle btn-sm text-warning-content bg-warning hover:brightness-90 shrink-0"
+						onClick={props.onRetry}
+						aria-label="Retry"
+					>
+						<RefreshCw class="w-3.5 h-3.5" />
+					</button>
+				</Show>
+				<div class={`${BUBBLE_OUTER_LAYOUT}`}>
 				<div class={`${CHAT_BUBBLE_WRAPPER} ${isUser() ? CHAT_BUBBLE_PRIMARY : ""}`}>
 					<Show when={isUser()}>
 						<FileSection files={props.files} />
@@ -204,6 +217,7 @@ const ChatBubble: Component<ChatBubbleProps> = (props) => {
 							</Show>
 						</Show>
 					</div>
+				</div>
 				</div>
 			</div>
 

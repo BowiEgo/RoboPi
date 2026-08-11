@@ -121,6 +121,27 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 
 	const hasStreaming = createMemo(() => displayMessages().some((m) => m.role === "agent" && m.streaming));
 
+	// Retryable user messages: last user msg whose agent response failed or is missing
+	const retryableIds = createMemo(() => {
+		const msgs = displayMessages();
+		if (hasStreaming()) return new Set<string>();
+		const ids = new Set<string>();
+		for (let i = 0; i < msgs.length; i++) {
+			if (msgs[i].role !== "user") continue;
+			const next = msgs[i + 1];
+			// No agent reply, or agent reply is empty/error and not streaming
+			if (!next || next.role !== "agent") {
+				ids.add(msgs[i].id ?? "");
+			} else if (
+				!next.streaming &&
+				(!next.content || next.content.startsWith("❌ Error:"))
+			) {
+				ids.add(msgs[i].id ?? "");
+			}
+		}
+		return ids;
+	});
+
 	function handleSend(text: string) {
 		if (!text.trim()) return;
 		// Delegate to the store — it inserts bubbles + sends IPC
@@ -188,6 +209,11 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 							timestamp={msg.timestamp}
 							avatar={msg.avatar}
 							streaming={msg.streaming}
+							onRetry={
+								msg.role === "user" && retryableIds().has(msg.id ?? "")
+									? () => handleSend(msg.content)
+									: undefined
+							}
 						/>
 					</div>
 					)}
