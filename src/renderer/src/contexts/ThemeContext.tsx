@@ -65,25 +65,23 @@ function getInitialTheme(): string {
 
 export const ThemeProvider: Component<{ children: JSX.Element }> = (props) => {
 	const [theme, setThemeSignal] = createSignal(getInitialTheme());
-
-	const setTheme = (id: string) => {
-		setThemeSignal(id);
-		document.documentElement.setAttribute("data-theme", id);
-		localStorage.setItem(STORAGE_KEY, id);
-	};
-
-	// Dark theme list — robo's own dark variant + daisyUI built-in dark themes
 	const DARK_THEMES = [
 		"robo-dark",
 		"dark", "night", "dracula", "synthwave", "cyberpunk", "halloween",
 		"forest", "black", "luxury", "coffee", "dim", "sunset", "abyss", "business",
 	];
+	const [isDark, setIsDark] = createSignal(
+		DARK_THEMES.includes(getInitialTheme()),
+	);
 
-	// Check if the current theme is considered dark
-	const isDark = () => {
-		const t = document.documentElement.getAttribute("data-theme") || "";
-		return DARK_THEMES.includes(t);
+	const setTheme = (id: string) => {
+		setThemeSignal(id);
+		setIsDark(DARK_THEMES.includes(id));
+		document.documentElement.setAttribute("data-theme", id);
+		localStorage.setItem(STORAGE_KEY, id);
 	};
+
+	// Dark theme list — robo's own dark variant + daisyUI built-in dark themes
 
 	const toggleDark = () => {
 		setTheme(isDark() ? "robo" : "robo-dark");

@@ -5,6 +5,7 @@ interface NavMenuListProps {
 	items: NavItem[];
 	activeNav: string;
 	expanded: boolean;
+	isDark?: boolean;
 	onSelect: (item: NavItem) => void;
 }
 
@@ -23,11 +24,29 @@ export default function NavMenuList(props: NavMenuListProps) {
 		<ul class={`${menu()} ${props.expanded ? "" : "items-center"}`}>
 			{props.items.map((navItem) => {
 				const active = props.activeNav === navItem.id;
+
 				return (
 					<li
 						class={`${item} ${active ? "bg-primary text-primary-content" : "hover:bg-primary/20 active:bg-primary/30 focus-visible:bg-primary/20 text-base-content/70"}`}
 					>
-						{props.expanded ? (
+						{navItem.isSwitch ? (
+							// daisyUI swap for theme toggle
+							// <div
+							// 	class={
+							// 		props.expanded
+							// 			? "flex items-center gap-3 px-3 py-2 w-full"
+							// 			: "tooltip tooltip-right flex items-center justify-center w-10 h-10"
+							// 	}
+							// 	data-tip={props.expanded ? undefined : navItem.label}
+							// >
+							<label class="swap swap-rotate">
+								<input type="checkbox" checked={props.isDark} onChange={() => props.onSelect(navItem)} />
+								<span class="swap-off transition-transform duration-300">{navItem.icon}</span>
+								<span class="swap-on transition-transform duration-300">{navItem.altIcon ?? navItem.icon}</span>
+							</label>
+							// {props.expanded && <span class={label}>{navItem.label}</span>}
+							// </div>
+						) : props.expanded ? (
 							<button
 								type="button"
 								class={`${btn} ${btnExpanded} bg-transparent active:bg-transparent focus-visible:bg-transparent`}

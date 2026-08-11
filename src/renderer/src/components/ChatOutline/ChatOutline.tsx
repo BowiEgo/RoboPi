@@ -17,26 +17,27 @@ interface ChatOutlineProps {
 
 // ── Class constants ──
 
-const wrapper = define({ base: "absolute w-12.5 h-60 right-4 top-1/2 -translate-y-1/2 z-10" });
+const wrapper = define({ base: "absolute w-12.5 h-fit right-4 top-1/2 -translate-y-1/2 z-10" });
 
-const scrollArea = "absolute right-0 w-60 h-60 overflow-hidden rounded-lg";
-const scrollAreaCollapsed = "border-transparent pointer-events-none";
-const scrollAreaExpanded = "bg-base-100 border border-base-300/60 shadow-lg blur-mask-t-[32px] blur-mask-b-[32px]";
+const scrollArea =
+	"w-60 max-h-60 -translate-x-[calc(100%-3.125rem)] rounded-lg overflow-hidden transition-all duration-200 blur-mask-t-[32px] blur-mask-b-[32px]";
+const scrollAreaCollapsed = "border border-transparent pointer-events-none [--blur-mask-opacity:0]";
+const scrollAreaExpanded = "bg-base-100 border border-base-300/60 shadow-lg";
 
-const list = "absolute right-0 min-w-0.25 max-w-full h-full pr-2 overflow-x-hidden scroll-list";
+const list = "min-w-0.25 max-w-full max-h-60 pr-2 overflow-y-auto overflow-x-hidden scroll-list";
 
 const listItems = "relative flex flex-col z-0 py-4";
 
 const row =
-	"flex items-center pl-4 py-1.5 w-full justify-between text-sm cursor-pointer text-base-content/60 hover:text-base-content";
+	"flex items-center pl-4 py-1.5 w-full justify-between text-sm cursor-pointer text-base-content/60 hover:text-base-content transition-colors duration-200";
 
-const titleBase = "leading-tight truncate transition-opacity duration-200";
+const titleBase = "truncate transition-all duration-200";
 const titleCollapsed = "opacity-0";
-const titleActive = "font-medium";
+const titleActive = "font-bold text-primary";
 const titleInactive = "";
 
-const dashBase = "w-3 h-0.75 rounded-full shrink-0 bg-base-content/40";
-const dashActive = "bg-primary";
+const dashBase = "w-2.5 h-0.75 rounded-full shrink-0 bg-base-content/40 transition-all duration-200";
+const dashActive = "bg-primary scale-x-120";
 
 // ── Component ──
 
@@ -105,7 +106,6 @@ const ChatOutline: Component<ChatOutlineProps> = (props) => {
 
 		// Fallback: at the bottom → last user message is active
 		const atBottom = main.scrollTop + main.clientHeight >= main.scrollHeight - 48;
-		console.log(atBottom);
 		if (atBottom) {
 			const items = marks();
 			if (items.length > 0) setActiveId(items[items.length - 1].msgId);

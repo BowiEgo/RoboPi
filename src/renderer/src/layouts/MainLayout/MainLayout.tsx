@@ -11,6 +11,7 @@ import { define } from "@/utils/cx";
 export interface NavItem {
 	id: string;
 	icon: JSX.Element;
+	altIcon?: JSX.Element;
 	label: string;
 	isSwitch?: boolean;
 }
@@ -19,6 +20,7 @@ interface MainLayoutProps {
 	topNavItems: NavItem[];
 	bottomNavItems: NavItem[];
 	activeNav: string;
+	isDark?: boolean;
 	onNavSelect: (item: NavItem) => void;
 	navTop?: JSX.Element;
 	children: JSX.Element;
@@ -50,6 +52,7 @@ const MainLayout: Component<MainLayoutProps> = (props) => {
 						items={props.topNavItems}
 						activeNav={props.activeNav}
 						expanded={expanded()}
+						isDark={props.isDark}
 						onSelect={props.onNavSelect}
 					/>
 					{props.bottomNavItems.length > 0 && (

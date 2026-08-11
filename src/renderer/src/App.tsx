@@ -6,7 +6,7 @@ import {
 	Settings,
 	Sun,
 } from "lucide-solid";
-import { type Component, createMemo, createSignal } from "solid-js";
+import { type Component, createSignal } from "solid-js";
 
 import { LocaleProvider, useLocale } from "@/contexts/LocaleContext";
 import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
@@ -31,7 +31,7 @@ const AppContent: Component = () => {
 		},
 	];
 
-	const bottomNav = createMemo<NavItem[]>(() => [
+	const bottomNav: NavItem[] = [
 		{
 			id: "settings",
 			icon: <Settings />,
@@ -39,11 +39,12 @@ const AppContent: Component = () => {
 		},
 		{
 			id: "themeMode",
-			icon: isDark() ? <Sun /> : <Moon />,
-			label: isDark() ? t("theme.switchToLight") : t("theme.switchToDark"),
+			icon: <Sun class="w-5 h-5" />,
+			altIcon: <Moon class="w-5 h-5" />,
+			label: t("theme.switchToLight"),
 			isSwitch: true,
 		},
-	]);
+	];
 
 	const onNavSelect = (item: NavItem) => {
 		if (item.isSwitch) {
@@ -57,7 +58,8 @@ const AppContent: Component = () => {
 		<div class="app">
 			<MainLayout
 				topNavItems={topNav}
-				bottomNavItems={bottomNav()}
+				bottomNavItems={bottomNav}
+			isDark={isDark()}
 				activeNav={activeNav()}
 				onNavSelect={onNavSelect}
 				navTop={<BotMessageSquare class="w-10 h-10 text-primary" />}

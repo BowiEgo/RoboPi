@@ -57,7 +57,23 @@ getHighlighter();
 function resolveTheme(): string {
 	if (typeof document === "undefined") return "github-light";
 	const t = document.documentElement.dataset.theme || "";
-	const darkThemes = ["robo-dark", "dark", "night", "dracula", "synthwave", "cyberpunk", "halloween", "forest", "black", "luxury", "coffee", "dim", "sunset", "abyss", "business"];
+	const darkThemes = [
+		"robo-dark",
+		"dark",
+		"night",
+		"dracula",
+		"synthwave",
+		"cyberpunk",
+		"halloween",
+		"forest",
+		"black",
+		"luxury",
+		"coffee",
+		"dim",
+		"sunset",
+		"abyss",
+		"business",
+	];
 	return darkThemes.includes(t) ? "dark-plus" : "github-light";
 }
 
@@ -139,7 +155,7 @@ md.renderer.rules.hr = () => '<hr class="border-none border-t border-base-300 my
 // Override inline code
 md.renderer.rules.code_inline = (tokens, idx) => {
 	const content = md.utils.escapeHtml(tokens[idx].content);
-	return `<code class="bg-base-300 text-primary rounded px-1 py-0.5 font-mono text-[0.9em]">${content}</code>`;
+	return `<code class="bg-primary/70 text-primary-content rounded px-1 py-0.5 font-mono text-[0.9em]">${content}</code>`;
 };
 
 // Override fence (code block) — sync fallback, Shiki handles when loaded

@@ -1,5 +1,12 @@
 @import 'tailwindcss';
 
+/* Register --blur-mask-opacity so it can be transitioned */
+@property --blur-mask-opacity {
+	syntax: '<number>';
+	inherits: true;
+	initial-value: 1;
+}
+
 /* ── Themed Scrollbar ── */
 @layer base {
 	* {
@@ -140,19 +147,18 @@
 		right: 0;
 		top: 10%;
 		height: 80%;
-		width: 1px;
+		width: 2px;
 		background: linear-gradient(to bottom, transparent, currentColor 30%, currentColor 70%, transparent);
 	}
 }
 
 /* ── Blur mask utilities ──
    blur-mask-t = top, blur-mask-b = bottom, blur-mask-l = left, blur-mask-r = right.
-   Default 12%. The * variant is self-contained — blur-mask-t-[30%] or blur-mask-t-[48px]
-   works standalone, no need to add the base class. */
+   Default 12%. Use [value] for custom: blur-mask-t-[30%] or blur-mask-t-[48px].
+   The * variant is self-contained. Mask visibility via --blur-mask-opacity (registered @property). */
 
 @utility blur-mask-t {
 	position: relative;
-
 	&::before {
 		content: '';
 		position: absolute;
@@ -160,17 +166,18 @@
 		left: 0;
 		right: 0;
 		height: 12%;
+		opacity: var(--blur-mask-opacity);
 		background: linear-gradient(to bottom, var(--color-base-100), transparent);
 		mask-image: linear-gradient(to bottom, black 30%, transparent 100%);
 		-webkit-mask-image: linear-gradient(to bottom, black 30%, transparent 100%);
 		pointer-events: none;
 		z-index: 2;
+		transition: opacity 0.2s;
 	}
 }
 
 @utility blur-mask-t-* {
 	position: relative;
-
 	&::before {
 		content: '';
 		position: absolute;
@@ -178,17 +185,18 @@
 		left: 0;
 		right: 0;
 		height: --value([*]);
+		opacity: var(--blur-mask-opacity);
 		background: linear-gradient(to bottom, var(--color-base-100), transparent);
-		mask-image: linear-gradient(to bottom, black 20.19%, transparent 100%);
-		-webkit-mask-image: linear-gradient(to bottom, black 20.19%, transparent 100%);
+		mask-image: linear-gradient(to bottom, black 30%, transparent 100%);
+		-webkit-mask-image: linear-gradient(to bottom, black 30%, transparent 100%);
 		pointer-events: none;
 		z-index: 2;
+		transition: opacity 0.2s;
 	}
 }
 
 @utility blur-mask-b {
 	position: relative;
-
 	&::after {
 		content: '';
 		position: absolute;
@@ -196,17 +204,18 @@
 		left: 0;
 		right: 0;
 		height: 12%;
+		opacity: var(--blur-mask-opacity);
 		background: linear-gradient(to top, var(--color-base-100), transparent);
 		mask-image: linear-gradient(to top, black 30%, transparent 100%);
 		-webkit-mask-image: linear-gradient(to top, black 30%, transparent 100%);
 		pointer-events: none;
 		z-index: 2;
+		transition: opacity 0.2s;
 	}
 }
 
 @utility blur-mask-b-* {
 	position: relative;
-
 	&::after {
 		content: '';
 		position: absolute;
@@ -214,17 +223,18 @@
 		left: 0;
 		right: 0;
 		height: --value([*]);
+		opacity: var(--blur-mask-opacity);
 		background: linear-gradient(to top, var(--color-base-100), transparent);
 		mask-image: linear-gradient(to top, black 30%, transparent 100%);
 		-webkit-mask-image: linear-gradient(to top, black 30%, transparent 100%);
 		pointer-events: none;
 		z-index: 2;
+		transition: opacity 0.2s;
 	}
 }
 
 @utility blur-mask-l {
 	position: relative;
-
 	&::before {
 		content: '';
 		position: absolute;
@@ -232,17 +242,18 @@
 		bottom: 0;
 		left: 0;
 		width: 12%;
+		opacity: var(--blur-mask-opacity);
 		background: linear-gradient(to right, var(--color-base-100), transparent);
 		mask-image: linear-gradient(to right, black 30%, transparent 100%);
 		-webkit-mask-image: linear-gradient(to right, black 30%, transparent 100%);
 		pointer-events: none;
 		z-index: 2;
+		transition: opacity 0.2s;
 	}
 }
 
 @utility blur-mask-l-* {
 	position: relative;
-
 	&::before {
 		content: '';
 		position: absolute;
@@ -250,17 +261,18 @@
 		bottom: 0;
 		left: 0;
 		width: --value([*]);
+		opacity: var(--blur-mask-opacity);
 		background: linear-gradient(to right, var(--color-base-100), transparent);
 		mask-image: linear-gradient(to right, black 30%, transparent 100%);
 		-webkit-mask-image: linear-gradient(to right, black 30%, transparent 100%);
 		pointer-events: none;
 		z-index: 2;
+		transition: opacity 0.2s;
 	}
 }
 
 @utility blur-mask-r {
 	position: relative;
-
 	&::after {
 		content: '';
 		position: absolute;
@@ -268,17 +280,18 @@
 		bottom: 0;
 		right: 0;
 		width: 12%;
+		opacity: var(--blur-mask-opacity);
 		background: linear-gradient(to left, var(--color-base-100), transparent);
 		mask-image: linear-gradient(to left, black 30%, transparent 100%);
 		-webkit-mask-image: linear-gradient(to left, black 30%, transparent 100%);
 		pointer-events: none;
 		z-index: 2;
+		transition: opacity 0.2s;
 	}
 }
 
 @utility blur-mask-r-* {
 	position: relative;
-
 	&::after {
 		content: '';
 		position: absolute;
@@ -286,11 +299,13 @@
 		bottom: 0;
 		right: 0;
 		width: --value([*]);
+		opacity: var(--blur-mask-opacity);
 		background: linear-gradient(to left, var(--color-base-100), transparent);
 		mask-image: linear-gradient(to left, black 30%, transparent 100%);
 		-webkit-mask-image: linear-gradient(to left, black 30%, transparent 100%);
 		pointer-events: none;
 		z-index: 2;
+		transition: opacity 0.2s;
 	}
 }
 
