@@ -20,8 +20,13 @@ export const safelist = [
 	"text-neutral-300",
 	"text-neutral-400",
 	"text-neutral-500",
+	"text-base-content/20",
 	"text-base-content/30",
+	"text-base-content/40",
+	"text-base-content/60",
 	"text-base-content/70",
+	"bg-base-content/20",
+	"bg-base-content/40",
 	"text-black",
 	"text-white",
 

@@ -2,13 +2,13 @@ import { type Component, createMemo, createSignal, type JSX } from "solid-js";
 
 import { useAgent } from "@/agent/useAgent";
 import { useLocale } from "@/contexts/LocaleContext";
-import { define } from "@/utils/cx";
 
 import Resizer from "@/components/Resizer/Resizer";
 import Search from "@/components/Search/Search";
 
 import ChatPanel, { type ChatTag } from "./ChatPanel/ChatPanel";
 import SessionList from "./SessionList/SessionList";
+import { define } from "@/utils/cx";
 
 // ── Layout ──
 
@@ -52,15 +52,8 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 	return (
 		<div class={`${root()} bg-app`}>
 			<div class={drawer} style={{ width: `${drawerWidth()}px` }}>
-				<aside
-					class={`${aside} border-r-glow text-primary/20`}
-					aria-label={t("chat.drawerLabel")}
-				>
-					{props.sidebarHeader && (
-						<div class={`${sidebarHeader} text-base-content`}>
-							{props.sidebarHeader}
-						</div>
-					)}
+				<aside class={`${aside} border-r-glow text-primary/20`} aria-label={t("chat.drawerLabel")}>
+					{props.sidebarHeader && <div class={`${sidebarHeader} text-base-content`}>{props.sidebarHeader}</div>}
 					<div class={`${sidebarContent} text-base-content`}>
 						<Search />
 						<SessionList />

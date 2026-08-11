@@ -66,6 +66,21 @@ function langDisplay(lang: string): string {
 	return lang.toLowerCase();
 }
 
+// ── Heading id counter (for ChatOutline navigation) ──
+
+const _headingCounts: Record<string, number> = {};
+
+function headingId(tag: string): string {
+	if (!_headingCounts[tag]) _headingCounts[tag] = 0;
+	const id = `${tag}-${_headingCounts[tag]++}`;
+	return id;
+}
+
+// Reset counter before each render
+function resetHeadingCounts(): void {
+	for (const k of Object.keys(_headingCounts)) delete _headingCounts[k];
+}
+
 // ── markdown-it instance ──
 
 const md = new MarkdownIt({
@@ -79,13 +94,14 @@ const md = new MarkdownIt({
 md.renderer.rules.heading_open = (tokens, idx) => {
 	const token = tokens[idx];
 	const tag = token.tag;
+	const id = headingId(tag);
 	const classMap: Record<string, string> = {
 		h1: "text-[28px] font-semibold leading-tight my-3 text-base-content",
 		h2: "text-[22px] font-semibold leading-snug my-3 pb-1 border-b border-base-300 text-base-content",
 		h3: "text-lg font-semibold leading-snug my-2 text-base-content",
 		h4: "text-base font-semibold leading-snug my-1 text-base-content/70",
 	};
-	return `<${tag} class="${classMap[tag] || ""}">`;
+	return `<${tag} id="${id}" class="${classMap[tag] || ""}">`;
 };
 
 md.renderer.rules.heading_close = (tokens, idx) => {
@@ -237,6 +253,7 @@ const Markdown: Component<MarkdownProps> = (props) => {
 		// Track signals so memo re-runs when highlighter loads or theme changes
 		void hlReady();
 		void theme();
+		resetHeadingCounts();
 		return md.render(props.content);
 	});
 

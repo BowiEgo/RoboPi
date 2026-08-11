@@ -1,6 +1,54 @@
 @import 'tailwindcss';
 
-@custom-variant dark (&:where([data-theme='robo-dark'], [data-theme='robo-dark'] *, [data-theme='dark'], [data-theme='dark'] *, [data-theme='night'] *, [data-theme='dracula'] *, [data-theme='synthwave'] *, [data-theme='cyberpunk'] *, [data-theme='halloween'] *, [data-theme='forest'] *, [data-theme='black'] *, [data-theme='luxury'] *, [data-theme='coffee'] *, [data-theme='dim'] *, [data-theme='sunset'] *, [data-theme='abyss'] *));
+/* ── Themed Scrollbar ── */
+@layer base {
+	* {
+		scrollbar-width: auto;
+		scrollbar-color: var(--color-base-300) transparent;
+	}
+
+	/* Compact variant (ChatOutline) */
+	.scroll-list {
+		scrollbar-width: thin;
+		scrollbar-color: transparent transparent;
+		scrollbar-gutter: stable;
+	}
+
+	.scroll-list::-webkit-scrollbar {
+		width: 3px;
+	}
+	.scroll-list::-webkit-scrollbar-track {
+		background: transparent;
+	}
+	.scroll-list::-webkit-scrollbar-thumb {
+		border-radius: 1.5px;
+		background: transparent;
+	}
+	.scroll-list:hover::-webkit-scrollbar-thumb {
+		background: var(--color-base-300);
+	}
+}
+
+@custom-variant dark (
+	&:where(
+		[data-theme='robo-dark'],
+		[data-theme='robo-dark'] *,
+		[data-theme='dark'],
+		[data-theme='dark'] *,
+		[data-theme='night'] *,
+		[data-theme='dracula'] *,
+		[data-theme='synthwave'] *,
+		[data-theme='cyberpunk'] *,
+		[data-theme='halloween'] *,
+		[data-theme='forest'] *,
+		[data-theme='black'] *,
+		[data-theme='luxury'] *,
+		[data-theme='coffee'] *,
+		[data-theme='dim'] *,
+		[data-theme='sunset'] *,
+		[data-theme='abyss'] *
+	)
+);
 
 /* Force Tailwind to scan dynamic class values */
 @source './safelist.ts';
@@ -94,6 +142,155 @@
 		height: 80%;
 		width: 1px;
 		background: linear-gradient(to bottom, transparent, currentColor 30%, currentColor 70%, transparent);
+	}
+}
+
+/* ── Blur mask utilities ──
+   blur-mask-t = top, blur-mask-b = bottom, blur-mask-l = left, blur-mask-r = right.
+   Default 12%. The * variant is self-contained — blur-mask-t-[30%] or blur-mask-t-[48px]
+   works standalone, no need to add the base class. */
+
+@utility blur-mask-t {
+	position: relative;
+
+	&::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 12%;
+		background: linear-gradient(to bottom, var(--color-base-100), transparent);
+		mask-image: linear-gradient(to bottom, black 30%, transparent 100%);
+		-webkit-mask-image: linear-gradient(to bottom, black 30%, transparent 100%);
+		pointer-events: none;
+		z-index: 2;
+	}
+}
+
+@utility blur-mask-t-* {
+	position: relative;
+
+	&::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: --value([*]);
+		background: linear-gradient(to bottom, var(--color-base-100), transparent);
+		mask-image: linear-gradient(to bottom, black 20.19%, transparent 100%);
+		-webkit-mask-image: linear-gradient(to bottom, black 20.19%, transparent 100%);
+		pointer-events: none;
+		z-index: 2;
+	}
+}
+
+@utility blur-mask-b {
+	position: relative;
+
+	&::after {
+		content: '';
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		height: 12%;
+		background: linear-gradient(to top, var(--color-base-100), transparent);
+		mask-image: linear-gradient(to top, black 30%, transparent 100%);
+		-webkit-mask-image: linear-gradient(to top, black 30%, transparent 100%);
+		pointer-events: none;
+		z-index: 2;
+	}
+}
+
+@utility blur-mask-b-* {
+	position: relative;
+
+	&::after {
+		content: '';
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		height: --value([*]);
+		background: linear-gradient(to top, var(--color-base-100), transparent);
+		mask-image: linear-gradient(to top, black 30%, transparent 100%);
+		-webkit-mask-image: linear-gradient(to top, black 30%, transparent 100%);
+		pointer-events: none;
+		z-index: 2;
+	}
+}
+
+@utility blur-mask-l {
+	position: relative;
+
+	&::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		width: 12%;
+		background: linear-gradient(to right, var(--color-base-100), transparent);
+		mask-image: linear-gradient(to right, black 30%, transparent 100%);
+		-webkit-mask-image: linear-gradient(to right, black 30%, transparent 100%);
+		pointer-events: none;
+		z-index: 2;
+	}
+}
+
+@utility blur-mask-l-* {
+	position: relative;
+
+	&::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		width: --value([*]);
+		background: linear-gradient(to right, var(--color-base-100), transparent);
+		mask-image: linear-gradient(to right, black 30%, transparent 100%);
+		-webkit-mask-image: linear-gradient(to right, black 30%, transparent 100%);
+		pointer-events: none;
+		z-index: 2;
+	}
+}
+
+@utility blur-mask-r {
+	position: relative;
+
+	&::after {
+		content: '';
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		right: 0;
+		width: 12%;
+		background: linear-gradient(to left, var(--color-base-100), transparent);
+		mask-image: linear-gradient(to left, black 30%, transparent 100%);
+		-webkit-mask-image: linear-gradient(to left, black 30%, transparent 100%);
+		pointer-events: none;
+		z-index: 2;
+	}
+}
+
+@utility blur-mask-r-* {
+	position: relative;
+
+	&::after {
+		content: '';
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		right: 0;
+		width: --value([*]);
+		background: linear-gradient(to left, var(--color-base-100), transparent);
+		mask-image: linear-gradient(to left, black 30%, transparent 100%);
+		-webkit-mask-image: linear-gradient(to left, black 30%, transparent 100%);
+		pointer-events: none;
+		z-index: 2;
 	}
 }
 
@@ -260,4 +457,5 @@
 		caramellatte,
 		abyss,
 		silk;
+	exclude: rootscrollgutter, rootscrolllock;
 }

@@ -1,6 +1,8 @@
 import { Plus } from "lucide-solid";
 import { type Component, createEffect, createMemo, createSignal, For, type JSX, Show } from "solid-js";
 
+import ChatOutline from "@/components/ChatOutline/ChatOutline";
+
 import Composer, { type AgentConfig } from "../Composer/Composer";
 import ChatBubble, { type ChatBubbleProps } from "./ChatBubble";
 
@@ -86,7 +88,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 		scrollToBottom("smooth");
 	});
 
-// ── Test data ──
+	// ── Test data ──
 	const TEST_MESSAGES: ChatBubbleProps[] = [
 		{
 			id: "test-1",
@@ -155,12 +157,9 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 			if (msgs[i].role !== "user") continue;
 			const next = msgs[i + 1];
 			// No agent reply, or agent reply is empty/error and not streaming
-			if (!next || next.role !== "agent") {
+			if (next?.role !== "agent") {
 				ids.add(msgs[i].id ?? "");
-			} else if (
-				!next.streaming &&
-				(!next.content || next.content.startsWith("❌ Error:"))
-			) {
+			} else if (!next.streaming && (!next.content || next.content.startsWith("❌ Error:"))) {
 				ids.add(msgs[i].id ?? "");
 			}
 		}
@@ -177,7 +176,8 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 	void hasStreaming();
 
 	return (
-		<div class="relative flex flex-col items-center h-full overflow-hidden">
+		<div class="chat-panel relative flex flex-col items-center h-full overflow-hidden">
+			<ChatOutline messages={displayMessages()} />
 			<header class="absolute flex shrink-0 items-center justify-between w-full gap-4 px-4 py-3 font-medium text-base font-display bg-transparent! text-base-content z-1">
 				{props.header}
 				{props.tags && props.tags.length > 0 && (
@@ -212,10 +212,12 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 			</header>
 
 			<main
-				ref={(el) => { scrollEl = el; }}
-				class="flex-1 w-full flex flex-col gap-1 overflow-y-auto px-4 pt-12 pb-[20%] text-base-content z-0"
+				ref={(el) => {
+					scrollEl = el;
+				}}
+				class="flex-1 w-full flex flex-col gap-1 overflow-y-auto pl-12 pr-20 pt-12 pb-[20%] text-base-content z-0"
 				style="scroll-behavior: auto; scroll-padding-top: 64px; scroll-padding-bottom: 96px"
-			onScroll={onScroll}
+				onScroll={onScroll}
 			>
 				<Show when={displayMessages().length === 0} fallback={null}>
 					{props.children ?? (
@@ -225,24 +227,22 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 					)}
 				</Show>
 				<For each={displayMessages()}>
-				{(msg) => (
-					<div data-role={msg.role}>
-						<ChatBubble
-							id={msg.id}
-							role={msg.role}
-							content={msg.content}
-							files={msg.files}
-							thinking={msg.thinking}
-							timestamp={msg.timestamp}
-							avatar={msg.avatar}
-							streaming={msg.streaming}
-							onRetry={
-								msg.role === "user" && retryableIds().has(msg.id ?? "")
-									? () => handleSend(msg.content)
-									: undefined
-							}
-						/>
-					</div>
+					{(msg) => (
+						<div data-role={msg.role} id={`msg-${msg.id}`}>
+							<ChatBubble
+								id={msg.id}
+								role={msg.role}
+								content={msg.content}
+								files={msg.files}
+								thinking={msg.thinking}
+								timestamp={msg.timestamp}
+								avatar={msg.avatar}
+								streaming={msg.streaming}
+								onRetry={
+									msg.role === "user" && retryableIds().has(msg.id ?? "") ? () => handleSend(msg.content) : undefined
+								}
+							/>
+						</div>
 					)}
 				</For>
 
@@ -258,8 +258,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 					style="mask-image: linear-gradient(to top, black 30%, transparent 100%);
  -webkit-mask-image: linear-gradient(to top, black 30%, transparent 100%);"
 				/>
-
-				</main>
+			</main>
 
 			<Composer onSend={handleSend} agentConfig={agentConfig()} rainbow={true} />
 		</div>
