@@ -9,6 +9,9 @@
  * 所有异步方法返回 Promise，可通过 await 等待操作完成。
  *
  * 任意组件 import { useAgent } 获取同一个实例，无需 props 传递。
+ *
+ * ⚠️ IPC 监听器在模块顶层注册一次，不绑定任何组件生命周期。
+ *    页面切换不会取消订阅，确保回来时 store 仍然能接收 agent 消息。
  */
 
 import {
@@ -16,7 +19,7 @@ import {
 	type AgentReadyPayload,
 	isValidMessageType,
 } from "@shared/agent-types";
-import { createMemo, createSignal, onCleanup, onMount } from "solid-js";
+import { createMemo, createSignal } from "solid-js";
 
 import type { SessionItemProps } from "@/pages/ChatPage/SessionList/SessionItem";
 import type { ChatBubbleProps } from "@/pages/ChatPage/ChatPanel/ChatBubble";
@@ -101,309 +104,267 @@ function sessionToItem(
 	};
 }
 
-// ── 单例 ──
+// ════════════════════════════════════════════════════════════════
+//  Module-level reactive state + IPC listener
+//  Created once, never torn down — survives page switches.
+// ════════════════════════════════════════════════════════════════
 
-type AgentStore = ReturnType<typeof createAgentStore>;
-let store: AgentStore | null = null;
+const agent = getAgentIpc();
 
-export function useAgent(): AgentStore {
-	if (!store) store = createAgentStore();
-	return store;
+const [sessions, setSessions] = createSignal<SessionInfoPayload[]>([]);
+const [activeId, setActiveId] = createSignal<string | null>(null);
+const [activeName, setActiveName] = createSignal<string>("");
+const [messages, setMessages] = createSignal<ChatBubbleProps[]>([]);
+const [resetKey, setResetKey] = createSignal("");
+const [loading, setLoading] = createSignal(false);
+const [agentConfig, setAgentConfig] = createSignal<AgentConfig>({});
+
+let pendingMessage: string | null = null;
+let _storeReady = false;
+
+// ── IPC listener (registered once at module level) ──
+
+if (agent && !_storeReady) {
+	_storeReady = true;
+
+	agent.onMessage((raw) => {
+		const msg = raw as {
+			id: string;
+			type: string;
+			payload: Record<string, unknown>;
+		};
+		if (!msg?.type || !isValidMessageType(msg.type)) return;
+
+		switch (msg.type) {
+			case AgentMessageType.AgentReady: {
+				const p = msg.payload as AgentReadyPayload;
+				setAgentConfig({
+					model: p.model,
+					thinkingLevel: p.thinkingLevel,
+					availableModels: p.availableModels,
+					status: "idle",
+				});
+				break;
+			}
+
+			case AgentMessageType.AgentConfig: {
+				const p = msg.payload as AgentConfig;
+				setAgentConfig((prev) => ({ ...prev, ...p }));
+				break;
+			}
+
+			case AgentMessageType.AgentStatus: {
+				const p = msg.payload as {
+					status?: string;
+					model?: string;
+					thinkingLevel?: string;
+				};
+				setAgentConfig((prev) => ({
+					...prev,
+					status: p.status,
+					model: p.model ?? prev.model,
+					thinkingLevel: p.thinkingLevel ?? prev.thinkingLevel,
+				}));
+				break;
+			}
+
+			case AgentMessageType.SessionSwitched: {
+				const p = msg.payload as {
+					sessionId: string;
+					name: string;
+					messages: ChatBubbleProps[];
+				};
+				setActiveId(p.sessionId);
+				setActiveName(p.name);
+				setMessages(p.messages ?? []);
+				setResetKey(p.sessionId + "-" + Date.now());
+				setLoading(false);
+				settle(msg.id, p);
+				break;
+			}
+
+			case AgentMessageType.SessionCreated: {
+				const p = msg.payload as {
+					sessionId: string;
+					name: string;
+					createdAt: number;
+					file: string;
+				};
+				setActiveId(p.sessionId);
+				setActiveName(p.name);
+				setLoading(false);
+
+				setSessions((prev) => {
+					if (prev.some((s) => s.id === p.sessionId)) return prev;
+					return [
+						{
+							file: p.file,
+							id: p.sessionId,
+							name: p.name,
+							createdAt: p.createdAt,
+							lastMessage: pendingMessage || "",
+							lastActiveAt: Date.now(),
+						},
+						...prev,
+					];
+				});
+
+				if (pendingMessage) {
+					const text = pendingMessage;
+					pendingMessage = null;
+					agent.send({
+						id: "msg-" + Date.now(),
+						type: AgentMessageType.ChatSend,
+						payload: { content: text, sessionId: p.sessionId },
+					});
+				}
+				settle(msg.id, p);
+				break;
+			}
+
+			case AgentMessageType.SessionListResult: {
+				const p = msg.payload as { sessions: SessionInfoPayload[] };
+				if (p.sessions?.length) setSessions(p.sessions);
+				settle(msg.id, p);
+				break;
+			}
+
+			case AgentMessageType.SessionDeleted: {
+				refreshSessions();
+				settle(msg.id, msg.payload);
+				break;
+			}
+
+			case AgentMessageType.SessionRenamed: {
+				const p = msg.payload as { sessionId: string; name: string };
+				if (activeId() === p.sessionId) setActiveName(p.name);
+				refreshSessions();
+				settle(msg.id, p);
+				break;
+			}
+
+			case AgentMessageType.SessionError: {
+				console.error("[useAgent] Session error:", msg.payload);
+				setLoading(false);
+				const message =
+					(msg.payload as { message?: string }).message ?? "Unknown error";
+				fail(msg.id, new Error(message));
+				break;
+			}
+		}
+	});
+
+	// Init: request session list + agent config
+	agent.send({ id: "init-list", type: AgentMessageType.SessionList, payload: {} });
+	agent.send({ id: "init-config", type: AgentMessageType.AgentConfig, payload: {} });
 }
 
-// ── Store ──
+// ════════════════════════════════════════════════════════════════
+//  Module-level functions
+// ════════════════════════════════════════════════════════════════
 
-function createAgentStore() {
-	const [sessions, setSessions] = createSignal<SessionInfoPayload[]>([]);
-	const [activeId, setActiveId] = createSignal<string | null>(null);
-	const [activeName, setActiveName] = createSignal<string>("");
-	const [messages, setMessages] = createSignal<ChatBubbleProps[]>([]);
-	const [resetKey, setResetKey] = createSignal("");
-	const [loading, setLoading] = createSignal(false);
-	const [agentConfig, setAgentConfig] = createSignal<AgentConfig>({});
-	let pendingMessage: string | null = null;
-
-	const agent = getAgentIpc();
-
-	onMount(() => {
-		if (!agent) return;
-
-		const unsub = agent.onMessage((raw) => {
-			const msg = raw as {
-				id: string;
-				type: string;
-				payload: Record<string, unknown>;
-			};
-			if (!msg?.type || !isValidMessageType(msg.type)) return;
-
-			switch (msg.type) {
-				case AgentMessageType.AgentReady: {
-					const p = msg.payload as AgentReadyPayload;
-					setAgentConfig({
-						model: p.model,
-						thinkingLevel: p.thinkingLevel,
-						availableModels: p.availableModels,
-						status: "idle",
-					});
-					break;
-				}
-
-				case AgentMessageType.AgentConfig: {
-					const p = msg.payload as AgentConfig;
-					setAgentConfig((prev) => ({ ...prev, ...p }));
-					break;
-				}
-
-				case AgentMessageType.AgentStatus: {
-					const p = msg.payload as {
-						status?: string;
-						model?: string;
-						thinkingLevel?: string;
-					};
-					setAgentConfig((prev) => ({
-						...prev,
-						status: p.status,
-						model: p.model ?? prev.model,
-						thinkingLevel: p.thinkingLevel ?? prev.thinkingLevel,
-					}));
-					break;
-				}
-
-				case AgentMessageType.SessionSwitched: {
-					const p = msg.payload as {
-						sessionId: string;
-						name: string;
-						messages: ChatBubbleProps[];
-					};
-					setActiveId(p.sessionId);
-					setActiveName(p.name);
-					setMessages(p.messages ?? []);
-					setResetKey(p.sessionId + "-" + Date.now());
-					setLoading(false);
-					settle(msg.id, p);
-					break;
-				}
-
-				case AgentMessageType.SessionCreated: {
-					const p = msg.payload as {
-						sessionId: string;
-						name: string;
-						createdAt: number;
-						file: string;
-					};
-					setActiveId(p.sessionId);
-					setActiveName(p.name);
-					setLoading(false);
-
-					// 直接插入本地列表，不等 listAll（SDK 延迟写盘）
-					setSessions((prev) => {
-						if (prev.some((s) => s.id === p.sessionId)) return prev;
-						return [
-							{
-								file: p.file,
-								id: p.sessionId,
-								name: p.name,
-								createdAt: p.createdAt,
-								lastMessage: pendingMessage || "",
-								lastActiveAt: Date.now(),
-							},
-							...prev,
-						];
-					});
-
-					if (pendingMessage) {
-						const text = pendingMessage;
-						pendingMessage = null;
-						agent.send({
-							id: "msg-" + Date.now(),
-							type: AgentMessageType.ChatSend,
-							payload: { content: text, sessionId: p.sessionId },
-						});
-					}
-					// refreshSessions();
-					settle(msg.id, p);
-					break;
-				}
-
-				case AgentMessageType.SessionListResult: {
-					const p = msg.payload as { sessions: SessionInfoPayload[] };
-					console.log("session-lenght: ", p.sessions.length);
-					if (p.sessions?.length) setSessions(p.sessions);
-					settle(msg.id, p);
-					break;
-				}
-
-				case AgentMessageType.SessionDeleted: {
-					refreshSessions();
-					settle(msg.id, msg.payload);
-					break;
-				}
-
-				case AgentMessageType.SessionRenamed: {
-					const p = msg.payload as { sessionId: string; name: string };
-					if (activeId() === p.sessionId) setActiveName(p.name);
-					refreshSessions();
-					settle(msg.id, p);
-					break;
-				}
-
-				case AgentMessageType.SessionError: {
-					console.error("[useAgent] Session error:", msg.payload);
-					setLoading(false);
-					const message =
-						(msg.payload as { message?: string }).message ?? "Unknown error";
-					fail(msg.id, new Error(message));
-					break;
-				}
-			}
-		});
-
+function refreshSessions() {
+	if (!agent) return;
+	queueMicrotask(() => {
 		agent.send({
-			id: "init-list",
+			id: "list-" + Date.now(),
 			type: AgentMessageType.SessionList,
 			payload: {},
 		});
-
-		// 主动拉取当前 agent 配置（防止 AgentReady 已先于 listener 触发）
-		agent.send({
-			id: "init-config",
-			type: AgentMessageType.AgentConfig,
-			payload: {},
-		});
-
-		onCleanup(unsub);
 	});
+}
 
-	function refreshSessions() {
-		if (!agent) return;
-		queueMicrotask(() => {
-			agent.send({
-				id: "list-" + Date.now(),
-				type: AgentMessageType.SessionList,
-				payload: {},
-			});
-		});
-	}
+function createSession(name?: string) {
+	pendingMessage = null;
+	setActiveId(null);
+	setActiveName(name ?? "");
+	setMessages([]);
+	setResetKey("new-" + Date.now());
+	setLoading(false);
+}
 
-	// ── 公开方法 ──
+async function handleSend(text: string): Promise<{ sessionId: string }> {
+	if (!agent) throw new Error("Agent not ready");
 
-	/**
-	 * 仅在本地清空 UI，不发送任何 IPC。
-	 * 真正的 session 创建延迟到首条消息发送时。
-	 */
-	function createSession(name?: string) {
-		pendingMessage = null;
-		setActiveId(null);
-		setActiveName(name ?? "");
-		setMessages([]);
-		setResetKey("new-" + Date.now());
-		setLoading(false);
-	}
-
-	/**
-	 * 发送消息。
-	 *   - 已有活跃会话：立即发送，Promise 同步 resolve。
-	 *   - 无活跃会话：先创建会话，等 session:created 后自动发送。
-	 *
-	 * @returns Promise<{ sessionId: string }>
-	 */
-	async function handleSend(text: string): Promise<{ sessionId: string }> {
-		if (!agent) throw new Error("Agent not ready");
-
-		if (activeId()) {
-			agent.send({
-				id: "msg-" + Date.now(),
-				type: AgentMessageType.ChatSend,
-				payload: { content: text, sessionId: activeId()! },
-			});
-			return { sessionId: activeId()! };
-		}
-
-		setLoading(true);
-		pendingMessage = text;
-		const id = "create-" + Date.now();
-		const promise = track<{
-			sessionId: string;
-			name: string;
-			createdAt: number;
-		}>(id);
-		agent.send({ id, type: AgentMessageType.SessionCreate, payload: {} });
-		return promise;
-	}
-
-	/**
-	 * 切换到指定会话。
-	 * Promise resolve 于 session:switched 事件到达时。
-	 */
-	async function switchSession(
-		id: string,
-	): Promise<{ sessionId: string; name: string; messages: ChatBubbleProps[] }> {
-		if (!agent) throw new Error("Agent not ready");
-
-		if (id === activeId()) {
-			return {
-				sessionId: id,
-				name: activeName(),
-				messages: messages(),
-			};
-		}
-
-		setLoading(true);
-		const msgId = "switch-" + Date.now();
-		const promise = track<{
-			sessionId: string;
-			name: string;
-			messages: ChatBubbleProps[];
-		}>(msgId);
+	if (activeId()) {
 		agent.send({
-			id: msgId,
-			type: AgentMessageType.SessionSwitch,
-			payload: { sessionId: id },
+			id: "msg-" + Date.now(),
+			type: AgentMessageType.ChatSend,
+			payload: { content: text, sessionId: activeId()! },
 		});
-		return promise;
+		return { sessionId: activeId()! };
 	}
 
-	/**
-	 * 删除指定会话。
-	 * Promise resolve 于 session:deleted 事件到达时。
-	 */
-	async function deleteSession(id: string): Promise<void> {
-		if (!agent) throw new Error("Agent not ready");
+	setLoading(true);
+	pendingMessage = text;
+	const id = "create-" + Date.now();
+	const promise = track<{ sessionId: string; name: string; createdAt: number }>(id);
+	agent.send({ id, type: AgentMessageType.SessionCreate, payload: {} });
+	return promise;
+}
 
-		const msgId = "delete-" + Date.now();
-		const promise = track<void>(msgId);
-		agent.send({
-			id: msgId,
-			type: AgentMessageType.SessionDelete,
-			payload: { sessionId: id },
-		});
-		return promise;
+async function switchSession(
+	id: string,
+): Promise<{ sessionId: string; name: string; messages: ChatBubbleProps[] }> {
+	if (!agent) throw new Error("Agent not ready");
+
+	if (id === activeId()) {
+		return { sessionId: id, name: activeName(), messages: messages() };
 	}
 
-	/**
-	 * 重命名指定会话。
-	 * Promise resolve 于 session:renamed 事件到达时。
-	 */
-	async function renameSession(
-		id: string,
-		name: string,
-	): Promise<{ sessionId: string; name: string }> {
-		if (!agent) throw new Error("Agent not ready");
+	setLoading(true);
+	const msgId = "switch-" + Date.now();
+	const promise = track<{
+		sessionId: string;
+		name: string;
+		messages: ChatBubbleProps[];
+	}>(msgId);
+	agent.send({
+		id: msgId,
+		type: AgentMessageType.SessionSwitch,
+		payload: { sessionId: id },
+	});
+	return promise;
+}
 
-		const msgId = "rename-" + Date.now();
-		const promise = track<{ sessionId: string; name: string }>(msgId);
-		agent.send({
-			id: msgId,
-			type: AgentMessageType.SessionRename,
-			payload: { sessionId: id, name },
-		});
-		return promise;
-	}
+async function deleteSession(id: string): Promise<void> {
+	if (!agent) throw new Error("Agent not ready");
 
-	const sessionItems = createMemo(() =>
-		sessions().map((s) => sessionToItem(s, activeId())),
-	);
+	const msgId = "delete-" + Date.now();
+	const promise = track<void>(msgId);
+	agent.send({
+		id: msgId,
+		type: AgentMessageType.SessionDelete,
+		payload: { sessionId: id },
+	});
+	return promise;
+}
 
+async function renameSession(
+	id: string,
+	name: string,
+): Promise<{ sessionId: string; name: string }> {
+	if (!agent) throw new Error("Agent not ready");
+
+	const msgId = "rename-" + Date.now();
+	const promise = track<{ sessionId: string; name: string }>(msgId);
+	agent.send({
+		id: msgId,
+		type: AgentMessageType.SessionRename,
+		payload: { sessionId: id, name },
+	});
+	return promise;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  Public hook — returns the singleton state
+// ════════════════════════════════════════════════════════════════
+
+const sessionItems = createMemo(() =>
+	sessions().map((s) => sessionToItem(s, activeId())),
+);
+
+export function useAgent() {
 	return {
 		sessions: sessionItems,
 		activeId,
@@ -411,11 +372,11 @@ function createAgentStore() {
 		messages,
 		resetKey,
 		loading,
+		agentConfig,
 		createSession,
 		switchSession,
 		deleteSession,
 		renameSession,
-		agentConfig,
 		handleSend,
 	};
 }
