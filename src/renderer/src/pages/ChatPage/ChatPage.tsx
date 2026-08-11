@@ -53,7 +53,7 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 		<div class={`${root()} bg-app`}>
 			<div class={drawer} style={{ width: `${drawerWidth()}px` }}>
 				<aside
-					class={`${aside} border-r-glow text-primary/20 dark:text-gray-700`}
+					class={`${aside} border-r-glow text-primary/20`}
 					aria-label={t("chat.drawerLabel")}
 				>
 					{props.sidebarHeader && (

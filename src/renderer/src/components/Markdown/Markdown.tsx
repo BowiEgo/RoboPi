@@ -13,7 +13,7 @@ function getHighlighter(): Promise<Highlighter> {
 	if (_hlPromise) return _hlPromise;
 
 	_hlPromise = createHighlighter({
-		themes: ["dark-plus", "light-plus"],
+		themes: ["dark-plus", "github-light"],
 		langs: [
 			"typescript",
 			"javascript",
@@ -55,8 +55,10 @@ getHighlighter();
 // ── Helpers ──
 
 function resolveTheme(): string {
-	if (typeof document === "undefined") return "light-plus";
-	return document.documentElement.dataset.theme === "dark" ? "dark-plus" : "light-plus";
+	if (typeof document === "undefined") return "github-light";
+	const t = document.documentElement.dataset.theme || "";
+	const darkThemes = ["robo-dark", "dark", "night", "dracula", "synthwave", "cyberpunk", "halloween", "forest", "black", "luxury", "coffee", "dim", "sunset", "abyss", "business"];
+	return darkThemes.includes(t) ? "dark-plus" : "github-light";
 }
 
 function langDisplay(lang: string): string {
@@ -121,7 +123,7 @@ md.renderer.rules.hr = () => '<hr class="border-none border-t border-base-300 my
 // Override inline code
 md.renderer.rules.code_inline = (tokens, idx) => {
 	const content = md.utils.escapeHtml(tokens[idx].content);
-	return `<code class="bg-base-300 text-primary dark:bg-gray-700 dark:text-primary/85 rounded px-1 py-0.5 font-mono text-[0.9em]">${content}</code>`;
+	return `<code class="bg-base-300 text-primary rounded px-1 py-0.5 font-mono text-[0.9em]">${content}</code>`;
 };
 
 // Override fence (code block) — sync fallback, Shiki handles when loaded
@@ -190,7 +192,7 @@ md.renderer.rules.tbody_open = () => "<tbody>";
 md.renderer.rules.tbody_close = () => "</tbody>";
 md.renderer.rules.tr_open = () => "<tr>";
 md.renderer.rules.tr_close = () => "</tr>";
-md.renderer.rules.th_open = () => '<th class="text-left dark:text-gray-200">';
+md.renderer.rules.th_open = () => '<th class="text-left">';
 md.renderer.rules.th_close = () => "</th>";
 md.renderer.rules.td_open = () => "<td>";
 md.renderer.rules.td_close = () => "</td>";

@@ -65,16 +65,16 @@ const SessionList: Component = () => {
 	return (
 		<section class={root()}>
 			<header class={header()}>
-				<span class={`${headerIcon} text-base-content/60 dark:text-white/60`}>
+				<span class={`${headerIcon} text-base-content/50`}>
 					<MessageCircle />
 				</span>
-				<span class={`${headerTitle} text-base-content/60 dark:text-white/60`}>{t("chat.sessions")}</span>
-				<span class={`${headerCount} text-base-content/40 dark:text-white/40`}>{sessions().length}</span>
+				<span class={`${headerTitle} text-base-content/50`}>{t("chat.sessions")}</span>
+				<span class={`${headerCount} text-base-content/30`}>{sessions().length}</span>
 				<div class={actions}>
 					{selectionMode() ? (
 						<button
 							type="button"
-							class="btn btn-ghost btn-sm btn-square text-error dark:text-white"
+							class="btn btn-ghost btn-sm btn-square text-error"
 							aria-label={t("chat.deleteSelected")}
 							disabled={selected().size === 0}
 							onClick={bulkDelete}
@@ -84,7 +84,7 @@ const SessionList: Component = () => {
 					) : (
 						<button
 							type="button"
-							class="btn btn-ghost btn-sm btn-square text-base-content/60 dark:text-white/50"
+							class="btn btn-ghost btn-sm btn-square text-base-content/50"
 							aria-label={t("chat.addSession")}
 							onClick={() => createSession()}
 						>
@@ -93,7 +93,7 @@ const SessionList: Component = () => {
 					)}
 					<button
 						type="button"
-						class="btn btn-ghost btn-sm btn-square text-base-content/60 dark:text-white/50"
+						class="btn btn-ghost btn-sm btn-square text-base-content/50"
 						aria-label="Session list menu"
 						onClick={(e) => {
 							e.stopPropagation();

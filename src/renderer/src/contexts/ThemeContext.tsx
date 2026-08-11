@@ -6,6 +6,7 @@ import { type Component, createContext, createSignal, type JSX, useContext } fro
 
 export const THEMES = [
 	"robo",
+	"robo-dark",
 	"Daisy",
 	"dark",
 	"cupcake",
@@ -71,13 +72,21 @@ export const ThemeProvider: Component<{ children: JSX.Element }> = (props) => {
 		localStorage.setItem(STORAGE_KEY, id);
 	};
 
-	// Check if the current theme is "dark"
+	// Dark theme list — robo's own dark variant + daisyUI built-in dark themes
+	const DARK_THEMES = [
+		"robo-dark",
+		"dark", "night", "dracula", "synthwave", "cyberpunk", "halloween",
+		"forest", "black", "luxury", "coffee", "dim", "sunset", "abyss", "business",
+	];
+
+	// Check if the current theme is considered dark
 	const isDark = () => {
-		return document.documentElement.getAttribute("data-theme") === "dark";
+		const t = document.documentElement.getAttribute("data-theme") || "";
+		return DARK_THEMES.includes(t);
 	};
 
 	const toggleDark = () => {
-		setTheme(isDark() ? "robo" : "dark");
+		setTheme(isDark() ? "robo" : "robo-dark");
 	};
 
 	// Apply theme on mount

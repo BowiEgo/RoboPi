@@ -14,7 +14,7 @@ const C = {
 		spacing: "px-3",
 		interaction: "rounded-lg border cursor-text shadow-sm",
 		color:
-			"border-base-300 dark:border-none input-field hover:border-base-600 focus-within:border-primary/45 focus-within:ring-primary/15",
+			"border-base-300 input-field hover:border-base-600 focus-within:border-primary/45 focus-within:ring-primary/15",
 	},
 	icon: {
 		display: "flex items-center justify-center",

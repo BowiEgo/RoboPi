@@ -309,7 +309,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 
 	return (
 		<div class="relative flex flex-col items-center h-full overflow-hidden">
-			<header class="absolute flex shrink-0 items-center justify-between w-full gap-4 px-4 py-3  dark:border-gray-700 font-medium text-base font-display bg-transparent! text-base-content dark:text-gray-300 z-1">
+			<header class="absolute flex shrink-0 items-center justify-between w-full gap-4 px-4 py-3  font-medium text-base font-display bg-transparent! text-base-content z-1">
 				{props.header}
 				{props.tags && props.tags.length > 0 && (
 					<div class="flex items-center gap-2 ml-auto">
@@ -318,14 +318,14 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 								tag.type === "action" ? (
 									<button
 										type="button"
-										class="btn btn-ghost btn-sm text-base-content dark:text-gray-300"
+										class="btn btn-ghost btn-sm text-base-content"
 										onClick={() => tag.onClick?.(tag.id)}
 									>
 										<Plus class="w-3 h-3" />
 										{tag.label}
 									</button>
 								) : (
-									<span class="inline-flex items-center px-2.5 py-0.75 border border-base-300 rounded bg-gray-300/10 text-base-content/80 font-mono text-[11px] leading-snug whitespace-nowrap dark:bg-gray-700 dark:border-gray-500 dark:text-gray-300">
+									<span class="inline-flex items-center px-2.5 py-0.75 border border-base-300 rounded base-200 text-base-content/70 font-mono text-[11px] leading-snug whitespace-nowrap">
 										{tag.label}
 									</span>
 								)
@@ -335,7 +335,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 				)}
 				<button
 					type="button"
-					class={`btn btn-xs ml-auto ${isTestMode() ? "btn-primary" : "btn-outline dark:bg-white"}`}
+					class={`btn btn-xs ml-auto ${isTestMode() ? "btn-primary" : "btn-outline"}`}
 					onClick={toggleTestMessages}
 				>
 					🧪 {isTestMode() ? "Clear" : "Test"}
@@ -369,13 +369,13 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 				</For>
 				<div
 					class="pointer-events-none absolute top-0 left-0 right-0 h-1/12 backdrop-blur-md
- bg-linear-to-b from-base-100 to-transparent dark:from-gray-900/60 dark:to-transparent"
+ bg-linear-to-b from-base-100 to-transparent"
 					style="mask-image: linear-gradient(to bottom, black 30%, transparent 100%);
  -webkit-mask-image: linear-gradient(to bottom, black 30%, transparent 100%);"
 				/>
 				<div
 					class="pointer-events-none absolute bottom-0 left-0 right-0 h-1/3 backdrop-blur-md
- bg-linear-to-b from-transparent to-base-100 dark:to-gray-900/60"
+ bg-linear-to-b from-transparent to-base-100"
 					style="mask-image: linear-gradient(to top, black 30%, transparent 100%);
  -webkit-mask-image: linear-gradient(to top, black 30%, transparent 100%);"
 				/>

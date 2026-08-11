@@ -48,12 +48,12 @@ function fileIcon(type?: string): string {
 
 // ── Class constants ──
 
-const CHAT_BUBBLE_WRAPPER = "chat-bubble max-w-full [&::before]:hidden rounded-xl dark:bg-gray-600";
-const CHAT_BUBBLE_PRIMARY = "chat-bubble-primary";
+const CHAT_BUBBLE_WRAPPER = "chat-bubble max-w-full [&::before]:hidden rounded-xl";
+const CHAT_BUBBLE_PRIMARY = "chat-bubble-primary text-primary-content";
 const BUBBLE_OUTER_LAYOUT = "max-w-[75%]";
 const CONTENT_AREA = "text-base leading-relaxed";
-const USER_TEXT = "whitespace-pre-wrap m-0 text-white/90 dark:text-gray-300";
-const STREAMING_CURSOR = "inline-block w-2 h-4 ml-0.5 rounded-[1px] bg-primary animate-pulse align-text-bottom";
+const USER_TEXT = "whitespace-pre-wrap m-0";
+const STREAMING_CURSOR = "inline-block w-2 h-4 ml-0.5 rounded-[1px] animate-pulse align-text-bottom";
 // ── Sub-components ──
 
 interface AvatarSlotProps {
@@ -67,7 +67,7 @@ const AvatarSlot: Component<AvatarSlotProps> = (props) => (
 			<Show
 				when={props.avatar}
 				fallback={
-					<div class="w-10 h-10 rounded-full bg-base-300 flex items-center justify-center">
+					<div class="w-10 h-10 rounded-full bg-base-300 flex items-center justify-center text-base-content/60">
 						{props.isUser ? <User class="w-5 h-5" /> : <Bot class="w-5 h-5" />}
 					</div>
 				}
@@ -96,10 +96,10 @@ interface FileSectionProps {
 
 const FileSection: Component<FileSectionProps> = (props) => (
 	<Show when={props.files && props.files.length > 0}>
-		<div class="flex flex-col gap-2 mb-2 pb-2 border-b border-white/20">
+		<div class="flex flex-col gap-2 mb-2 pb-2 border-b border-white/15">
 			<For each={props.files}>
 				{(file) => (
-					<div class="flex items-center gap-2 px-2 py-1 bg-white/15 rounded transition-colors hover:bg-white/25">
+					<div class="flex items-center gap-2 px-2 py-1 bg-white/10 rounded transition-colors hover:bg-white/20">
 						<span class="text-lg leading-none shrink-0">{fileIcon(file.type)}</span>
 						<div class="flex flex-col min-w-0 flex-1">
 							<span class="text-sm font-medium truncate">{file.name}</span>
@@ -128,17 +128,17 @@ interface ThinkingBlockProps {
 
 const ThinkingBlock: Component<ThinkingBlockProps> = (props) => (
 	<Show when={props.thinking && props.thinking.trim().length > 0}>
-		<div class="mb-2 rounded overflow-hidden">
+		<div class="mb-2 rounded-box overflow-hidden border border-base-300">
 			<button
 				type="button"
-				class="btn btn-ghost btn-xs rounded-b w-full justify-start gap-1 dark:text-neutral-300 dark:hover:bg-black/20 dark:hover:border-gray-500"
+				class="btn btn-ghost btn-xs w-full justify-start gap-1 text-base-content/60"
 				onClick={props.onToggle}
 			>
-				<span class="text-[10px] leading-none shrink-0">{props.open ? "▾" : "▸"}</span>
-				<span>{props.label}</span>
+				<span class="text-[10px] leading-none shrink-0 font-mono">{props.open ? "▾" : "▸"}</span>
+				<span class="text-xs">{props.label}</span>
 			</button>
 			<Show when={props.open}>
-				<div class="p-2 font-mono rounded-b text-[10px] text-base-content/50 whitespace-pre-wrap leading-relaxed bg-base-200 max-h-50 overflow-y-auto dark:bg-gray-500 dark:text-gray-300">
+				<div class="p-2 font-mono text-[10px] whitespace-pre-wrap leading-relaxed bg-base-200 text-base-content/50 max-h-50 overflow-y-auto border-t border-base-300">
 					{props.thinking}
 				</div>
 			</Show>

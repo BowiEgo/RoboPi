@@ -1,5 +1,5 @@
 import { Send } from "lucide-solid";
-import { type Component, createSignal, For } from "solid-js";
+import { type Component, createSignal, For, onCleanup, onMount, Show } from "solid-js";
 
 import { useLocale } from "@/contexts/LocaleContext";
 
@@ -57,7 +57,7 @@ const C = {
 	dropdownBtn: {
 		display: "btn btn-ghost btn-xs",
 		interaction: "rounded-lg mr-3 transition-none border-1",
-		color: "bg-app-raised text-base-content border-neutral-content/40 dark:text-white/70",
+		color: "bg-app-raised text-base-content border-base-content/15",
 	},
 
 	toolbar: {
@@ -82,15 +82,13 @@ const C = {
 		sizing: "w-[70%]",
 		spacing: "bottom-[6%]",
 		interaction: "rounded-3xl shadow-xl border-1",
-		color: "input-field border-base-200 dark:border-gray-700",
+		color: "input-field border-base-300",
 	},
 	wrapperFocused: { interaction: "border-accent" },
 	aura: { display: "flex flex-col", sizing: "h-full", interaction: "rounded-3xl" },
-	card: { display: "card", sizing: "h-full", interaction: "rounded-3xl", color: "bg-base-100 dark:bg-gray-900" },
+	card: { display: "card", sizing: "h-full", interaction: "rounded-3xl", color: "bg-base-100" },
 	footer: { display: "flex items-center justify-between", sizing: "shrink-0", spacing: "px-4 py-2" },
 };
-
-let _ddCounter = 0;
 
 interface DropdownItem {
 	label: string;
@@ -103,35 +101,78 @@ interface DropdownMenuProps {
 }
 
 const DropdownMenu: Component<DropdownMenuProps> = (props) => {
-	// eslint-disable-next-line solidjs/reactivity
-	const anchorId = () => `dd-${++_ddCounter}`;
-	const id = anchorId();
+	const [open, setOpen] = createSignal(false);
+	let btnRef: HTMLButtonElement | undefined;
+	let menuRef: HTMLUListElement | undefined;
+
+	function toggle(e: MouseEvent) {
+		e.stopPropagation();
+		setOpen((v) => !v);
+	}
+
+	function close() {
+		setOpen(false);
+	}
+
+	// Click outside to close
+	function onDocClick(e: MouseEvent) {
+		if (menuRef && !menuRef.contains(e.target as Node) && btnRef && !btnRef.contains(e.target as Node)) {
+			close();
+		}
+	}
+
+	// Escape to close
+	function onDocKey(e: KeyboardEvent) {
+		if (e.key === "Escape") close();
+	}
+
+	onMount(() => {
+		document.addEventListener("click", onDocClick);
+		document.addEventListener("keydown", onDocKey);
+	});
+
+	onCleanup(() => {
+		document.removeEventListener("click", onDocClick);
+		document.removeEventListener("keydown", onDocKey);
+	});
 
 	return (
-		<>
+		<div class="relative">
 			<button
-				popovertarget={id}
-				style={{ 'anchor-name': `--${id}` }}
+				ref={btnRef}
 				class={cx(C.dropdownBtn)}
 				type="button"
+				onClick={toggle}
+				aria-expanded={open()}
+				aria-haspopup="menu"
 			>
 				{props.label}
 			</button>
-			<ul
-				class={`dropdown dropdown-top menu flex flex-col flex-nowrap mb-2 bg-neutral text-neutral-content rounded-box shadow-xl border-1 z-1 p-2 max-h-48 overflow-y-auto border-primary/20`}
-				popover
-				id={id}
-				style={{ 'position-anchor': `--${id}`, width: props.width ?? '18rem' }}
-			>
-				<For each={props.items}>
-					{(item) => (
-						<li>
-							<a class={item.active ? 'active' : ''}>{item.label}</a>
-						</li>
-					)}
-				</For>
-			</ul>
-		</>
+			<Show when={open()}>
+				<ul
+					ref={menuRef}
+					class="absolute bottom-full left-0 mb-2 menu flex flex-col flex-nowrap bg-base-200 text-base-content rounded-box shadow-xl border-1 z-50 p-2 max-h-48 overflow-y-auto border-base-300"
+					style={{ width: props.width ?? "18rem" }}
+					role="menu"
+				>
+					<For each={props.items}>
+						{(item) => (
+							<li role="menuitem">
+								<a
+									class={item.active ? "active" : ""}
+									onClick={(e) => {
+										e.preventDefault();
+										close();
+									}}
+								>
+									{item.label}
+								</a>
+							</li>
+						)}
+					</For>
+				</ul>
+			</Show>
+		</div>
 	);
 };
 

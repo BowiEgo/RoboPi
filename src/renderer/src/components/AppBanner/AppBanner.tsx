@@ -16,11 +16,11 @@ const AppBanner: Component = () => {
 
 	return (
 		<div class={banner}>
-			<div class={`${logo} text-base-content dark:text-white`}>
+			<div class={`${logo} text-base-content`}>
 				{t("banner.logo")}
-				<span class={`${version} text-base-content/70 dark:text-white/90`}>0.1.0.0 Alpha</span>
+				<span class={`${version} text-base-content/50`}>0.1.0.0 Alpha</span>
 			</div>
-			<div class={`${desc} text-base-content/70 dark:text-white/70`}>{t("banner.desc")}</div>
+			<div class={`${desc} text-base-content/50`}>{t("banner.desc")}</div>
 		</div>
 	);
 };

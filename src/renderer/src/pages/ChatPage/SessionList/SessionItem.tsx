@@ -96,7 +96,7 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 
 	return (
 		<div
-			class={`${row()} ${props.active ? "bg-primary/70 dark:bg-primary/55" : "hover:bg-gray-200 dark:hover:bg-gray-500"}`}
+			class={`${row()} ${props.active ? "bg-primary text-primary-content" : "hover:bg-base-200 text-base-content/70"}`}
 			role="tab"
 			tabIndex={props.active ? 0 : -1}
 			onClick={() => props.onClick?.(props.id)}
@@ -120,7 +120,7 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 						when={editingName() !== null}
 						fallback={
 							<span
-								class={`${titleText} ${props.active ? "text-white/90 dark:text-white/80" : "text-gray-500 dark:text-gray-200"}`}
+								class={`${titleText} ${props.active ? "text-primary-content" : "text-base-content/80"}`}
 							>
 								{props.label}
 							</span>
@@ -142,7 +142,7 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 					</Show>
 					{props.time && (
 						<span
-							class={`${timeText} text-base-content/30 ${props.active ? "text-white/80 dark:text-white/60" : "text-gray-400 dark:text-gray-300"}`}
+							class={`${timeText} text-base-content/30 ${props.active ? "text-primary-content/60" : "text-base-content/40"}`}
 						>
 							{props.time}
 						</span>
@@ -150,7 +150,7 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 				</div>
 				{props.subtitle && (
 					<p
-						class={`${subtitleText} ${props.active ? "text-white/70 dark:text-white/50" : "text-gray-400 dark:text-gray-400"}`}
+						class={`${subtitleText} ${props.active ? "text-primary-content/60" : "text-base-content/50"}`}
 					>
 						{props.subtitle}
 					</p>
@@ -160,7 +160,7 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 			<div class={ellipsisWrapper}>
 				<button
 					type="button"
-					class={`${ellipsisBtn} ${props.active ? "text-white/70 dark:text-white/50 hover:bg-primary/75" : "text-gray-400 dark:text-gray-400"}`}
+					class={`${ellipsisBtn} ${props.active ? "text-primary-content/60 hover:bg-primary/75" : "text-base-content/40"}`}
 					aria-label="Session menu"
 					onClick={toggleMenu}
 				>

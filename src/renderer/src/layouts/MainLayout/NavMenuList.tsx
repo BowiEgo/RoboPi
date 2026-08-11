@@ -1,5 +1,3 @@
-import { For } from "solid-js";
-
 import type { NavItem } from "./MainLayout";
 import { define } from "@/utils/cx";
 
@@ -23,38 +21,36 @@ const label = "text-sm font-medium truncate";
 export default function NavMenuList(props: NavMenuListProps) {
 	return (
 		<ul class={`${menu()} ${props.expanded ? "" : "items-center"}`}>
-			<For each={props.items}>
-				{(navItem) => {
-					const active = props.activeNav === navItem.id;
-					return (
-						<li
-							class={`${item} ${active ? "bg-primary text-primary-content" : "hover:bg-primary/20 active:bg-primary/30 focus-visible:bg-primary/20 dark:text-white/70"}`}
-						>
-							{props.expanded ? (
-								<button
-									type="button"
-									class={`${btn} ${btnExpanded} bg-transparent active:bg-transparent focus-visible:bg-transparent`}
-									aria-label={navItem.label}
-									onClick={() => props.onSelect(navItem)}
-								>
-									<span class={`${icon} shrink-0`}>{navItem.icon}</span>
-									<span class={label}>{navItem.label}</span>
-								</button>
-							) : (
-								<button
-									type="button"
-									class={`${btn} ${btnCollapsed} bg-transparent active:bg-transparent focus-visible:bg-transparent`}
-									data-tip={navItem.label}
-									aria-label={navItem.label}
-									onClick={() => props.onSelect(navItem)}
-								>
-									<span class={icon}>{navItem.icon}</span>
-								</button>
-							)}
-						</li>
-					);
-				}}
-			</For>
+			{props.items.map((navItem) => {
+				const active = props.activeNav === navItem.id;
+				return (
+					<li
+						class={`${item} ${active ? "bg-primary text-primary-content" : "hover:bg-primary/20 active:bg-primary/30 focus-visible:bg-primary/20 text-base-content/70"}`}
+					>
+						{props.expanded ? (
+							<button
+								type="button"
+								class={`${btn} ${btnExpanded} bg-transparent active:bg-transparent focus-visible:bg-transparent`}
+								aria-label={navItem.label}
+								onClick={() => props.onSelect(navItem)}
+							>
+								<span class={`${icon} shrink-0`}>{navItem.icon}</span>
+								<span class={label}>{navItem.label}</span>
+							</button>
+						) : (
+							<button
+								type="button"
+								class={`${btn} ${btnCollapsed} bg-transparent active:bg-transparent focus-visible:bg-transparent`}
+								data-tip={navItem.label}
+								aria-label={navItem.label}
+								onClick={() => props.onSelect(navItem)}
+							>
+								<span class={icon}>{navItem.icon}</span>
+							</button>
+						)}
+					</li>
+				);
+			})}
 		</ul>
 	);
 }
