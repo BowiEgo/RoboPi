@@ -23,16 +23,40 @@ interface ChatPanelProps {
 }
 
 const ChatPanel: Component<ChatPanelProps> = (props) => {
-	let bottomRef: HTMLDivElement | undefined;
-
 	const agentConfig = () => props.agentConfig ?? {};
 
 	// Messages come directly from the store (via props.initialMessages).
 	// No local state — the store is the single source of truth.
 	const messages = () => props.initialMessages ?? [];
 
-	// ── Scroll: instant to last user message on switch, smooth to bottom on streaming ──
+	// ── Scroll ──
 
+	let scrollEl: HTMLElement | undefined;
+	let suppressScrollEvent = false;
+
+	const [isNearBottom, setIsNearBottom] = createSignal(true);
+
+	const onScroll = () => {
+		if (suppressScrollEvent || !scrollEl) return;
+		const el = scrollEl;
+		setIsNearBottom(el.scrollHeight - el.scrollTop - el.clientHeight <= 4);
+	};
+
+	const scrollToBottom = (behavior: ScrollBehavior = "auto") => {
+		if (!scrollEl) return;
+		suppressScrollEvent = true;
+		scrollEl.scrollTo({ top: scrollEl.scrollHeight, behavior });
+		// Re-enable after animation frame + buffer
+		requestAnimationFrame(() => {
+			requestAnimationFrame(() => {
+				suppressScrollEvent = false;
+				setIsNearBottom(true);
+			});
+		});
+	};
+
+	// Instant jump to last user message on session switch / new message.
+	// If the session is streaming, follow with instant scroll to bottom.
 	let lastMsgId = "";
 	createEffect(() => {
 		const msgs = messages();
@@ -40,28 +64,29 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 		const latestId = msgs[msgs.length - 1].id ?? "";
 		if (latestId !== lastMsgId) {
 			lastMsgId = latestId;
-			// Session switch or new message → jump to last user message
+			const streaming = msgs[msgs.length - 1].streaming;
 			queueMicrotask(() => {
 				const userBubbles = document.querySelectorAll('[data-role="user"]');
 				const lastUser = userBubbles[userBubbles.length - 1];
 				lastUser?.scrollIntoView({ block: "start" });
+				if (streaming && scrollEl) {
+					scrollEl.scrollTop = scrollEl.scrollHeight;
+				}
 			});
 		}
 	});
 
-	// Smooth scroll to bottom while streaming
-	let lastContentLen = 0;
+	// Smooth scroll to bottom while streaming — only when user is near bottom.
 	createEffect(() => {
 		const msgs = messages();
 		if (msgs.length === 0) return;
-		const len = msgs[msgs.length - 1].content.length;
-		if (len !== lastContentLen && msgs[msgs.length - 1].streaming) {
-			lastContentLen = len;
-			bottomRef?.scrollIntoView({ block: "end", behavior: "smooth" });
-		}
+		const last = msgs[msgs.length - 1];
+		void last.content.length;
+		if (!last.streaming || !isNearBottom()) return;
+		scrollToBottom("smooth");
 	});
 
-	// ── Test data ──
+// ── Test data ──
 	const TEST_MESSAGES: ChatBubbleProps[] = [
 		{
 			id: "test-1",
@@ -187,8 +212,10 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 			</header>
 
 			<main
+				ref={(el) => { scrollEl = el; }}
 				class="flex-1 w-full flex flex-col gap-1 overflow-y-auto px-4 pt-12 pb-[20%] text-base-content z-0"
-				style="scroll-behavior: auto; scroll-padding-top: 64px"
+				style="scroll-behavior: auto; scroll-padding-top: 64px; scroll-padding-bottom: 96px"
+			onScroll={onScroll}
 			>
 				<Show when={displayMessages().length === 0} fallback={null}>
 					{props.children ?? (
@@ -232,13 +259,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
  -webkit-mask-image: linear-gradient(to top, black 30%, transparent 100%);"
 				/>
 
-				{/* Sentinel — scrollIntoView target */}
-				<div
-					ref={(el) => {
-						bottomRef = el;
-					}}
-				/>
-			</main>
+				</main>
 
 			<Composer onSend={handleSend} agentConfig={agentConfig()} rainbow={true} />
 		</div>
