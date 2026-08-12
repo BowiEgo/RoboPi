@@ -5,6 +5,8 @@
 
 基于 Pi Agent 构建的桌面应用，将对话式 AI、任务自动化和知识库构建集成在同一界面中。
 
+![preview.png](./docs/imgs/WechatIMG55.png)
+
 ## 文档
 
 - [DESIGN.md](docs/DESIGN.md) — 架构与设计决策

@@ -4,6 +4,8 @@
 
 A desktop application built on Pi Agent that integrates conversational AI, task automation, and knowledge base construction into a unified interface.
 
+![preview.png](./docs/imgs/WechatIMG55.png)
+
 ## Documentation
 
 - [DESIGN.md](docs/DESIGN.md) — Architecture & design decisions
