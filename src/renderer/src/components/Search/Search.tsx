@@ -34,7 +34,7 @@ const C = {
 		spacing: "gap-1.5 px-1.5 py-1",
 		interaction: "rounded pointer-events-none",
 		text: "font-mono text-[12px] font-medium tracking-wider leading-none",
-		color: "bg-primary text-primary-content opacity-50",
+		color: "bg-primary text-primary-content opacity-60",
 	},
 };
 
