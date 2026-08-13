@@ -40,6 +40,7 @@ export const AgentMessageType = {
 	AgentReady: "agent:ready",
 	AgentConfig: "agent:config",
 	AgentShutdown: "agent:shutdown",
+	AgentError: "agent:error",
 	// Model management
 	ModelRefresh: "model:refresh",
 	ModelRefreshed: "model:refreshed",
@@ -78,6 +79,7 @@ export type AgentPayload =
 	| AgentStatusPayload
 	| AgentReadyPayload
 	| AgentConfigPayload
+	| AgentErrorPayload
 	| ModelRefreshPayload
 	| ModelRefreshedPayload
 	| ModelSetApiKeyPayload
@@ -193,6 +195,12 @@ export interface AgentConfigPayload {
 	/** Available model list. */
 	availableModels?: string[];
 	status?: "idle" | "thinking" | "responding" | "error";
+}
+
+/** Agent lifecycle / protocol error (init, not-ready, invalid payload). */
+export interface AgentErrorPayload {
+	code: string;
+	message: string;
 }
 
 // ============================================================================

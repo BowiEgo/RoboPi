@@ -7,8 +7,8 @@
  */
 
 import { type AgentMessage, AgentMessageType, isValidMessageType } from "../../shared/agent-types.ts";
-import { AgentHost } from "./agent-host.ts";
 import { createLogger } from "../../shared/logger/index.ts";
+import { AgentHost } from "./agent-host.ts";
 import { AGENT_READY_ID, AGENT_VERSION, DEFAULT_SESSION_NAME, ErrorCode } from "./constants.ts";
 import {
 	isChatSendPayload,
@@ -74,10 +74,9 @@ async function startup(): Promise<void> {
 		logger.error("Failed to initialize", message);
 		postMessageToHost({
 			id: AGENT_READY_ID,
-			type: AgentMessageType.ChatError,
+			type: AgentMessageType.AgentError,
 			payload: {
-				sessionId: "",
-				code: "INIT_ERROR",
+				code: ErrorCode.INIT_ERROR,
 				message: `Failed to initialize agent: ${message}`,
 			},
 		});

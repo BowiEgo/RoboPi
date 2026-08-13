@@ -8,7 +8,7 @@ import { ErrorCode } from "./constants.ts";
 export function respondError(msgId: string, code: string, message: string): void {
 	postToHost({
 		id: msgId,
-		type: AgentMessageType.SessionError,
+		type: AgentMessageType.AgentError,
 		payload: { code, message },
 	});
 }

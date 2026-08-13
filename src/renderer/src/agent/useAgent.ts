@@ -259,10 +259,18 @@ if (agent && !_storeReady) {
 				break;
 			}
 
-			case AgentMessageType.SessionError: {
-				console.error("[useAgent] Session error:", msg.payload);
-				setLoading(false);
+			case AgentMessageType.AgentError: {
 				const message = (msg.payload as { message?: string }).message ?? "Unknown error";
+				console.error("[useAgent] Agent error:", message);
+				setLoading(false);
+				fail(msg.id, new Error(message));
+				break;
+			}
+
+			case AgentMessageType.SessionError: {
+				const message = (msg.payload as { message?: string }).message ?? "Unknown error";
+				console.error("[useAgent] Session error:", message);
+				setLoading(false);
 				fail(msg.id, new Error(message));
 				break;
 			}
