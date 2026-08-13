@@ -3,7 +3,6 @@
 *::before,
 *::after {
 	box-sizing: border-box;
-	margin: 0;
 	font-weight: normal;
 }
 
@@ -14,36 +13,11 @@ ul {
 /* ── Body ── */
 body {
 	min-height: 100vh;
-	color: var(--main-text);
-	background: var(--main-bg);
+	color: var(--color-base-content);
+	background: var(--color-base-100);
 	font-family: var(--font-display);
 	line-height: 1.6;
 	text-rendering: optimizeLegibility;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
-}
-
-/* ── Themed Scrollbar ── */
-::-webkit-scrollbar {
-	width: 6px;
-	height: 6px;
-}
-
-::-webkit-scrollbar-track {
-	background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-	background: var(--color-surface-dark-soft);
-	border-radius: 3px;
-	transition: background 0.15s ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-	background: var(--color-accent-periwinkle);
-	opacity: 0.6;
-}
-
-::-webkit-scrollbar-corner {
-	background: transparent;
 }

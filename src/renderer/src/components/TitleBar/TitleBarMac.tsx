@@ -1,14 +1,24 @@
 import type { Component } from "solid-js";
 
-import styles from "./TitleBar.module.css";
+import { cstyle } from "@/utils/cstyle";
 
 /**
- * macOS 标题栏
- * titleBarStyle: 'hidden' 保留了原生的红/黄/绿交通灯按钮，
- * 这里仅提供一个可拖拽的空白区域。
+ * macOS title bar.
+ * With titleBarStyle: 'hidden', native traffic-light buttons are retained.
+ * This just provides a draggable empty region.
  */
+
+const C = {
+	bar: cstyle({
+		display: "absolute top-0",
+		sizing: "w-screen h-8 shrink-0",
+		interaction: "select-none",
+		color: "bg-app bg-transparent",
+	}),
+};
+
 const TitleBarMac: Component = () => {
-	return <div class={styles.macBar} />;
+	return <div class={C.bar()} style="-webkit-app-region: drag" />;
 };
 
 export default TitleBarMac;

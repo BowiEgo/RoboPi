@@ -1,76 +1,85 @@
-import { type Component, createSignal, type JSX } from "solid-js";
+import { type Component, createMemo, createSignal, type JSX } from "solid-js";
 
+import { useAgent } from "@/agent/useAgent";
 import { useLocale } from "@/contexts/LocaleContext";
 
 import Resizer from "@/components/Resizer/Resizer";
 import Search from "@/components/Search/Search";
 
-import styles from "./ChatPage.module.css";
-
 import ChatPanel, { type ChatTag } from "./ChatPanel/ChatPanel";
+import SessionList from "./SessionList/SessionList";
+import { cstyle } from "@/utils/cstyle";
+
+// ── Layout ──
+
+const root = cstyle({ base: "flex h-full overflow-hidden" });
+const drawer = "relative shrink-0";
+const aside = "flex flex-col h-full pt-3 overflow-hidden select-none";
+const sidebarHeader = "flex items-center gap-2 px-4 text-[15px] font-medium font-display shrink-0";
+const sidebarContent = "flex-1 p-3";
+const sidebarBottom = "shrink-0";
+const main = cstyle({ base: "flex-1 flex flex-col overflow-hidden p-8 pt-0 pl-5" });
 
 interface ChatPageProps {
-	/** 侧边栏头部内容 */
 	sidebarHeader?: JSX.Element;
-	/** 侧边栏主体内容 */
-	sidebarContent: JSX.Element;
-	/** 侧边栏底部内容 */
 	sidebarBottom?: JSX.Element;
-	/** 对话区标题 */
-	chatHeader?: JSX.Element;
-	/** 对话区过滤标签 */
-	chatTags?: ChatTag[];
-	/** 对话区消息内容 */
 	children?: JSX.Element;
-	/** 侧边栏初始宽度（默认 260px） */
 	defaultWidth?: number;
-	/** 侧边栏最小宽度（默认 180px） */
 	minWidth?: number;
-	/** 侧边栏最大宽度（默认 600px） */
 	maxWidth?: number;
 }
 
 const ChatPage: Component<ChatPageProps> = (props) => {
 	const { t } = useLocale();
+	const { activeId, activeName, messages, resetKey, loading, agentConfig, createSession, handleSend } = useAgent();
+
 	const minW = () => props.minWidth ?? 180;
 	const maxW = () => props.maxWidth ?? 600;
+	const [drawerWidth, setDrawerWidth] = createSignal(props.defaultWidth ?? 300);
 
-	const [drawerWidth, setDrawerWidth] = createSignal(props.defaultWidth ?? 260);
+	const tags = createMemo<ChatTag[]>(() => [
+		{ id: "context", label: "上下文：0.0% / 1.0M ↑ 0 ↓ 0" },
+		{ id: "cache", label: "缓存：0" },
+		{ id: "cost", label: "$0.000" },
+		{
+			id: "new",
+			label: t("chat.newSession"),
+			type: "action",
+			onClick: () => createSession(),
+		},
+	]);
 
 	return (
-		<div class={styles.layout}>
-			{/* Left side drawer */}
-			<aside
-				class={styles.drawer}
-				style={{ width: `${drawerWidth()}px` }}
-				aria-label={t("chat.drawerLabel")}
-			>
-				{props.sidebarHeader && (
-					<div class={styles.drawerHeader}>{props.sidebarHeader}</div>
-				)}
-
-				<div class={styles.drawerContent}>
-					<Search />
-					{props.sidebarContent}
-				</div>
-				{props.sidebarBottom && (
-					<div class={styles.drawerBottom}>{props.sidebarBottom}</div>
-				)}
-
+		<div class={`${root()} bg-app-raised`}>
+			<div class={drawer} style={{ width: `${drawerWidth()}px` }}>
+				<aside class={`${aside} text-primary/10`} aria-label={t("chat.drawerLabel")}>
+					{props.sidebarHeader && <div class={`${sidebarHeader} text-base-content`}>{props.sidebarHeader}</div>}
+					<div class={`${sidebarContent} text-base-content`}>
+						<Search />
+						<SessionList />
+					</div>
+					{props.sidebarBottom && <div class={sidebarBottom}>{props.sidebarBottom}</div>}
+				</aside>
 				<Resizer
 					value={drawerWidth()}
 					min={minW()}
 					max={maxW()}
-					orientation="horizontal"
 					position="right"
-					handle={false}
+					grip={false}
 					onChange={(v) => setDrawerWidth(v)}
 				/>
-			</aside>
+			</div>
 
-			{/* Right side main area */}
-			<main class={styles.main} aria-label={t("chat.contentLabel")}>
-				<ChatPanel header={props.chatHeader} tags={props.chatTags}>
+			<main class={`${main()} text-base-content`} aria-label={t("chat.contentLabel")}>
+				<ChatPanel
+					header={<span>{loading() ? `${t("status.starting")}...` : activeName() || "RoboPi"}</span>}
+					tags={tags()}
+					sessionId={activeId() ?? undefined}
+					agentConfig={agentConfig()}
+					initialMessages={messages()}
+					resetKey={resetKey()}
+					onSend={handleSend}
+				>
 					{props.children}
 				</ChatPanel>
 			</main>

@@ -1,5 +1,5 @@
 /**
- * 将字符串的首字母大写
+ * Capitalize the first letter of a string.
  */
 export function capitalize(str: string): string {
 	if (!str) return str;
@@ -7,7 +7,7 @@ export function capitalize(str: string): string {
 }
 
 /**
- * 将字符串按指定分隔符转为驼峰命名
+ * Convert a string to camelCase using the given separator.
  */
 export function toCamelCase(str: string, separator = "-"): string {
 	if (!str) return str;
@@ -18,7 +18,7 @@ export function toCamelCase(str: string, separator = "-"): string {
 }
 
 /**
- * 计算斐波那契数列的第 n 项（n >= 0）
+ * Compute the n-th Fibonacci number (n >= 0).
  */
 export function fibonacci(n: number): number {
 	if (n < 0) throw new Error("n must be non-negative");

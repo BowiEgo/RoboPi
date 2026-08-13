@@ -1,19 +1,48 @@
+import { Search as SearchIcon } from "lucide-solid";
 import { type Component, createSignal } from "solid-js";
 
 import { useLocale } from "@/contexts/LocaleContext";
 
-import Icon from "@/components/Icon";
+import { cstyle } from "@/utils/cstyle";
 
-import commandSvg from "@/assets/icons/command.svg?raw";
-import searchSvg from "@/assets/icons/search.svg?raw";
-import xSvg from "@/assets/icons/x.svg?raw";
+// ── Styles ──
 
-import styles from "./Search.module.css";
+const C = {
+	wrapper: cstyle({
+		display: "relative flex items-center",
+		sizing: "w-full h-9",
+		spacing: "px-3",
+		interaction: "rounded-lg border cursor-text shadow-sm",
+		color:
+			"border-base-300 input-field hover:border-base-600 focus-within:border-primary/45 focus-within:ring-primary/15",
+	}),
+	icon: cstyle({
+		display: "flex items-center justify-center",
+		sizing: "w-4 h-4 shrink-0",
+		interaction: "pointer-events-none",
+		color: "text-neutral-500 group-focus-within:text-primary group-focus-within:opacity-100",
+	}),
+	input: cstyle({
+		display: "border-none outline-none bg-transparent",
+		sizing: "flex-1 min-w-0 h-full",
+		spacing: "px-2",
+		text: "text-xs leading-none",
+	}),
+	shortcut: cstyle({
+		display: "flex items-center",
+		sizing: "shrink-0",
+		spacing: "gap-1.5 px-1.5 py-1",
+		interaction: "rounded pointer-events-none",
+		text: "font-mono text-[12px] font-medium tracking-wider leading-none",
+		color: "bg-primary text-primary-content opacity-60",
+	}),
+};
+
+// ── Component ──
 
 const Search: Component = () => {
 	const { t } = useLocale();
 	const [value, setValue] = createSignal("");
-	const [focused, setFocused] = createSignal(false);
 
 	let inputRef: HTMLInputElement | undefined;
 
@@ -22,53 +51,25 @@ const Search: Component = () => {
 		setValue(target.value);
 	};
 
-	const handleClear = () => {
-		setValue("");
-		inputRef?.focus();
-	};
-
 	return (
-		<div
-			class={`${styles.search} ${focused() ? styles.focused : ""} glass-btn`}
-			role="search"
-		>
-			<span class={styles.icon}>
-				<Icon raw={searchSvg} />
+		<label class={`${C.wrapper()} group`}>
+			<span class={C.icon()}>
+				<SearchIcon class="w-full h-full" />
 			</span>
-
 			<input
+				type="search"
+				class={C.input()}
 				ref={inputRef}
-				type="text"
-				class={styles.input}
 				value={value()}
 				onInput={handleInput}
-				onFocus={() => setFocused(true)}
-				onBlur={() => setFocused(false)}
 				placeholder={t("search.placeholder")}
 				aria-label={t("search.label")}
 			/>
-
-			{value() && (
-				<button
-					type="button"
-					class={styles.clearBtn}
-					onClick={handleClear}
-					aria-label={t("search.clear")}
-					tabindex={-1}
-				>
-					<Icon raw={xSvg} />
-				</button>
-			)}
-
-			{!value() && (
-				<kbd class={styles.shortcut}>
-					<span class={styles.cmdIcon}>
-						<Icon raw={commandSvg} />
-					</span>
-					K
-				</kbd>
-			)}
-		</div>
+			<span class={C.shortcut()}>
+				<span class="scale-125">⌘</span>
+				<span>K</span>
+			</span>
+		</label>
 	);
 };
 

@@ -1,12 +1,7 @@
 import { electronAPI } from "@electron-toolkit/preload";
 import { contextBridge, ipcRenderer } from "electron";
 
-interface WindowApi {
-	minimize: () => void;
-	maximize: () => void;
-	close: () => void;
-	platform: NodeJS.Platform;
-}
+import type { AgentApi, WindowApi } from "./index.d";
 
 // Custom APIs for renderer
 const api: WindowApi = {
@@ -14,6 +9,18 @@ const api: WindowApi = {
 	maximize: () => ipcRenderer.send("window:maximize"),
 	close: () => ipcRenderer.send("window:close"),
 	platform: process.platform,
+	invoke: (channel: string, ...args: unknown[]) =>
+		ipcRenderer.invoke(channel, ...args),
+};
+
+const agentApi: AgentApi = {
+	send: (msg: unknown) => ipcRenderer.send("agent:send", msg),
+	onMessage: (callback: (msg: unknown) => void) => {
+		const handler = (_event: Electron.IpcRendererEvent, msg: unknown) =>
+			callback(msg);
+		ipcRenderer.on("agent:message", handler);
+		return () => ipcRenderer.removeListener("agent:message", handler);
+	},
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to
@@ -23,12 +30,12 @@ if (process.contextIsolated) {
 	try {
 		contextBridge.exposeInMainWorld("electron", electronAPI);
 		contextBridge.exposeInMainWorld("api", api);
+		contextBridge.exposeInMainWorld("agent", agentApi);
 	} catch (error) {
 		console.error(error);
 	}
 } else {
-	// @ts-expect-error (define in dts)
 	window.electron = electronAPI;
-	// @ts-expect-error (define in dts)
 	window.api = api;
+	window.agent = agentApi;
 }

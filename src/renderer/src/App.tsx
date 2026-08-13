@@ -1,54 +1,43 @@
-import { type Component, createMemo, createSignal } from "solid-js";
+import { BotMessageSquare, MessageCircle, Moon, Settings, Sun } from "lucide-solid";
+import { type Component, createSignal } from "solid-js";
 
 import { LocaleProvider, useLocale } from "@/contexts/LocaleContext";
 import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
 
 import MainLayout, { type NavItem } from "@/layouts/MainLayout/MainLayout";
-import ChatItem from "@/pages/ChatPage/ChatItem/ChatItem";
 import ChatPage from "@/pages/ChatPage/ChatPage";
-import SettingsPage from "@/pages/SettingsPage/SettingsPage";
-import ThemePage from "@/pages/ThemePage/ThemePage";
 import AppBanner from "@/components/AppBanner/AppBanner";
-import Icon from "@/components/Icon";
-
-import chatIcon from "@/assets/icons/chat.svg?raw";
-import electronLogo from "@/assets/icons/electron.svg";
-import moonSvg from "@/assets/icons/moon.svg?raw";
-import paletteIcon from "@/assets/icons/palette.svg?raw";
-import settingsIcon from "@/assets/icons/settings.svg?raw";
-import sunSvg from "@/assets/icons/sun.svg?raw";
+import Modal from "@/components/Modal/Modal";
+import SettingPanel from "@/components/SettingPanel/SettingPanel";
 
 const AppContent: Component = () => {
 	const [activeNav, setActiveNav] = createSignal("chat");
+	const [settingsOpen, setSettingsOpen] = createSignal(false);
 	const { t } = useLocale();
+	const { isDark, toggleDark } = useTheme();
 
-	const { mode, toggleMode } = useTheme();
+	const topNav: NavItem[] = [{ id: "chat", icon: <MessageCircle />, label: t("nav.chat") }];
 
-	const topNav: NavItem[] = [
-		{ id: "chat", icon: <Icon raw={chatIcon} />, label: t("nav.chat") },
-		{ id: "theme", icon: <Icon raw={paletteIcon} />, label: t("nav.theme") },
-	];
-
-	const bottomNav = createMemo<NavItem[]>(() => [
+	const bottomNav: NavItem[] = [
 		{
 			id: "settings",
-			icon: <Icon raw={settingsIcon} />,
+			icon: <Settings />,
 			label: t("nav.settings"),
 		},
-		// 每次 mode() 变化，这里都会重新执行
-		/* ── Dark/Light Mode Toggle ── */
 		{
 			id: "themeMode",
-			icon: mode() === "dark" ? <Icon raw={sunSvg} /> : <Icon raw={moonSvg} />,
-			label:
-				mode() === "dark" ? t("theme.switchToLight") : t("theme.switchToDark"),
+			icon: <Sun class="w-5 h-5" />,
+			altIcon: <Moon class="w-5 h-5" />,
+			label: t("theme.switchToLight"),
 			isSwitch: true,
 		},
-	]);
+	];
 
 	const onNavSelect = (item: NavItem) => {
 		if (item.isSwitch) {
-			if (item.id === "themeMode") toggleMode();
+			if (item.id === "themeMode") toggleDark();
+		} else if (item.id === "settings") {
+			setSettingsOpen(true);
 		} else {
 			setActiveNav(item.id);
 		}
@@ -58,59 +47,24 @@ const AppContent: Component = () => {
 		<div class="app">
 			<MainLayout
 				topNavItems={topNav}
-				bottomNavItems={bottomNav()}
+				bottomNavItems={bottomNav}
+				isDark={isDark()}
 				activeNav={activeNav()}
 				onNavSelect={onNavSelect}
-				navTop={<img alt="logo" src={electronLogo} class="h-5 w-5" />}
+				navTop={<BotMessageSquare class="w-10 h-10 text-primary" />}
 			>
-				{activeNav() === "chat" && (
-					<ChatPage
-						sidebarHeader={<AppBanner />}
-						sidebarContent={
-							<ChatItem
-								sessions={[
-									{
-										id: "1",
-										label: t("chat.session1"),
-										subtitle: t("chat.session1Preview"),
-										time: "10:30",
-										status: "active",
-									},
-									{
-										id: "2",
-										label: t("chat.session2"),
-										subtitle: t("chat.session2Preview"),
-										time: "09:15",
-										status: "starting",
-									},
-									{
-										id: "3",
-										label: t("chat.session3"),
-										subtitle: t("chat.session3Preview"),
-										time: "昨天",
-									},
-									{
-										id: "4",
-										label: t("chat.session4"),
-										subtitle: t("chat.session4Preview"),
-										time: "昨天",
-									},
-								]}
-							/>
-						}
-						sidebarBottom={<div class="h-12" />}
-						chatHeader={<span>.pi-desktop</span>}
-						chatTags={[
-							{ id: "context", label: "上下文：0.0% / 1.0M ↑ 0 ↓ 0" },
-							{ id: "cache", label: "缓存：0" },
-							{ id: "cost", label: "$0.000" },
-							{ id: "new", label: t("chat.newSession"), type: "action" },
-						]}
-					/>
-				)}
-				{activeNav() === "theme" && <ThemePage />}
-				{activeNav() === "settings" && <SettingsPage />}
+				{activeNav() === "chat" && <ChatPage sidebarHeader={<AppBanner />} sidebarBottom={<div class="h-12" />} />}
 			</MainLayout>
+
+			<Modal
+				open={settingsOpen()}
+				onClose={() => setSettingsOpen(false)}
+				title={t("settings.title")}
+				minWidth="66rem"
+				backdropBlur={true}
+			>
+				<SettingPanel />
+			</Modal>
 		</div>
 	);
 };
