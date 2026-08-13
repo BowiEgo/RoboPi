@@ -8,8 +8,8 @@
 
 import { ModelRuntime, SettingsManager } from "@earendil-works/pi-coding-agent";
 
-import { getAuthPath, getModelsPath, getSettingsDir } from "./config.ts";
 import { createLogger } from "../../shared/logger/index.ts";
+import { getAuthPath, getModelsPath, getSettingsDir } from "./config.ts";
 import { SessionHost } from "./session/session-host.ts";
 
 const logger = createLogger("AgentHost");
@@ -49,16 +49,18 @@ export class AgentHost {
 
 	private async updateModelLists(): Promise<void> {
 		if (!this.modelRuntime) return;
-		const all = this.modelRuntime.getModels().map((m) => m.id);
 
 		// Use the SDK's own credential store — no manual file parsing
 		const credentials = await this.modelRuntime.listCredentials();
-		const configuredProviders = new Set(credentials.filter((c) => c.type === "api_key").map((c) => c.providerId));
+		const configuredProviders = new Set(
+			credentials.filter((c) => c.type === "api_key").map((c) => c.providerId),
+		);
 
-		this.configuredModels = all.filter((id) => {
-			const provider = id.split("/")[0];
-			return configuredProviders.has(provider);
-		});
+		// Filter by the Model's authoritative `provider` field, not the ID prefix
+		const models = this.modelRuntime.getModels();
+		this.configuredModels = models
+			.filter((m) => configuredProviders.has(m.provider))
+			.map((m) => m.id);
 	}
 
 	async refreshModels(force = false): Promise<void> {
@@ -101,7 +103,6 @@ export class AgentHost {
 		}
 
 		const available = await modelRuntime.getAvailable();
-		this.configuredModels = available.map((m) => m.id);
 		if (available.length === 0) {
 			logger.warn("No authenticated models available. Set ANTHROPIC_API_KEY or OPENAI_API_KEY.");
 		} else {
@@ -118,9 +119,10 @@ export class AgentHost {
 			}
 		}
 
-		const snapshotAll = modelRuntime.getModels().map((m) => m.id);
-		const authenticated = available.map((m) => m.id);
-		this.availableModels = [...new Set([...authenticated, ...snapshotAll])];
+		// availableModels = every built-in model (used by Settings page)
+		this.availableModels = modelRuntime.getModels().map((m) => m.id);
+
+		// configuredModels = models whose provider has an API key (used by Composer)
 		await this.updateModelLists();
 	}
 

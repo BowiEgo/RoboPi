@@ -1,10 +1,9 @@
 import { Plus, Trash2 } from "lucide-solid";
 import { type Component, createMemo, createSignal, For, Show } from "solid-js";
 
-import { setApiKey as persistApiKey } from "@/ipc/settings";
-
 import Dropdown from "@/components/Dropdown/Dropdown";
 
+import { setApiKey as persistApiKey } from "@/ipc/settings";
 import { cstyle } from "@/utils/cstyle";
 
 // ── Types ──
@@ -149,7 +148,7 @@ const ModelManager: Component<ModelManagerProps> = (props) => {
 				<div class={C.headerActions()}>
 					<button type="button" class={C.addBtn()} onClick={() => setModalOpen(true)}>
 						<Plus class="w-3.5 h-3.5" />
-						Add Model
+						Add Provider
 					</button>
 				</div>
 			</div>

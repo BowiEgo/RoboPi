@@ -238,14 +238,9 @@ async function applyConfig(
 	payload: { model?: string; thinkingLevel?: string },
 ): Promise<void> {
 	if (payload.model) {
+		// session.setModel() already persists to settings via
+		// setDefaultModelAndProvider(model.provider, model.id).
 		await host.setModel(payload.model);
-		const slash = payload.model.indexOf("/");
-		if (slash > 0) {
-			host.settingsManager?.setDefaultModelAndProvider(payload.model.slice(0, slash), payload.model.slice(slash + 1));
-		} else {
-			host.settingsManager?.setDefaultModel(payload.model);
-		}
-		void host.settingsManager?.flush();
 	}
 	if (payload.thinkingLevel && isThinkingLevel(payload.thinkingLevel)) {
 		agentHost.thinkingLevelRef.value = payload.thinkingLevel;

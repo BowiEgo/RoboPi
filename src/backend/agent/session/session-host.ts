@@ -139,7 +139,8 @@ export class SessionHost {
 
 	async setModel(modelId: string): Promise<void> {
 		if (!this.session || !this.modelRuntime) return;
-		const model = this.modelRuntime.getModel(modelId.split("/")[0], modelId.slice(modelId.indexOf("/") + 1));
+		// Match by the full model ID — do not derive the provider from the ID prefix.
+		const model = this.modelRuntime.getModels().find((m) => m.id === modelId);
 		if (!model) return;
 		await this.session.setModel(model);
 		if (this.agentModelRef) this.agentModelRef.value = model.id;
