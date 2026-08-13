@@ -1,11 +1,11 @@
 import { type Component, createSignal, onMount } from "solid-js";
 
-import { getSettings, type SettingsInfo } from "@/ipc/settings";
 import { type LocaleId, useLocale } from "@/contexts/LocaleContext";
 
 import ModelManager, { type SavedModel } from "@/components/ModelManager/ModelManager";
 import Versions from "@/components/Versions/Versions";
 
+import { getSettings, type SettingsInfo } from "@/ipc/settings";
 import { cstyle } from "@/utils/cstyle";
 
 const LOCALES: { id: LocaleId; labelKey: string }[] = [
@@ -52,9 +52,9 @@ const C = {
 		spacing: "gap-2",
 	}),
 	localeBtn: cstyle({
-		display: "btn btn-outline btn-sm",
+		display: "btn btn-soft btn-sm",
 		variants: {
-			active: { true: "btn-active" },
+			active: { true: "btn-active btn-primary" },
 		},
 	}),
 };

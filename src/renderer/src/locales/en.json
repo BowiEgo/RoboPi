@@ -92,6 +92,8 @@
 	"settings.selectProvider": "Select provider...",
 	"settings.apiKey": "API Key",
 	"settings.apiKeyPlaceholder": "sk-...",
+	"settings.showApiKey": "Show API key",
+	"settings.hideApiKey": "Hide API key",
 	"settings.customProvider": "Custom (OpenAI-compatible)",
 	"settings.cancel": "Cancel",
 	"settings.save": "Save",

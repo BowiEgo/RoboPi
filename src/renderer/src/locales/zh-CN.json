@@ -92,6 +92,8 @@
 	"settings.selectProvider": "选择供应商...",
 	"settings.apiKey": "API 密钥",
 	"settings.apiKeyPlaceholder": "sk-...",
+	"settings.showApiKey": "显示密钥",
+	"settings.hideApiKey": "隐藏密钥",
 	"settings.customProvider": "自定义（OpenAI 兼容）",
 	"settings.cancel": "取消",
 	"settings.save": "保存",

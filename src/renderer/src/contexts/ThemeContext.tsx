@@ -53,6 +53,7 @@ interface ThemeContextValue {
 	setTheme: (id: string) => void;
 	isDark: () => boolean;
 	toggleDark: () => void;
+	setDark: (dark: boolean) => void;
 }
 
 const ThemeCtx = createContext<ThemeContextValue>();
@@ -87,10 +88,14 @@ export const ThemeProvider: Component<{ children: JSX.Element }> = (props) => {
 		setTheme(isDark() ? "robo" : "robo-dark");
 	};
 
+	const setDark = (dark: boolean) => {
+		setTheme(dark ? "robo-dark" : "robo");
+	};
+
 	// Apply theme on mount
 	document.documentElement.setAttribute("data-theme", getInitialTheme());
 
-	return <ThemeCtx.Provider value={{ theme, setTheme, isDark, toggleDark }}>{props.children}</ThemeCtx.Provider>;
+	return <ThemeCtx.Provider value={{ theme, setTheme, isDark, toggleDark, setDark }}>{props.children}</ThemeCtx.Provider>;
 };
 
 export function useTheme(): ThemeContextValue {

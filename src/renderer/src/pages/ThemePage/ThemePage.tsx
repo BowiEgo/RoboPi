@@ -27,10 +27,10 @@ const C = {
 		spacing: "gap-2",
 	}),
 	modeBtn: cstyle({
-		display: "btn btn-outline btn-sm",
+		display: "btn btn-soft btn-sm",
 		spacing: "gap-2",
 		variants: {
-			active: { true: "btn-active" },
+			active: { true: "btn-primary btn-active" },
 		},
 	}),
 	themeGrid: cstyle({
@@ -48,7 +48,7 @@ const C = {
 // ── Component ──
 
 const ThemePage: Component = () => {
-	const { theme, setTheme, isDark, toggleDark } = useTheme();
+	const { theme, setTheme, isDark, setDark } = useTheme();
 	const { t } = useLocale();
 
 	return (
@@ -56,11 +56,11 @@ const ThemePage: Component = () => {
 			<section class={C.section()}>
 				<h2 class={C.eyebrow()}>{t("theme.mode")}</h2>
 				<div class={C.modeRow()}>
-					<button type="button" class={C.modeBtn({ active: isDark() })} onClick={() => toggleDark()}>
+					<button type="button" class={C.modeBtn({ active: isDark() })} onClick={() => setDark(true)}>
 						<Moon class="w-4 h-4" />
 						<span>{t("theme.modeDark")}</span>
 					</button>
-					<button type="button" class={C.modeBtn({ active: !isDark() })} onClick={() => toggleDark()}>
+					<button type="button" class={C.modeBtn({ active: !isDark() })} onClick={() => setDark(false)}>
 						<Sun class="w-4 h-4" />
 						<span>{t("theme.modeLight")}</span>
 					</button>

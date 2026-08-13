@@ -21,6 +21,8 @@ export interface ModalProps {
 	maxHeight?: string;
 	/** Apply a frosted-glass (backdrop blur) effect to the overlay. */
 	backdropBlur?: boolean;
+	/** Body overflow behavior (CSS overflow value, default "auto"). */
+	bodyOverflow?: string;
 	children: JSX.Element;
 }
 
@@ -37,7 +39,7 @@ const C = {
 	}),
 	panel: cstyle({
 		display: "flex flex-col",
-		sizing: "w-full overflow-hidden",
+		sizing: "w-full",
 		interaction: "rounded-2xl shadow-2xl border",
 		color: "bg-base-100 border-base-300",
 	}),
@@ -55,7 +57,6 @@ const C = {
 	body: cstyle({
 		display: "flex flex-col flex-1",
 		spacing: "p-6 gap-4",
-		sizing: "overflow-y-auto",
 	}),
 };
 
@@ -118,7 +119,7 @@ const Modal: Component<ModalProps> = (props) => {
 							</button>
 						</div>
 					</Show>
-					<div class={C.body()}>{props.children}</div>
+					<div class={C.body()} style={{ overflow: props.bodyOverflow ?? "auto" }}>{props.children}</div>
 				</div>
 			</div>
 		</Show>

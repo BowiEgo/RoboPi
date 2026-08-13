@@ -1,4 +1,4 @@
-import { Plus, Trash2 } from "lucide-solid";
+import { Eye, EyeOff, Plus, Trash2 } from "lucide-solid";
 import { type Component, createMemo, createSignal, For, Show } from "solid-js";
 
 import { useLocale } from "@/contexts/LocaleContext";
@@ -65,7 +65,19 @@ const C = {
 	subtitle: cstyle({ text: "text-xs", color: "text-base-content/40" }),
 	field: cstyle({ display: "flex flex-col", spacing: "gap-1.5" }),
 	label: cstyle({ text: "text-xs font-medium", color: "text-base-content/60" }),
-	apiKeyInput: cstyle({ display: "input input-bordered input-sm", text: "font-mono text-xs" }),
+	keyField: cstyle({ display: "relative flex" }),
+	apiKeyInput: cstyle({
+		display: "input input-bordered input-sm",
+		sizing: "flex-1",
+		text: "font-mono text-xs",
+		spacing: "pr-9",
+	}),
+	toggleKeyBtn: cstyle({
+		display: "absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center",
+		sizing: "w-5 h-5",
+		interaction: "rounded",
+		color: "text-base-content/40 hover:text-base-content",
+	}),
 	footer: cstyle({
 		display: "flex justify-end",
 		spacing: "pt-2 gap-2",
@@ -105,6 +117,7 @@ const ModelManager: Component<ModelManagerProps> = (props) => {
 	const [modalOpen, setModalOpen] = createSignal(false);
 	const [provider, setProvider] = createSignal("");
 	const [apiKey, setApiKey] = createSignal("");
+	const [showKey, setShowKey] = createSignal(false);
 
 	const providers = createMemo(() => [...props.providerList, { id: "custom", name: t("settings.customProvider") }]);
 
@@ -171,8 +184,8 @@ const ModelManager: Component<ModelManagerProps> = (props) => {
 				open={modalOpen()}
 				onClose={() => setModalOpen(false)}
 				title={t("settings.addProvider")}
-				minWidth="45rem"
-				minHeight="48vh"
+				minWidth="28rem"
+				bodyOverflow="visible"
 			>
 				<p class={C.subtitle()}>{t("settings.addProviderSubtitle")}</p>
 				<div class={C.field()}>
@@ -186,13 +199,25 @@ const ModelManager: Component<ModelManagerProps> = (props) => {
 				</div>
 				<div class={C.field()}>
 					<label class={C.label()}>{t("settings.apiKey")}</label>
-					<input
-						type="password"
-						class={C.apiKeyInput()}
-						placeholder={t("settings.apiKeyPlaceholder")}
-						value={apiKey()}
-						onInput={(e) => setApiKey(e.currentTarget.value)}
-					/>
+					<div class={C.keyField()}>
+						<input
+							type={showKey() ? "text" : "password"}
+							class={C.apiKeyInput()}
+							placeholder={t("settings.apiKeyPlaceholder")}
+							value={apiKey()}
+							onInput={(e) => setApiKey(e.currentTarget.value)}
+						/>
+						<button
+							type="button"
+							class={C.toggleKeyBtn()}
+							onClick={() => setShowKey((v) => !v)}
+							aria-label={showKey() ? t("settings.hideApiKey") : t("settings.showApiKey")}
+						>
+							<Show when={showKey()} fallback={<Eye class="w-3.5 h-3.5" />}>
+								<EyeOff class="w-3.5 h-3.5" />
+							</Show>
+						</button>
+					</div>
 				</div>
 				<div class={C.footer()}>
 					<button type="button" class={C.cancelBtn()} onClick={() => setModalOpen(false)}>
