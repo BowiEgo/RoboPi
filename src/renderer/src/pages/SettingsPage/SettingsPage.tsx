@@ -91,6 +91,14 @@ const SettingsPage: Component = () => {
 	onMount(async () => {
 		const s = await getSettings();
 		setInfo(s);
+		// Seed the list with providers that already have a stored API key.
+		setSavedModels(
+			(s.configuredProviders ?? []).map((p) => ({
+				id: p.id,
+				name: p.name,
+				provider: p.name,
+			})),
+		);
 	});
 
 	return (

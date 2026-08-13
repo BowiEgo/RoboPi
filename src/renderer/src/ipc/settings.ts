@@ -9,6 +9,7 @@ export interface SettingsInfo {
 	hasOpenAI: boolean;
 	availableModels: string[];
 	providerList: { id: string; name: string }[];
+	configuredProviders: { id: string; name: string }[];
 }
 
 export async function getSettings(): Promise<SettingsInfo> {

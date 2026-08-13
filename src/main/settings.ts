@@ -41,6 +41,9 @@ function hasApiKey(cred?: Credential): boolean {
 export function setupSettings(ipcMain: IpcMain): void {
 	ipcMain.handle("settings:get", async () => {
 		const creds = await readCredentials();
+		const configuredProviders = Object.entries(creds)
+			.filter(([, cred]) => hasApiKey(cred))
+			.map(([id]) => ({ id, name: id }));
 		return {
 			configDir: getConfigDir(),
 			sessionsDir: getSessionsDir(),
@@ -48,6 +51,7 @@ export function setupSettings(ipcMain: IpcMain): void {
 			hasOpenAI: hasApiKey(creds.openai),
 			availableModels: agentHostManager.getAvailableModels(),
 			providerList: agentHostManager.getProviderList(),
+			configuredProviders,
 		};
 	});
 
