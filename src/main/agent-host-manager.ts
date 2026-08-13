@@ -13,6 +13,8 @@ import { join } from "node:path";
 
 import { app, BrowserWindow } from "electron";
 
+import { createLogger } from "../shared/logger/index.ts";
+
 import {
 	type AgentMessage,
 	AgentMessageType,
@@ -20,6 +22,8 @@ import {
 } from "../shared/agent-types.ts";
 
 export type AgentMessageHandler = (msg: AgentMessage) => void;
+
+const logger = createLogger("AgentHostManager");
 
 class AgentHostManager {
 	private child: ChildProcess | null = null;
@@ -40,13 +44,13 @@ class AgentHostManager {
 	/** Start the Agent Host child process */
 	start(): void {
 		if (this.child) {
-			console.warn("[AgentHostManager] Agent host is already running");
+			logger.warn("Agent host is already running");
 			return;
 		}
 
 		const { command, args } = this.resolveCommand();
 
-		console.log(`[AgentHostManager] Spawning: ${command} ${args.join(" ")}`);
+		logger.info(`Spawning: ${command} ${args.join(" ")}`);
 
 		this.child = spawn(command, args, {
 			stdio: ["pipe", "pipe", "pipe", "ipc"],
@@ -60,7 +64,7 @@ class AgentHostManager {
 			const msg = raw as AgentMessage;
 			if (!msg?.type || !isValidMessageType(msg.type)) return;
 
-			console.log(`[AgentHostManager] ← ${msg.type}`);
+			logger.debug(`← ${msg.type}`);
 
 			if (msg.type === AgentMessageType.AgentReady) {
 				this.isReady = true;
@@ -77,27 +81,25 @@ class AgentHostManager {
 		});
 
 		this.child.on("error", (err) => {
-			console.error("[AgentHostManager] Agent host error:", err);
+			logger.error("Agent host error", err);
 			this.isReady = false;
 		});
 
 		this.child.on("exit", (code, signal) => {
-			console.log(
-				`[AgentHostManager] Agent host exited (code: ${code}, signal: ${signal})`,
-			);
+			logger.info(`Agent host exited (code: ${code}, signal: ${signal})`);
 			this.child = null;
 			this.isReady = false;
 		});
 
 		if (this.child.stdout) {
 			this.child.stdout.on("data", (data: Buffer) => {
-				console.log(`[AgentHost stdout] ${data.toString().trim()}`);
+				logger.debug(`[stdout] ${data.toString().trim()}`);
 			});
 		}
 
 		if (this.child.stderr) {
 			this.child.stderr.on("data", (data: Buffer) => {
-				console.error(`[AgentHost stderr] ${data.toString().trim()}`);
+				logger.error(`[stderr] ${data.toString().trim()}`);
 			});
 		}
 	}
@@ -110,7 +112,7 @@ class AgentHostManager {
 			return;
 		}
 
-		console.log(`[AgentHostManager] → ${msg.type}`);
+		logger.debug(`→ ${msg.type}`);
 		this.child.send(msg);
 	}
 
@@ -162,7 +164,7 @@ class AgentHostManager {
 	private resolveCommand(): { command: string; args: string[] } {
 		// Dev: run TS source directly via --experimental-strip-types
 		// Native ESM path, fully compatible with ESM-only packages like pi-coding-agent
-		const tsSourcePath = join(__dirname, "../../src/backend/agent/index.ts");
+		const tsSourcePath = join(__dirname, "../../src/backend/agent/index.mts");
 		if (existsSync(tsSourcePath)) {
 			return {
 				command: process.execPath,
@@ -180,8 +182,7 @@ class AgentHostManager {
 		}
 
 		throw new Error(
-			`[AgentHostManager] Cannot find agent-host entry. ` +
-				`Tried: ${tsSourcePath}, ${mjsPath}`,
+			`Cannot find agent-host entry. Tried: ${tsSourcePath}, ${mjsPath}`,
 		);
 	}
 

@@ -8,6 +8,7 @@
 
 import { type AgentMessage, AgentMessageType, isValidMessageType } from "../../shared/agent-types.ts";
 import { AgentHost } from "./agent-host.ts";
+import { createLogger } from "../../shared/logger/index.ts";
 import { AGENT_READY_ID, AGENT_VERSION, DEFAULT_SESSION_NAME, ErrorCode } from "./constants.ts";
 import {
 	isChatSendPayload,
@@ -17,6 +18,7 @@ import {
 	isSessionCreatePayload,
 	isSessionIdPayload,
 	isSessionRenamePayload,
+	isThinkingLevel,
 } from "./guards.ts";
 import { postMessageToHost, uid } from "./ipc.ts";
 import { respondError, respondNotReady } from "./respond.ts";
@@ -26,6 +28,7 @@ import { respondError, respondNotReady } from "./respond.ts";
 // ============================================================================
 
 const agentHost = new AgentHost();
+const logger = createLogger("AgentHost");
 
 /** Accessor — returns null until initialize() completes. Handlers must check. */
 function sh() {
@@ -65,10 +68,10 @@ async function startup(): Promise<void> {
 			});
 		}
 
-		console.log(`[AgentHost] Started (PID: ${process.pid})`);
+		logger.info(`Started (PID: ${process.pid})`);
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
-		console.error("[AgentHost] Failed to initialize:", message);
+		logger.error("Failed to initialize", message);
 		postMessageToHost({
 			id: AGENT_READY_ID,
 			type: AgentMessageType.ChatError,
@@ -97,11 +100,11 @@ async function shutdown(): Promise<void> {
 process.on("message", (raw: unknown) => {
 	const msg = raw as AgentMessage;
 	if (!msg?.type || !isValidMessageType(msg.type)) {
-		console.warn("[AgentHost] Received invalid message:", raw);
+		logger.warn("Received invalid message", raw);
 		return;
 	}
 
-	console.log(`[AgentHost] ← ${msg.type} (${msg.id})`);
+	logger.debug(`← ${msg.type} (${msg.id})`);
 
 	switch (msg.type) {
 		case AgentMessageType.ChatSend:
@@ -169,7 +172,7 @@ function handleChatSend(msg: AgentMessage): void {
 
 	host.session.prompt(payload.content).catch((err) => {
 		const message = err instanceof Error ? err.message : String(err);
-		console.error("[AgentHost] prompt error:", err);
+		logger.error("prompt error", err);
 		postMessageToHost({
 			id: uid(),
 			type: AgentMessageType.ChatError,
@@ -186,7 +189,7 @@ function handleChatCancel(): void {
 	const host = sh();
 	if (host?.session) {
 		host.session.abort().catch((err) => {
-			console.error("[AgentHost] abort error:", err);
+			logger.error("abort error", err);
 		});
 	}
 }
@@ -245,10 +248,9 @@ async function applyConfig(
 		}
 		void host.settingsManager?.flush();
 	}
-	if (payload.thinkingLevel) {
+	if (payload.thinkingLevel && isThinkingLevel(payload.thinkingLevel)) {
 		agentHost.thinkingLevelRef.value = payload.thinkingLevel;
-		// ThinkingLevel is a string union; the value is validated by the SDK.
-		host.settingsManager?.setDefaultThinkingLevel(payload.thinkingLevel as never);
+		host.settingsManager?.setDefaultThinkingLevel(payload.thinkingLevel);
 		void host.settingsManager?.flush();
 	}
 }
@@ -356,13 +358,13 @@ async function handleModelRefresh(msg: AgentMessage): Promise<void> {
 		await agentHost.refreshModels(msg.payload.force);
 		respondModelRefreshed(msg.id);
 	} catch (err) {
-		console.error("[AgentHost] Model refresh failed:", err);
+		logger.error("Model refresh failed", err);
 		respondError(msg.id, ErrorCode.REFRESH_ERROR, "Model refresh failed");
 	}
 }
 
 function handleShutdown(): void {
-	console.log("[AgentHost] Shutting down...");
+	logger.info("Shutting down...");
 	void shutdown();
 }
 

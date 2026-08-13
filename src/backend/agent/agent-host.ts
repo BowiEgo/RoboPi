@@ -9,7 +9,10 @@
 import { ModelRuntime, SettingsManager } from "@earendil-works/pi-coding-agent";
 
 import { getAuthPath, getModelsPath, getSettingsDir } from "./config.ts";
+import { createLogger } from "../../shared/logger/index.ts";
 import { SessionHost } from "./session/session-host.ts";
+
+const logger = createLogger("AgentHost");
 
 // ============================================================================
 // AgentHost
@@ -73,13 +76,13 @@ export class AgentHost {
 	// ---- Initialization ----
 
 	async initialize(): Promise<void> {
-		console.log("[AgentHost] Initializing Pi Agent SDK...");
+		logger.info("Initializing Pi Agent SDK...");
 
 		await this.initModelRuntime();
 		const settingsManager = this.initSettings();
 		await this.initSessions(settingsManager);
 
-		console.log("[AgentHost] Initialization complete");
+		logger.info("Initialization complete");
 	}
 
 	private async initModelRuntime(): Promise<void> {
@@ -100,9 +103,9 @@ export class AgentHost {
 		const available = await modelRuntime.getAvailable();
 		this.configuredModels = available.map((m) => m.id);
 		if (available.length === 0) {
-			console.warn("[AgentHost] No authenticated models available. " + "Set ANTHROPIC_API_KEY or OPENAI_API_KEY.");
+			logger.warn("No authenticated models available. Set ANTHROPIC_API_KEY or OPENAI_API_KEY.");
 		} else {
-			console.log(`[AgentHost] Available models: ${available.map((m) => m.id).join(", ")}`);
+			logger.info(`Available models: ${available.map((m) => m.id).join(", ")}`);
 		}
 
 		// Build canonical provider list (deduplicated by provider ID)

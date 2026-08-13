@@ -10,6 +10,9 @@ import type { AgentSession, SessionManager } from "@earendil-works/pi-coding-age
 
 import { AgentMessageType } from "../../../shared/agent-types.ts";
 import { postMessageToHost, uid } from "../ipc.ts";
+import { createLogger } from "../../../shared/logger/index.ts";
+
+const logger = createLogger("TitleGenerator");
 
 export interface TitleGeneratorDeps {
 	getSession: () => AgentSession | null;
@@ -59,7 +62,7 @@ export class TitleGenerator {
 			?.followUp(prompt)
 			.catch((err) => {
 				this.generating = false;
-				console.error("[AgentHost] Title generation failed:", err);
+				logger.error("Title generation failed", err);
 			});
 	}
 
@@ -83,7 +86,7 @@ export class TitleGenerator {
 					name: title,
 				},
 			});
-			console.log(`[AgentHost] Auto-titled session: "${title}"`);
+			logger.info(`Auto-titled session: "${title}"`);
 		}
 	}
 }

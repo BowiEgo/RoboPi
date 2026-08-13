@@ -8,6 +8,8 @@
 
 // ── Primitives ──
 
+import { THINKING_LEVELS, type ThinkingLevel } from "./constants.ts";
+
 export function isRecord(v: unknown): v is Record<string, unknown> {
 	return typeof v === "object" && v !== null && !Array.isArray(v);
 }
@@ -79,6 +81,10 @@ export interface ModelSetApiKeyPayload {
 
 export function isModelSetApiKeyPayload(v: unknown): v is ModelSetApiKeyPayload {
 	return isRecord(v) && isString(v.provider) && v.provider.length > 0 && isString(v.apiKey) && v.apiKey.length > 0;
+}
+
+export function isThinkingLevel(v: unknown): v is ThinkingLevel {
+	return typeof v === "string" && THINKING_LEVELS.includes(v as ThinkingLevel);
 }
 
 export interface ModelRefreshPayload {

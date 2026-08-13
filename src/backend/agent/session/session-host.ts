@@ -20,6 +20,7 @@ import {
 import { AgentMessageType, type SessionInfoPayload, type SessionMessagePayload } from "../../../shared/agent-types.ts";
 import { getSessionsDir } from "../config.ts";
 import { DEFAULT_SESSION_NAME, ErrorCode, type ThinkingLevel } from "../constants.ts";
+import { createLogger } from "../../../shared/logger/index.ts";
 import { postMessageToHost, uid } from "../ipc.ts";
 import { extractLastUserText, loadMessagesFromSession } from "./message-loader.ts";
 import { TitleGenerator } from "./title-generator.ts";
@@ -27,6 +28,8 @@ import { TitleGenerator } from "./title-generator.ts";
 // ============================================================================
 // SessionHost
 // ============================================================================
+
+const logger = createLogger("SessionHost");
 
 export interface SessionHostOptions {
 	modelRuntime: Awaited<ReturnType<typeof ModelRuntime.create>>;
@@ -95,7 +98,7 @@ export class SessionHost {
 				this.currentSessionName = mostRecent.name ?? DEFAULT_SESSION_NAME;
 				this.session = await this.createAgentSessionFor(sm);
 				this.subscribeToSession(this.session, this.currentSessionId ?? "");
-				console.log(`[AgentHost] Restored session: ${this.currentSessionId} (${this.currentSessionName})`);
+				logger.info(`Restored session: ${this.currentSessionId} (${this.currentSessionName})`);
 			} else {
 				const sm = SessionManager.create(process.cwd(), dir);
 				this.currentSessionManager = sm;
@@ -103,10 +106,10 @@ export class SessionHost {
 				this.currentSessionName = DEFAULT_SESSION_NAME;
 				this.session = await this.createAgentSessionFor(sm);
 				this.subscribeToSession(this.session, this.currentSessionId ?? "");
-				console.log(`[AgentHost] Created default session: ${this.currentSessionId}`);
+				logger.info(`Created default session: ${this.currentSessionId}`);
 			}
 		} catch (err) {
-			console.error("[AgentHost] Session init error:", err);
+			logger.error("Session init error", err);
 			if (!this.session) {
 				const sm = SessionManager.inMemory(process.cwd());
 				this.currentSessionManager = sm;
@@ -117,7 +120,7 @@ export class SessionHost {
 			}
 		}
 
-		console.log(`[AgentHost] Pi Agent session ready (model: ${this.session?.model?.id ?? "auto"})`);
+		logger.info(`Session ready (model: ${this.session?.model?.id ?? "auto"})`);
 	}
 
 	async dispose(): Promise<void> {
@@ -170,7 +173,7 @@ export class SessionHost {
 					file: sm.getSessionFile() ?? "",
 				},
 			});
-			console.log(`[AgentHost] Session created: ${this.currentSessionId} (${this.currentSessionName})`);
+			logger.info(`Session created: ${this.currentSessionId} (${this.currentSessionName})`);
 		} catch (err) {
 			this.respondCrudError(msgId, ErrorCode.CREATE_ERROR, err);
 		}
@@ -213,7 +216,7 @@ export class SessionHost {
 				this.backgroundSessions.delete(targetId);
 
 				this.respondSwitched(msgId, targetId, bg.name, loadMessagesFromSession(bg.manager));
-				console.log(`[AgentHost] Brought to foreground: ${targetId} (${bg.name})`);
+				logger.info(`Brought to foreground: ${targetId} (${bg.name})`);
 				return;
 			}
 
@@ -242,7 +245,7 @@ export class SessionHost {
 			this.subscribeToSession(this.session, this.currentSessionId);
 
 			this.respondSwitched(msgId, this.currentSessionId, this.currentSessionName, loadMessagesFromSession(sm));
-			console.log(`[AgentHost] Session switched: ${this.currentSessionId} (${this.currentSessionName})`);
+			logger.info(`Session switched: ${this.currentSessionId} (${this.currentSessionName})`);
 		} catch (err) {
 			this.respondCrudError(msgId, ErrorCode.SWITCH_ERROR, err);
 		}
@@ -273,7 +276,7 @@ export class SessionHost {
 				type: AgentMessageType.SessionDeleted,
 				payload: { sessionId: payload.sessionId },
 			});
-			console.log(`[AgentHost] Session deleted: ${payload.sessionId}`);
+			logger.info(`Session deleted: ${payload.sessionId}`);
 
 			if (isActive) {
 				await this.createDefaultSession();
@@ -336,7 +339,7 @@ export class SessionHost {
 				type: AgentMessageType.SessionRenamed,
 				payload: { sessionId: payload.sessionId, name: trimmedName },
 			});
-			console.log(`[AgentHost] Session renamed: ${payload.sessionId} → "${trimmedName}"`);
+			logger.info(`Session renamed: ${payload.sessionId} → "${trimmedName}"`);
 		} catch (err) {
 			this.respondCrudError(msgId, ErrorCode.RENAME_ERROR, err);
 		}
@@ -390,7 +393,7 @@ export class SessionHost {
 
 	private respondCrudError(msgId: string, code: string, err: unknown): void {
 		const message = err instanceof Error ? err.message : String(err);
-		console.error(`[AgentHost] ${code}:`, message);
+		logger.error(`${code}`, message);
 		postMessageToHost({
 			id: msgId,
 			type: AgentMessageType.SessionError,
@@ -406,7 +409,7 @@ export class SessionHost {
 				name: this.currentSessionName ?? DEFAULT_SESSION_NAME,
 				unsubscribe: this.unsubscribe,
 			});
-			console.log(`[AgentHost] Moved to background: ${this.currentSessionId}`);
+			logger.debug(`Moved to background: ${this.currentSessionId}`);
 			this.session = null;
 			this.currentSessionManager = null;
 			this.currentSessionId = null;
@@ -484,7 +487,7 @@ export class SessionHost {
 			this.session = await this.createAgentSessionFor(sm);
 			this.subscribeToSession(this.session, this.currentSessionId ?? "");
 		} catch (err) {
-			console.error("[AgentHost] Failed to create default session, falling back to in-memory:", err);
+			logger.error("Failed to create default session, falling back to in-memory", err);
 			const sm = SessionManager.inMemory(process.cwd());
 			this.currentSessionManager = sm;
 			this.currentSessionId = sm.getSessionId();
@@ -502,7 +505,7 @@ export class SessionHost {
 			try {
 				this.session.dispose();
 			} catch (err) {
-				console.error("[AgentHost] Error disposing session:", err);
+				logger.error("Error disposing session", err);
 			}
 			this.session = null;
 		}
@@ -553,11 +556,11 @@ export class SessionHost {
 	}
 
 	private handleToolExecutionStart(event: Extract<AgentSessionEvent, { type: "tool_execution_start" }>): void {
-		console.log(`[AgentHost] Tool: ${event.toolName}`);
+		logger.debug(`Tool: ${event.toolName}`);
 	}
 
 	private handleToolExecutionEnd(event: Extract<AgentSessionEvent, { type: "tool_execution_end" }>): void {
-		console.log(`[AgentHost] Tool result: ${event.isError ? "error" : "ok"}`);
+		logger.debug(`Tool result: ${event.isError ? "error" : "ok"}`);
 	}
 
 	private handleAgentEnd(event: Extract<AgentSessionEvent, { type: "agent_end" }>, sessionId: string): void {

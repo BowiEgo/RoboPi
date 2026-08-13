@@ -15,7 +15,7 @@ const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const root = resolve(__dirname, "..");
 
 await esbuild.build({
-  entryPoints: [resolve(root, "src/backend/agent/index.ts")],
+  entryPoints: [resolve(root, "src/backend/agent/index.mts")],
   bundle: true,
   platform: "node",
   format: "esm",
