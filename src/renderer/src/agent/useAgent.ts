@@ -70,7 +70,8 @@ if (agent && !_storeReady) {
 				setAgentConfig({
 					model: p.model,
 					thinkingLevel: p.thinkingLevel,
-					availableModels: p.availableModels,
+					availableThinkingLevels: p.availableThinkingLevels,
+					configuredModels: p.configuredModels ?? [],
 					status: "idle",
 				});
 				break;
@@ -103,12 +104,17 @@ if (agent && !_storeReady) {
 					name: string;
 					messages: ChatBubbleProps[];
 					model?: string;
+					thinkingLevel?: string;
+					availableThinkingLevels?: string[];
 				};
 				setActiveId(p.sessionId);
 				setActiveName(p.name);
-				if (p.model) {
-					setAgentConfig((prev) => ({ ...prev, model: p.model }));
-				}
+				setAgentConfig((prev) => ({
+					...prev,
+					model: p.model ?? prev.model,
+					thinkingLevel: p.thinkingLevel ?? prev.thinkingLevel,
+					availableThinkingLevels: p.availableThinkingLevels ?? prev.availableThinkingLevels,
+				}));
 				// Prefer cached messages (may contain streaming progress not yet on disk).
 				// Keep cache entry alive — background streaming events may still write to it.
 				const cached = sessionMsgCache.get(p.sessionId);
@@ -320,6 +326,16 @@ function selectModel(modelId: string) {
 	});
 }
 
+function selectThinkingLevel(level: string) {
+	if (!agent) return;
+	setAgentConfig((prev) => ({ ...prev, thinkingLevel: level }));
+	agent.send({
+		id: `set-thinking-${level}`,
+		type: AgentMessageType.AgentConfig,
+		payload: { thinkingLevel: level },
+	});
+}
+
 // ════════════════════════════════════════════════════════════════
 //  Module-level functions
 // ════════════════════════════════════════════════════════════════
@@ -451,6 +467,7 @@ export function useAgent() {
 		agentConfig,
 		createSession,
 		selectModel,
+		selectThinkingLevel,
 		switchSession,
 		deleteSession,
 		renameSession,

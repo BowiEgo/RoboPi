@@ -49,6 +49,7 @@ async function startup(): Promise<void> {
 				version: AGENT_VERSION,
 				model: host.getCurrentModel() ?? agentHost.modelRef.value,
 				thinkingLevel: agentHost.thinkingLevelRef.value,
+				availableThinkingLevels: host.getAvailableThinkingLevels(),
 				availableModels: agentHost.getAvailableModels(),
 				configuredModels: agentHost.getConfiguredModels(),
 				providerList: agentHost.getProviderList(),
@@ -225,6 +226,7 @@ async function handleAgentConfig(msg: AgentMessage): Promise<void> {
 		payload: {
 			model: host.getCurrentModel() ?? agentHost.modelRef.value,
 			thinkingLevel: agentHost.thinkingLevelRef.value,
+			availableThinkingLevels: host.getAvailableThinkingLevels(),
 			availableModels: agentHost.getAvailableModels(),
 			configuredModels: agentHost.getConfiguredModels(),
 			providerList: agentHost.getProviderList(),
@@ -243,7 +245,7 @@ async function applyConfig(
 		await host.setModel(payload.model);
 	}
 	if (payload.thinkingLevel && isThinkingLevel(payload.thinkingLevel)) {
-		agentHost.thinkingLevelRef.value = payload.thinkingLevel;
+		host.setThinkingLevel(payload.thinkingLevel);
 		host.settingsManager?.setDefaultThinkingLevel(payload.thinkingLevel);
 		void host.settingsManager?.flush();
 	}

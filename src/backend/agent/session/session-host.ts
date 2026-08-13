@@ -137,6 +137,10 @@ export class SessionHost {
 		return this.session?.model?.id;
 	}
 
+	getAvailableThinkingLevels(): string[] {
+		return this.session?.getAvailableThinkingLevels() ?? [];
+	}
+
 	async setModel(modelId: string): Promise<void> {
 		if (!this.session || !this.modelRuntime) return;
 		// Match by the full model ID — do not derive the provider from the ID prefix.
@@ -144,6 +148,11 @@ export class SessionHost {
 		if (!model) return;
 		await this.session.setModel(model);
 		if (this.agentModelRef) this.agentModelRef.value = model.id;
+	}
+
+	setThinkingLevel(level: ThinkingLevel): void {
+		if (this.session) this.session.setThinkingLevel(level);
+		if (this.thinkingLevelRef) this.thinkingLevelRef.value = level;
 	}
 
 	// ---- IPC Handlers ----
@@ -215,6 +224,9 @@ export class SessionHost {
 				this.currentSessionName = bg.name;
 				this.unsubscribe = bg.unsubscribe;
 				this.backgroundSessions.delete(targetId);
+
+				if (this.agentModelRef) this.agentModelRef.value = this.session.model?.id;
+				if (this.thinkingLevelRef) this.thinkingLevelRef.value = this.session.thinkingLevel;
 
 				this.respondSwitched(msgId, targetId, bg.name, loadMessagesFromSession(bg.manager));
 				logger.info(`Brought to foreground: ${targetId} (${bg.name})`);
@@ -388,7 +400,14 @@ export class SessionHost {
 		postMessageToHost({
 			id: msgId,
 			type: AgentMessageType.SessionSwitched,
-			payload: { sessionId, name, messages, model: this.getCurrentModel() },
+			payload: {
+				sessionId,
+				name,
+				messages,
+				model: this.getCurrentModel(),
+				thinkingLevel: this.session?.thinkingLevel ?? this.thinkingLevelRef.value,
+				availableThinkingLevels: this.getAvailableThinkingLevels(),
+			},
 		});
 	}
 
@@ -462,18 +481,17 @@ export class SessionHost {
 	private async createAgentSessionFor(sm: ReturnType<typeof SessionManager.open>): Promise<AgentSession> {
 		if (!this.modelRuntime) throw new Error("ModelRuntime not initialized");
 
-		const level = (process.env.PI_THINKING_LEVEL as ThinkingLevel) ?? "medium";
-
+		// No thinkingLevel passed — let createAgentSession restore it from the
+		// session's own change log (falling back to settings default).
 		const result = await createAgentSession({
 			modelRuntime: this.modelRuntime,
 			sessionManager: sm,
 			settingsManager: this.settingsManager ?? undefined,
 			tools: ["read", "bash", "edit", "write"],
-			thinkingLevel: level,
 		});
 
 		if (this.agentModelRef) this.agentModelRef.value = result.session.model?.id;
-		if (this.thinkingLevelRef) this.thinkingLevelRef.value = process.env.PI_THINKING_LEVEL ?? "medium";
+		if (this.thinkingLevelRef) this.thinkingLevelRef.value = result.session.thinkingLevel;
 
 		return result.session;
 	}

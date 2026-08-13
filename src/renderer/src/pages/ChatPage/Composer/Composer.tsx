@@ -11,6 +11,7 @@ import { cstyle } from "@/utils/cstyle";
 export interface AgentConfig {
 	model?: string;
 	thinkingLevel?: string;
+	availableThinkingLevels?: string[];
 	configuredModels?: string[];
 	status?: string;
 }
@@ -189,7 +190,7 @@ interface ToolbarProps {
 }
 
 const Toolbar: Component<ToolbarProps> = (props) => {
-	const { selectModel } = useAgent();
+	const { selectModel, selectThinkingLevel } = useAgent();
 
 	const statusItems = (): DropdownItem[] => [
 		{ label: props.t("composer.mode.idle") },
@@ -205,8 +206,16 @@ const Toolbar: Component<ToolbarProps> = (props) => {
 		{ label: `${props.t("composer.prompt")} 1` },
 		{ label: `${props.t("composer.prompt")} 2` },
 	];
-	const thinkingItems = (): DropdownItem[] =>
-		Object.keys(THINKING_LABELS).map((k) => ({ label: props.t(THINKING_LABELS[k]) }));
+	const thinkingItems = (): DropdownItem[] => {
+		const available = props.cfg?.availableThinkingLevels;
+		const levels =
+			available && available.length > 0 ? available : Object.keys(THINKING_LABELS);
+		return levels.map((k) => ({
+			label: props.t(THINKING_LABELS[k] ?? k),
+			active: k === props.cfg?.thinkingLevel,
+			onClick: () => selectThinkingLevel(k),
+		}));
+	};
 
 	return (
 		<div class={C.toolbar()}>

@@ -183,6 +183,7 @@ export interface AgentReadyPayload {
 	version: string;
 	model?: string;
 	thinkingLevel?: string;
+	availableThinkingLevels?: string[];
 	availableModels?: string[];
 	configuredModels?: string[];
 	providerList?: { id: string; name: string }[];
@@ -192,6 +193,7 @@ export interface AgentReadyPayload {
 export interface AgentConfigPayload {
 	model?: string;
 	thinkingLevel?: string;
+	availableThinkingLevels?: string[];
 	/** Available model list. */
 	availableModels?: string[];
 	status?: "idle" | "thinking" | "responding" | "error";
@@ -274,6 +276,8 @@ export interface SessionSwitchedPayload {
 	name: string;
 	messages: SessionMessagePayload[];
 	model?: string;
+	thinkingLevel?: string;
+	availableThinkingLevels?: string[];
 }
 
 /** Session deleted successfully. */
