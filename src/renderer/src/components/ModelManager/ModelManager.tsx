@@ -4,6 +4,7 @@ import { type Component, createMemo, createSignal, For, Show } from "solid-js";
 import Dropdown from "@/components/Dropdown/Dropdown";
 import Modal from "@/components/Modal/Modal";
 
+import { useLocale } from "@/contexts/LocaleContext";
 import { setApiKey as persistApiKey } from "@/ipc/settings";
 import { cstyle } from "@/utils/cstyle";
 
@@ -20,6 +21,7 @@ interface ModelManagerProps {
 	models: SavedModel[];
 	availableModels: string[];
 	providerList: { id: string; name: string }[];
+	configDir?: string;
 	onAdd: (model: SavedModel) => void;
 	onDelete: (id: string) => void;
 }
@@ -33,12 +35,6 @@ const C = {
 		text: "text-xs leading-relaxed",
 		sizing: "max-w-120",
 		color: "text-base-content/50",
-	}),
-	inlineCode: cstyle({
-		text: "text-xs",
-		spacing: "px-1",
-		interaction: "rounded",
-		color: "bg-base-200",
 	}),
 	headerActions: cstyle({ display: "flex items-center", spacing: "gap-2", sizing: "shrink-0" }),
 	addBtn: cstyle({
@@ -104,11 +100,15 @@ function providerInitials(name: string): string {
 // ── Component ──
 
 const ModelManager: Component<ModelManagerProps> = (props) => {
+	const { t } = useLocale();
 	const [modalOpen, setModalOpen] = createSignal(false);
 	const [provider, setProvider] = createSignal("");
 	const [apiKey, setApiKey] = createSignal("");
 
-	const providers = createMemo(() => [...props.providerList, { id: "custom", name: "Custom (OpenAI-compatible)" }]);
+	const providers = createMemo(() => [
+		...props.providerList,
+		{ id: "custom", name: t("settings.customProvider") },
+	]);
 
 	function handleSave() {
 		const p = provider();
@@ -130,13 +130,11 @@ const ModelManager: Component<ModelManagerProps> = (props) => {
 	return (
 		<div class={C.root()}>
 			<div class={C.header()}>
-				<p class={C.description()}>
-					Local model configuration stored in <code class={C.inlineCode()}>%USERPROFILE%\.robopi\models.json</code>
-				</p>
+				<p class={C.description()}>{t("settings.modelsHint", { path: props.configDir ?? "" })}</p>
 				<div class={C.headerActions()}>
 					<button type="button" class={C.addBtn()} onClick={() => setModalOpen(true)}>
 						<Plus class="w-3.5 h-3.5" />
-						Add Provider
+						{t("settings.addProvider")}
 					</button>
 				</div>
 			</div>
@@ -161,7 +159,7 @@ const ModelManager: Component<ModelManagerProps> = (props) => {
 									type="button"
 									class={C.deleteBtn()}
 									onClick={() => props.onDelete(model.id)}
-									aria-label="Delete model"
+									aria-label={t("settings.deleteProvider")}
 								>
 									<Trash2 class="w-3.5 h-3.5" />
 								</button>
@@ -171,33 +169,33 @@ const ModelManager: Component<ModelManagerProps> = (props) => {
 				</div>
 			</Show>
 
-			<Modal open={modalOpen()} onClose={() => setModalOpen(false)} title="Add Provider" width="28rem">
-				<p class={C.subtitle()}>Only OpenAI-compatible API is supported</p>
+			<Modal open={modalOpen()} onClose={() => setModalOpen(false)} title={t("settings.addProvider")} width="28rem">
+				<p class={C.subtitle()}>{t("settings.addProviderSubtitle")}</p>
 				<div class={C.field()}>
-					<label class={C.label()}>Provider</label>
+					<label class={C.label()}>{t("settings.provider")}</label>
 					<Dropdown
 						value={provider()}
 						options={providers()}
-						placeholder="Select provider..."
+						placeholder={t("settings.selectProvider")}
 						onChange={setProvider}
 					/>
 				</div>
 				<div class={C.field()}>
-					<label class={C.label()}>API Key</label>
+					<label class={C.label()}>{t("settings.apiKey")}</label>
 					<input
 						type="password"
 						class={C.apiKeyInput()}
-						placeholder="sk-..."
+						placeholder={t("settings.apiKeyPlaceholder")}
 						value={apiKey()}
 						onInput={(e) => setApiKey(e.currentTarget.value)}
 					/>
 				</div>
 				<div class={C.footer()}>
 					<button type="button" class={C.cancelBtn()} onClick={() => setModalOpen(false)}>
-						Cancel
+						{t("settings.cancel")}
 					</button>
 					<button type="button" class={C.saveBtn()} disabled={!provider() || !apiKey().trim()} onClick={handleSave}>
-						Save
+						{t("settings.save")}
 					</button>
 				</div>
 			</Modal>

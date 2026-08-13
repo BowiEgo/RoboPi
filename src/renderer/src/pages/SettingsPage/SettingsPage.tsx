@@ -47,12 +47,6 @@ const C = {
 		spacing: "mt-1",
 		color: "text-base-content/30",
 	}),
-	inlineCode: cstyle({
-		text: "text-xs",
-		spacing: "px-1",
-		interaction: "rounded",
-		color: "bg-base-200",
-	}),
 	localeRow: cstyle({
 		display: "flex",
 		spacing: "gap-2",
@@ -97,29 +91,28 @@ const SettingsPage: Component = () => {
 		<div class={C.sections()}>
 			{/* ── Storage ── */}
 			<section class={C.section()}>
-				<h2 class={C.sectionTitle()}>Storage</h2>
+				<h2 class={C.sectionTitle()}>{t("settings.storage")}</h2>
 				<div class={C.storageList()}>
 					<div class={C.storageRow()}>
-						<span class={C.storageLabel()}>Config dir</span>
+						<span class={C.storageLabel()}>{t("settings.configDir")}</span>
 						<code class={C.storageValue()}>{info()?.configDir ?? "—"}</code>
 					</div>
 					<div class={C.storageRow()}>
-						<span class={C.storageLabel()}>Sessions dir</span>
+						<span class={C.storageLabel()}>{t("settings.sessionsDir")}</span>
 						<code class={C.storageValue()}>{info()?.sessionsDir ?? "—"}</code>
 					</div>
-					<p class={C.hint()}>
-						Set <code class={C.inlineCode()}>ROBOPI_HOME</code> environment variable to override. Restart required.
-					</p>
+					<p class={C.hint()}>{t("settings.configDirHint", { env: "ROBOPI_HOME" })}</p>
 				</div>
 			</section>
 
 			{/* ── Providers ── */}
 			<section class={C.section()}>
-				<h2 class={C.sectionTitle()}>Providers</h2>
+				<h2 class={C.sectionTitle()}>{t("settings.providers")}</h2>
 				<ModelManager
 					models={savedModels()}
 					availableModels={info()?.availableModels ?? []}
 					providerList={info()?.providerList ?? []}
+					configDir={info()?.configDir}
 					onAdd={addModel}
 					onDelete={deleteModel}
 				/>
