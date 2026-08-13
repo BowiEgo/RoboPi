@@ -18,7 +18,7 @@ const aside = "flex flex-col h-full pt-3 overflow-hidden select-none";
 const sidebarHeader = "flex items-center gap-2 px-4 text-[15px] font-medium font-display shrink-0";
 const sidebarContent = "flex-1 p-3";
 const sidebarBottom = "shrink-0";
-const main = define({ base: "flex-1 flex flex-col overflow-hidden ml-2.5" });
+const main = define({ base: "flex-1 flex flex-col overflow-hidden p-8 pt-0 pl-5" });
 
 interface ChatPageProps {
 	sidebarHeader?: JSX.Element;
@@ -50,9 +50,9 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 	]);
 
 	return (
-		<div class={`${root()} bg-app`}>
+		<div class={`${root()} bg-app-raised`}>
 			<div class={drawer} style={{ width: `${drawerWidth()}px` }}>
-				<aside class={`${aside} border-r-glow text-primary/10`} aria-label={t("chat.drawerLabel")}>
+				<aside class={`${aside} text-primary/10`} aria-label={t("chat.drawerLabel")}>
 					{props.sidebarHeader && <div class={`${sidebarHeader} text-base-content`}>{props.sidebarHeader}</div>}
 					<div class={`${sidebarContent} text-base-content`}>
 						<Search />

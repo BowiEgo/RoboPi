@@ -176,7 +176,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 	void hasStreaming();
 
 	return (
-		<div class="chat-panel relative flex flex-col items-center h-full overflow-hidden">
+		<div class="chat-panel relative flex flex-col items-center h-full overflow-hidden bg-app rounded-2xl shadow-xl">
 			<ChatOutline messages={displayMessages()} />
 			<header class="absolute flex shrink-0 items-center justify-between w-full gap-4 px-4 py-3 font-medium text-base font-display bg-transparent! text-base-content z-1">
 				{props.header}
@@ -215,7 +215,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 				ref={(el) => {
 					scrollEl = el;
 				}}
-				class="flex-1 w-full flex flex-col gap-1 overflow-y-auto pl-12 pr-20 pt-12 pb-[20%] text-base-content z-0"
+				class="flex-1 w-full flex flex-col gap-1 overflow-y-auto pl-12 pr-20 pt-12 pb-[30%] text-base-content z-0"
 				style="scroll-behavior: auto; scroll-padding-top: 64px; scroll-padding-bottom: 96px"
 				onScroll={onScroll}
 			>

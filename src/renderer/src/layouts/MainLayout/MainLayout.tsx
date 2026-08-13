@@ -28,7 +28,7 @@ interface MainLayoutProps {
 
 // ── Layout ──
 
-const root = define({ base: "flex flex-col w-screen h-screen overflow-hidden pt-8 bg-app" });
+const root = define({ base: "flex flex-col w-screen h-screen overflow-hidden pt-8" });
 const body = define({ base: "flex flex-1 overflow-hidden" });
 const nav = define({
 	base: "flex flex-col items-center select-none shrink-0 w-20 transition-[width] pt-6 py-3 px-1 gap-1",
@@ -43,10 +43,10 @@ const MainLayout: Component<MainLayoutProps> = (props) => {
 	const [expanded, setExpanded] = createSignal(false);
 
 	return (
-		<div class={root()}>
+		<div class={`${root()} bg-app-raised`}>
 			<TitleBar />
 			<div class={body()}>
-				<nav class={`${nav()} ${expanded() ? "w-52" : ""} bg-app`} aria-label={t("nav.pageNav")}>
+				<nav class={`${nav()} ${expanded() ? "w-52" : ""} bg-app-raised`} aria-label={t("nav.pageNav")}>
 					{props.navTop && <div class={navTop}>{props.navTop}</div>}
 					<NavMenuList
 						items={props.topNavItems}

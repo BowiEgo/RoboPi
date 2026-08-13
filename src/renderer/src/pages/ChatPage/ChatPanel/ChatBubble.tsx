@@ -52,7 +52,7 @@ function fileIcon(type?: string): string {
 
 const CHAT_BUBBLE_WRAPPER = "chat-bubble max-w-full [&::before]:hidden rounded-xl select-text";
 const CHAT_BUBBLE_PRIMARY = "chat-bubble-primary text-primary-content";
-const BUBBLE_OUTER_LAYOUT = "";
+const BUBBLE_OUTER_LAYOUT = "w-full";
 const CONTENT_AREA = "text-base leading-relaxed";
 const USER_TEXT = "whitespace-pre-wrap m-0 select-text";
 const STREAMING_CURSOR = "inline-block w-2 h-4 ml-0.5 rounded-[1px] animate-pulse align-text-bottom";

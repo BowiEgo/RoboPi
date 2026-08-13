@@ -80,7 +80,7 @@ const C = {
 	wrapper: {
 		display: "absolute flex flex-col",
 		sizing: "w-[70%]",
-		spacing: "bottom-[6%]",
+		spacing: "bottom-[3%]",
 		interaction: "rounded-3xl shadow-xl border-1",
 		color: "input-field border-base-300",
 	},
