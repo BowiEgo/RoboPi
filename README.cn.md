@@ -5,7 +5,16 @@
 
 基于 Pi Agent 构建的桌面应用，将对话式 AI、任务自动化和知识库构建集成在同一界面中。
 
-![preview.png](./docs/imgs/WechatIMG55.png)
+<table>
+  <tr>
+    <td><img src="./docs/imgs/light-home-mac.jpg" alt="Light theme home" width="400"/></td>
+    <td><img src="./docs/imgs/home-dark-mac.jpg" alt="Dark theme home" width="400"/></td>
+  </tr>
+  <tr>
+    <td><img src="./docs/imgs/theme-abyss-mac.jpg" alt="Abyss theme" width="400"/></td>
+    <td><img src="./docs/imgs/model-aqua-mac.jpg" alt="Aqua theme model" width="400"/></td>
+  </tr>
+</table>
 
 ## 文档
 
