@@ -7,6 +7,7 @@ import { useAgent } from "@/agent/useAgent";
 import { useLocale } from "@/contexts/LocaleContext";
 
 import Dropdown, { type DropdownOption } from "@/components/Dropdown/Dropdown";
+import ProviderIcon from "@/components/ProviderIcon/ProviderIcon";
 import Resizer from "@/components/Resizer/Resizer";
 
 import { cstyle } from "@/utils/cstyle";
@@ -205,6 +206,7 @@ const Toolbar: Component<ToolbarProps> = (props) => {
 			id: m.id,
 			name: shortenModel(m.id),
 			group: m.provider,
+			groupIcon: <ProviderIcon provider={m.provider} size="w-4 h-4" textClass="text-[8px]" />,
 		}));
 	const promptItems = (): DropdownItem[] => [
 		{ label: `${props.t("composer.prompt")} 1` },

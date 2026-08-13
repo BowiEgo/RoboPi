@@ -1,5 +1,5 @@
 import { Check, ChevronsUpDown, Search } from "lucide-solid";
-import { type Component, createEffect, createMemo, createSignal, For, Show } from "solid-js";
+import { type Component, createEffect, createMemo, createSignal, For, type JSX, Show } from "solid-js";
 
 import { cstyle } from "@/utils/cstyle";
 
@@ -8,6 +8,10 @@ export interface DropdownOption {
 	name: string;
 	/** Optional group label — consecutive options with the same group render under one header. */
 	group?: string;
+	/** Optional icon rendered next to the group label. */
+	groupIcon?: JSX.Element;
+	/** Optional icon rendered before the option name. */
+	icon?: JSX.Element;
 }
 
 export interface DropdownProps {
@@ -65,20 +69,20 @@ const C = {
 	}),
 	optionsList: cstyle({
 		sizing: "max-h-66 overflow-y-auto",
-		spacing: "p-1",
+		spacing: "p-1 pt-0",
 	}),
 	groupLabel: cstyle({
-		display: "sticky top-0 z-10",
-		spacing: "px-3 py-1.5",
+		display: "sticky top-0 z-10 flex items-center",
+		spacing: "px-3 py-1.5 gap-1.5",
 		text: "text-[11px] font-semibold uppercase tracking-wider",
-		color: "bg-base-100 text-base-content/40",
+		color: "bg-base-200 text-base-content/60",
 	}),
 	option: cstyle({
 		display: "flex items-center justify-between",
 		sizing: "w-full",
 		spacing: "px-3 py-2",
 		text: "text-sm",
-		interaction: "rounded-md transition-colors",
+		interaction: "transition-colors",
 		variants: {
 			selected: {
 				true: "bg-primary/10 text-primary",
@@ -110,12 +114,12 @@ const Dropdown: Component<DropdownProps> = (props) => {
 	// each option's global index for keyboard navigation / scroll sync.
 	const grouped = createMemo(() => {
 		const items = filtered();
-		const result: { label: string; options: { opt: DropdownOption; index: number }[] }[] = [];
-		let current: { label: string; options: { opt: DropdownOption; index: number }[] } | null = null;
+		const result: { label: string; icon?: JSX.Element; options: { opt: DropdownOption; index: number }[] }[] = [];
+		let current: { label: string; icon?: JSX.Element; options: { opt: DropdownOption; index: number }[] } | null = null;
 		items.forEach((opt, index) => {
 			const label = opt.group ?? "";
 			if (!current || current.label !== label) {
-				current = { label, options: [] };
+				current = { label, icon: opt.groupIcon, options: [] };
 				result.push(current);
 			}
 			current.options.push({ opt, index });
@@ -164,9 +168,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
 		const idx = highlightedIndex();
 		if (idx < 0 || !containerRef || !highlightByKeyboard) return;
 		queueMicrotask(() => {
-			containerRef
-				?.querySelector(`[data-option-index="${idx}"]`)
-				?.scrollIntoView({ block: "nearest" });
+			containerRef?.querySelector(`[data-option-index="${idx}"]`)?.scrollIntoView({ block: "nearest" });
 		});
 	});
 
@@ -216,7 +218,10 @@ const Dropdown: Component<DropdownProps> = (props) => {
 							{(group) => (
 								<div>
 									<Show when={group.label}>
-										<div class={C.groupLabel()}>{group.label}</div>
+										<div class={C.groupLabel()}>
+											<span class="inline-flex -translate-y-px">{group.icon}</span>
+											<span class="leading-none">{group.label}</span>
+										</div>
 									</Show>
 									<For each={group.options}>
 										{({ opt, index }) => (
@@ -232,9 +237,12 @@ const Dropdown: Component<DropdownProps> = (props) => {
 												}}
 												onClick={() => select(opt.id)}
 											>
-												{opt.name}
+												<span class="flex items-center gap-2 min-w-0">
+													{opt.icon}
+													<span class="truncate">{opt.name}</span>
+												</span>
 												<Show when={props.value === opt.id}>
-													<Check class="w-3.5 h-3.5" />
+													<Check class="w-3.5 h-3.5 shrink-0" />
 												</Show>
 											</button>
 										)}

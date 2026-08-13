@@ -25,6 +25,10 @@ import { cstyle } from "@/utils/cstyle";
 
 export interface ProviderIconProps {
 	provider: string;
+	/** Icon/container size (Tailwind size class), default "w-8 h-8". */
+	size?: string;
+	/** Fallback initials text size, default "text-[10px]". */
+	textClass?: string;
 }
 
 // ── Brand icon registry (simple-icons) ──
@@ -89,16 +93,10 @@ function initials(name: string): string {
 // ── Styles ──
 
 const C = {
-	container: cstyle({
-		display: "flex items-center justify-center",
-		sizing: "w-8 h-8 shrink-0",
-	}),
-	svg: cstyle({ sizing: "w-5 h-5" }),
 	fallback: cstyle({
-		display: "flex items-center justify-center",
-		sizing: "w-8 h-8 shrink-0",
-		text: "text-white text-[10px] font-bold",
+		display: "flex items-center justify-center shrink-0",
 		interaction: "rounded-md",
+		color: "text-white font-bold leading-none",
 	}),
 };
 
@@ -108,19 +106,19 @@ const C = {
  */
 const ProviderIcon: Component<ProviderIconProps> = (props) => {
 	const icon = PROVIDER_ICONS[props.provider];
+	const size = () => props.size ?? "w-8 h-8";
+	const textClass = () => props.textClass ?? "text-[10px]";
 
 	if (icon) {
 		return (
-			<div class={C.container()}>
-				<svg viewBox="0 0 24 24" class={C.svg()} role="img" aria-label={props.provider}>
-					<path d={icon.path} fill={`#${icon.hex}`} />
-				</svg>
-			</div>
+			<svg viewBox="0 0 24 24" class={`${size()} shrink-0 block`} role="img" aria-label={props.provider}>
+				<path d={icon.path} fill={`#${icon.hex}`} />
+			</svg>
 		);
 	}
 
 	return (
-		<div class={`${C.fallback()} ${FALLBACK_COLORS[props.provider] ?? "bg-gray-500"}`}>
+		<div class={`${C.fallback()} ${FALLBACK_COLORS[props.provider] ?? "bg-gray-500"} ${size()} ${textClass()}`}>
 			{initials(props.provider)}
 		</div>
 	);

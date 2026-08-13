@@ -96,8 +96,13 @@ const ModelManager: Component<ModelManagerProps> = (props) => {
 		...props.providerList.map((p) => ({
 			...p,
 			group: p.name.charAt(0).toUpperCase(),
+			icon: <ProviderIcon provider={p.id} size="w-4 h-4" textClass="text-[8px]" />,
 		})),
-		{ id: "custom", name: t("settings.customProvider") },
+		{
+			id: "custom",
+			name: t("settings.customProvider"),
+			icon: <ProviderIcon provider="custom" size="w-4 h-4" textClass="text-[8px]" />,
+		},
 	]);
 
 	function handleSave() {
