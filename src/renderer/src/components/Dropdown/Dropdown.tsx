@@ -75,6 +75,7 @@ const C = {
 const Dropdown: Component<DropdownProps> = (props) => {
 	const [open, setOpen] = createSignal(false);
 	const [search, setSearch] = createSignal("");
+	const [highlightedIndex, setHighlightedIndex] = createSignal(-1);
 	let containerRef: HTMLDivElement | undefined;
 
 	const filtered = createMemo(() => {
@@ -84,6 +85,48 @@ const Dropdown: Component<DropdownProps> = (props) => {
 	});
 
 	const selectedName = () => props.options.find((o) => o.id === props.value)?.name ?? props.placeholder;
+
+	function select(id: string) {
+		props.onChange(id);
+		setOpen(false);
+		setSearch("");
+		setHighlightedIndex(-1);
+	}
+
+	function onKeyDown(e: KeyboardEvent) {
+		const items = filtered();
+		if (e.key === "ArrowDown") {
+			e.preventDefault();
+			setHighlightedIndex((i) => (i + 1 >= items.length ? 0 : i + 1));
+		} else if (e.key === "ArrowUp") {
+			e.preventDefault();
+			setHighlightedIndex((i) => (i - 1 < 0 ? items.length - 1 : i - 1));
+		} else if (e.key === "Enter") {
+			const idx = highlightedIndex();
+			if (idx >= 0 && idx < items.length) {
+				e.preventDefault();
+				select(items[idx].id);
+			}
+		} else if (e.key === "Escape") {
+			setOpen(false);
+		}
+	}
+
+	createEffect(() => {
+		// Reset keyboard highlight whenever the menu opens.
+		if (open()) setHighlightedIndex(-1);
+	});
+
+	createEffect(() => {
+		// Keep the keyboard-highlighted option visible while browsing.
+		const idx = highlightedIndex();
+		if (idx < 0 || !containerRef) return;
+		queueMicrotask(() => {
+			containerRef
+				?.querySelector(`[data-option-index="${idx}"]`)
+				?.scrollIntoView({ block: "nearest" });
+		});
+	});
 
 	createEffect(() => {
 		if (!open()) return;
@@ -113,21 +156,26 @@ const Dropdown: Component<DropdownProps> = (props) => {
 								class={C.searchInput()}
 								placeholder="Search..."
 								value={search()}
+								ref={(el) => {
+									// Auto-focus the search box as soon as the menu opens.
+									queueMicrotask(() => el.focus());
+								}}
 								onInput={(e) => setSearch(e.currentTarget.value)}
+								onKeyDown={onKeyDown}
 							/>
 						</div>
 					</Show>
 					<div class={C.optionsList()}>
 						<For each={filtered()}>
-							{(opt) => (
+							{(opt, index) => (
 								<button
 									type="button"
-									class={C.option({ selected: props.value === opt.id })}
-									onClick={() => {
-										props.onChange(opt.id);
-										setOpen(false);
-										setSearch("");
-									}}
+									data-option-index={index()}
+									class={`${C.option({ selected: props.value === opt.id })} ${
+										highlightedIndex() === index() ? "bg-base-200" : ""
+									}`}
+									onMouseEnter={() => setHighlightedIndex(index())}
+									onClick={() => select(opt.id)}
 								>
 									{opt.name}
 									<Show when={props.value === opt.id}>
