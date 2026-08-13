@@ -14,6 +14,9 @@ export const safelist = [
 	"bg-primary/80",
 	"hover:bg-base-300/30",
 
+	// Overlay / modal
+	"backdrop-blur-xs",
+
 	// Text
 	"text-white/80",
 	"text-neutral-100",

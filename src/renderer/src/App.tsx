@@ -57,7 +57,13 @@ const AppContent: Component = () => {
 				{activeNav() === "chat" && <ChatPage sidebarHeader={<AppBanner />} sidebarBottom={<div class="h-12" />} />}
 			</MainLayout>
 
-			<Modal open={settingsOpen()} onClose={() => setSettingsOpen(false)} title={t("settings.title")} minWidth="66rem">
+			<Modal
+				open={settingsOpen()}
+				onClose={() => setSettingsOpen(false)}
+				title={t("settings.title")}
+				minWidth="66rem"
+				backdropBlur={true}
+			>
 				<SettingsPage />
 				<div class="divider" />
 				<ThemePage />

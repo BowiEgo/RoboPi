@@ -1,5 +1,5 @@
 import { X } from "lucide-solid";
-import { type Component, type JSX, createEffect, onCleanup, Show } from "solid-js";
+import { type Component, createEffect, type JSX, onCleanup, Show } from "solid-js";
 
 import { cstyle } from "@/utils/cstyle";
 
@@ -19,6 +19,8 @@ export interface ModalProps {
 	maxWidth?: string;
 	/** Maximum panel height (CSS value, default "85vh"). */
 	maxHeight?: string;
+	/** Apply a frosted-glass (backdrop blur) effect to the overlay. */
+	backdropBlur?: boolean;
 	children: JSX.Element;
 }
 
@@ -29,6 +31,9 @@ const C = {
 		display: "fixed inset-0 z-50 flex items-center justify-center",
 		spacing: "p-4",
 		color: "bg-black/40",
+		variants: {
+			backdropBlur: { true: "backdrop-blur-xs" },
+		},
 	}),
 	panel: cstyle({
 		display: "flex flex-col",
@@ -90,7 +95,7 @@ const Modal: Component<ModalProps> = (props) => {
 
 	return (
 		<Show when={props.open}>
-			<div class={C.overlay()} onClick={props.onClose}>
+			<div class={C.overlay({ backdropBlur: props.backdropBlur })} onClick={props.onClose}>
 				<div
 					class={C.panel()}
 					style={{
