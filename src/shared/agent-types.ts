@@ -58,6 +58,7 @@ export const AgentMessageType = {
 	SessionDeleted: "session:deleted",
 	SessionRenamed: "session:renamed",
 	SessionHistoryResult: "session:history_result",
+	SessionStats: "session:stats",
 	SessionError: "session:error",
 } as const;
 
@@ -96,6 +97,7 @@ export type AgentPayload =
 	| SessionDeletedPayload
 	| SessionRenamedPayload
 	| SessionHistoryResultPayload
+	| SessionStatsPayload
 	| SessionErrorPayload
 	| Record<string, never>;
 
@@ -303,6 +305,24 @@ export interface SessionRenamedPayload {
 export interface SessionHistoryResultPayload {
 	sessionId: string;
 	messages: SessionMessagePayload[];
+}
+
+/** Session usage statistics (cumulative tokens, cache, cost, context usage). */
+export interface SessionStatsPayload {
+	sessionId: string;
+	tokens: {
+		input: number;
+		output: number;
+		cacheRead: number;
+		cacheWrite: number;
+		total: number;
+	};
+	cost: number;
+	contextUsage?: {
+		tokens: number | null;
+		contextWindow: number;
+		percent: number | null;
+	};
 }
 
 /** Session operation error. */

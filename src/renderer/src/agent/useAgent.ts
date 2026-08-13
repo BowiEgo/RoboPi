@@ -21,6 +21,7 @@ import {
 	type ConfiguredModel,
 	isValidMessageType,
 	type SessionInfoPayload,
+	type SessionStatsPayload,
 } from "@shared/agent-types";
 import { createMemo, createSignal } from "solid-js";
 
@@ -45,6 +46,7 @@ const [messages, setMessages] = createSignal<ChatBubbleProps[]>([]);
 const [resetKey, setResetKey] = createSignal("");
 const [loading, setLoading] = createSignal(false);
 const [agentConfig, setAgentConfig] = createSignal<AgentConfig>({});
+const [stats, setStats] = createSignal<SessionStatsPayload | null>(null);
 
 // Per-session message cache — preserves streaming content across session switches
 const sessionMsgCache = new Map<string, ChatBubbleProps[]>();
@@ -187,6 +189,13 @@ if (agent && !_storeReady) {
 				if (activeId() === p.sessionId) setActiveName(p.name);
 				refreshSessions();
 				settle(msg.id, p);
+				break;
+			}
+
+			case AgentMessageType.SessionStats: {
+				const p = msg.payload as unknown as SessionStatsPayload;
+				// Only apply stats for the active session (background sessions report too)
+				if (p.sessionId === activeId()) setStats(p);
 				break;
 			}
 
@@ -359,6 +368,7 @@ function createSession(name?: string) {
 	setMessages([]);
 	setResetKey(`new-${Date.now()}`);
 	setLoading(false);
+	setStats(null);
 }
 
 async function handleSend(text: string): Promise<{ sessionId: string }> {
@@ -411,6 +421,7 @@ async function switchSession(id: string): Promise<{ sessionId: string; name: str
 	if (curId) sessionMsgCache.set(curId, messages());
 
 	setLoading(true);
+	setStats(null);
 	const msgId = `switch-${Date.now()}`;
 	const promise = track<{
 		sessionId: string;
@@ -466,6 +477,7 @@ export function useAgent() {
 		resetKey,
 		loading,
 		agentConfig,
+		stats,
 		createSession,
 		selectModel,
 		selectThinkingLevel,

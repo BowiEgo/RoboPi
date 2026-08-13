@@ -141,6 +141,39 @@ export class SessionHost {
 		return this.session?.getAvailableThinkingLevels() ?? [];
 	}
 
+	/** Push cumulative session usage (tokens/cache/cost) + context usage to the renderer. */
+	pushStats(): void {
+		const session = this.session;
+		const sid = this.currentSessionId;
+		if (!session || !sid) return;
+
+		let stats: ReturnType<AgentSession["getSessionStats"]> | undefined;
+		try {
+			stats = session.getSessionStats();
+		} catch (err) {
+			logger.debug("getSessionStats failed", err);
+		}
+
+		let contextUsage: { tokens: number | null; contextWindow: number; percent: number | null } | undefined;
+		try {
+			contextUsage = session.getContextUsage();
+		} catch (err) {
+			logger.debug("getContextUsage failed", err);
+		}
+		const cu = contextUsage ?? stats?.contextUsage;
+
+		postMessageToHost({
+			id: uid(),
+			type: AgentMessageType.SessionStats,
+			payload: {
+				sessionId: sid,
+				tokens: stats?.tokens ?? { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+				cost: stats?.cost ?? 0,
+				contextUsage: cu ? { tokens: cu.tokens, contextWindow: cu.contextWindow, percent: cu.percent } : undefined,
+			},
+		});
+	}
+
 	async setModel(modelId: string): Promise<void> {
 		if (!this.session || !this.modelRuntime) return;
 		// Match by the full model ID — do not derive the provider from the ID prefix.
@@ -183,6 +216,7 @@ export class SessionHost {
 					file: sm.getSessionFile() ?? "",
 				},
 			});
+			this.pushStats();
 			logger.info(`Session created: ${this.currentSessionId} (${this.currentSessionName})`);
 		} catch (err) {
 			this.respondCrudError(msgId, ErrorCode.CREATE_ERROR, err);
@@ -313,6 +347,7 @@ export class SessionHost {
 						model: this.getCurrentModel(),
 					},
 				});
+				this.pushStats();
 			}
 		} catch (err) {
 			this.respondCrudError(msgId, ErrorCode.DELETE_ERROR, err);
@@ -409,6 +444,7 @@ export class SessionHost {
 				availableThinkingLevels: this.getAvailableThinkingLevels(),
 			},
 		});
+		this.pushStats();
 	}
 
 	private respondCrudError(msgId: string, code: string, err: unknown): void {
@@ -612,6 +648,11 @@ export class SessionHost {
 					: undefined,
 			},
 		});
+
+		// Refresh cumulative usage labels for the active session
+		if (sessionId === this.currentSessionId) {
+			this.pushStats();
+		}
 
 		// Clean up finished background sessions
 		if (this.backgroundSessions.has(sessionId)) {

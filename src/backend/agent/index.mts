@@ -67,6 +67,7 @@ async function startup(): Promise<void> {
 					model: host.getCurrentModel(),
 				},
 			});
+			host.pushStats();
 		}
 
 		logger.info(`Started (PID: ${process.pid})`);

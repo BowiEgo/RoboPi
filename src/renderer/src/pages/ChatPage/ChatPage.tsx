@@ -29,25 +29,53 @@ interface ChatPageProps {
 	maxWidth?: number;
 }
 
+// ── Usage label formatting ──
+
+function formatCompact(n: number): string {
+	if (n >= 1_000_000) {
+		const v = (n / 1_000_000).toFixed(1);
+		return `${v.endsWith(".0") ? v.slice(0, -2) : v}M`;
+	}
+	if (n >= 1_000) {
+		const v = (n / 1_000).toFixed(1);
+		return `${v.endsWith(".0") ? v.slice(0, -2) : v}K`;
+	}
+	return String(Math.round(n));
+}
+
+function formatPercent(p: number | null | undefined): string {
+	return p == null ? "—" : `${(p * 100).toFixed(1)}%`;
+}
+
 const ChatPage: Component<ChatPageProps> = (props) => {
 	const { t } = useLocale();
-	const { activeId, activeName, messages, resetKey, loading, agentConfig, createSession, handleSend } = useAgent();
+	const { activeId, activeName, messages, resetKey, loading, agentConfig, stats, createSession, handleSend } =
+		useAgent();
 
 	const minW = () => props.minWidth ?? 180;
 	const maxW = () => props.maxWidth ?? 600;
 	const [drawerWidth, setDrawerWidth] = createSignal(props.defaultWidth ?? 300);
 
-	const tags = createMemo<ChatTag[]>(() => [
-		{ id: "context", label: "上下文：0.0% / 1.0M ↑ 0 ↓ 0" },
-		{ id: "cache", label: "缓存：0" },
-		{ id: "cost", label: "$0.000" },
-		{
-			id: "new",
-			label: t("chat.newSession"),
-			type: "action",
-			onClick: () => createSession(),
-		},
-	]);
+	const tags = createMemo<ChatTag[]>(() => {
+		const s = stats();
+		const tokens = s?.tokens;
+		const ctx = s?.contextUsage;
+		const contextWindow = ctx ? formatCompact(ctx.contextWindow) : "—";
+		const contextLabel = `上下文：${formatPercent(ctx?.percent)} / ${contextWindow} ↑ ${formatCompact(tokens?.input ?? 0)} ↓ ${formatCompact(tokens?.output ?? 0)}`;
+		const cacheLabel = `缓存：${formatCompact(tokens?.cacheRead ?? 0)}`;
+		const costLabel = `$${(s?.cost ?? 0).toFixed(3)}`;
+		return [
+			{ id: "context", label: contextLabel },
+			{ id: "cache", label: cacheLabel },
+			{ id: "cost", label: costLabel },
+			{
+				id: "new",
+				label: t("chat.newSession"),
+				type: "action",
+				onClick: () => createSession(),
+			},
+		];
+	});
 
 	return (
 		<div class={`${root()} bg-app-raised`}>
