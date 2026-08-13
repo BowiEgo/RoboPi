@@ -1,14 +1,11 @@
 import { Plus, Trash2 } from "lucide-solid";
-import { setApiKey as persistApiKey } from "@/agent/ipc/settings";
-import Dropdown from "@/components/Dropdown/Dropdown";
-import {
-	type Component,
-	createMemo,
-	createSignal,
-	For,
-	Show,
-} from "solid-js";
+import { type Component, createMemo, createSignal, For, Show } from "solid-js";
 
+import { setApiKey as persistApiKey } from "@/agent/ipc/settings";
+
+import Dropdown from "@/components/Dropdown/Dropdown";
+
+import { cstyle } from "@/utils/cstyle";
 
 // ── Types ──
 
@@ -27,8 +24,73 @@ interface ModelManagerProps {
 	onDelete: (id: string) => void;
 }
 
-// ── Derive providers & models from available model IDs ──
+// ── Styles ──
 
+const C = {
+	root: cstyle({ display: "flex flex-col", spacing: "gap-4" }),
+	header: cstyle({ display: "flex items-start justify-between", spacing: "gap-4" }),
+	description: cstyle({
+		text: "text-xs leading-relaxed",
+		sizing: "max-w-120",
+		color: "text-base-content/50",
+	}),
+	inlineCode: cstyle({
+		text: "text-xs",
+		spacing: "px-1",
+		interaction: "rounded",
+		color: "bg-base-200",
+	}),
+	headerActions: cstyle({ display: "flex items-center", spacing: "gap-2", sizing: "shrink-0" }),
+	addBtn: cstyle({
+		display: "btn btn-sm btn-outline",
+		spacing: "gap-1.5",
+	}),
+	modelList: cstyle({ display: "flex flex-col", spacing: "gap-2" }),
+	modelItem: cstyle({
+		display: "flex items-center",
+		spacing: "gap-3 px-3 py-2",
+		interaction: "rounded-lg border",
+		color: "border-base-300 bg-base-200/50",
+	}),
+	icon: cstyle({
+		display: "flex items-center justify-center",
+		sizing: "w-8 h-8 shrink-0",
+		text: "text-white text-[10px] font-bold",
+		interaction: "rounded-md",
+	}),
+	modelContent: cstyle({ display: "flex-1", sizing: "min-w-0" }),
+	modelName: cstyle({ text: "text-sm font-medium truncate" }),
+	modelProvider: cstyle({ text: "text-xs", color: "text-base-content/40" }),
+	deleteBtn: cstyle({
+		display: "btn btn-ghost btn-xs btn-square",
+		color: "text-base-content/30 hover:text-error",
+	}),
+	overlay: cstyle({
+		display: "fixed inset-0 z-50 flex items-center justify-center",
+		color: "bg-black/40",
+	}),
+	modal: cstyle({
+		sizing: "w-full max-w-md",
+		spacing: "mx-4",
+		interaction: "rounded-2xl shadow-2xl border",
+		color: "bg-base-100 border-base-300",
+	}),
+	modalHeader: cstyle({ spacing: "px-6 py-4", interaction: "border-b", color: "border-base-200" }),
+	modalTitle: cstyle({ text: "text-lg font-semibold", color: "text-base-content" }),
+	modalSubtitle: cstyle({ text: "text-xs", spacing: "mt-1", color: "text-base-content/40" }),
+	modalBody: cstyle({ display: "flex flex-col", spacing: "px-6 py-4 gap-4" }),
+	field: cstyle({ display: "flex flex-col", spacing: "gap-1.5" }),
+	label: cstyle({ text: "text-xs font-medium", color: "text-base-content/60" }),
+	apiKeyInput: cstyle({ display: "input input-bordered input-sm", text: "font-mono text-xs" }),
+	modalFooter: cstyle({
+		display: "flex justify-end",
+		spacing: "px-6 py-4 gap-2",
+		interaction: "border-t",
+		color: "border-base-200",
+	}),
+	cancelBtn: cstyle({ display: "btn btn-ghost btn-sm" }),
+	saveBtn: cstyle({ display: "btn btn-primary btn-sm" }),
+};
 
 // ── Provider icon colors ──
 
@@ -52,26 +114,20 @@ function providerInitials(name: string): string {
 	return name.slice(0, 2).toUpperCase();
 }
 
-// ── ModelManager Component ──
+// ── Component ──
 
 const ModelManager: Component<ModelManagerProps> = (props) => {
 	const [modalOpen, setModalOpen] = createSignal(false);
 	const [provider, setProvider] = createSignal("");
 	const [apiKey, setApiKey] = createSignal("");
 
-	const providers = createMemo(() => [
-		...props.providerList,
-		{ id: "custom", name: "Custom (OpenAI-compatible)" },
-	]);
-
-
+	const providers = createMemo(() => [...props.providerList, { id: "custom", name: "Custom (OpenAI-compatible)" }]);
 
 	function handleSave() {
 		const p = provider();
 		const key = apiKey();
 		if (!p || !key.trim()) return;
 		const provName = providers().find((pr) => pr.id === p)?.name ?? p;
-		// Persist API key locally
 		persistApiKey(p, key.trim());
 		props.onAdd({
 			id: `${p}-${Date.now()}`,
@@ -85,47 +141,38 @@ const ModelManager: Component<ModelManagerProps> = (props) => {
 	}
 
 	return (
-		<div class="flex flex-col gap-4">
-			{/* Header */}
-			<div class="flex items-start justify-between gap-4">
-				<p class="text-xs text-base-content/50 leading-relaxed max-w-120">
-					Local model configuration stored in{" "}
-					<code class="text-xs bg-base-200 px-1 rounded">%USERPROFILE%\.robopi\models.json</code>
+		<div class={C.root()}>
+			<div class={C.header()}>
+				<p class={C.description()}>
+					Local model configuration stored in <code class={C.inlineCode()}>%USERPROFILE%\.robopi\models.json</code>
 				</p>
-				<div class="flex items-center gap-2 shrink-0">
-						<button
-						type="button"
-						class="btn btn-sm btn-outline gap-1.5"
-						onClick={() => setModalOpen(true)}
-					>
+				<div class={C.headerActions()}>
+					<button type="button" class={C.addBtn()} onClick={() => setModalOpen(true)}>
 						<Plus class="w-3.5 h-3.5" />
 						Add Model
 					</button>
 				</div>
 			</div>
 
-			{/* Saved models */}
 			<Show when={props.models.length > 0}>
-				<div class="flex flex-col gap-2">
+				<div class={C.modelList()}>
 					<For each={props.models}>
 						{(model) => (
-							<div class="flex items-center gap-3 px-3 py-2 rounded-lg border border-base-300 bg-base-200/50">
+							<div class={C.modelItem()}>
 								<div
-									class={`w-8 h-8 rounded-md flex items-center justify-center text-white text-[10px] font-bold shrink-0 ${
-										PROVIDER_COLORS[
-											providers().find((p) => p.name === model.provider)?.id ?? "custom"
-										] ?? "bg-gray-500"
+									class={`${C.icon()} ${
+										PROVIDER_COLORS[providers().find((p) => p.name === model.provider)?.id ?? "custom"] ?? "bg-gray-500"
 									}`}
 								>
 									{providerInitials(model.provider)}
 								</div>
-								<div class="flex-1 min-w-0">
-									<div class="text-sm font-medium truncate">{model.name}</div>
-									<div class="text-xs text-base-content/40">{model.provider}</div>
+								<div class={C.modelContent()}>
+									<div class={C.modelName()}>{model.name}</div>
+									<div class={C.modelProvider()}>{model.provider}</div>
 								</div>
 								<button
 									type="button"
-									class="btn btn-ghost btn-xs btn-square text-base-content/30 hover:text-error"
+									class={C.deleteBtn()}
 									onClick={() => props.onDelete(model.id)}
 									aria-label="Delete model"
 								>
@@ -137,25 +184,16 @@ const ModelManager: Component<ModelManagerProps> = (props) => {
 				</div>
 			</Show>
 
-			{/* ── Modal ── */}
 			<Show when={modalOpen()}>
-				<div
-					class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-					onClick={() => setModalOpen(false)}
-				>
-					<div
-						class="w-full max-w-md mx-4 rounded-2xl bg-base-100 shadow-2xl border border-base-300"
-						onClick={(e) => e.stopPropagation()}
-					>
-						<div class="px-6 py-4 border-b border-base-200">
-							<h3 class="text-lg font-semibold text-base-content">Add Provider</h3>
-							<p class="text-xs text-base-content/40 mt-1">
-								Only OpenAI-compatible API is supported
-							</p>
+				<div class={C.overlay()} onClick={() => setModalOpen(false)}>
+					<div class={C.modal()} onClick={(e) => e.stopPropagation()}>
+						<div class={C.modalHeader()}>
+							<h3 class={C.modalTitle()}>Add Provider</h3>
+							<p class={C.modalSubtitle()}>Only OpenAI-compatible API is supported</p>
 						</div>
-						<div class="px-6 py-4 flex flex-col gap-4">
-							<div class="flex flex-col gap-1.5">
-								<label class="text-xs font-medium text-base-content/60">Provider</label>
+						<div class={C.modalBody()}>
+							<div class={C.field()}>
+								<label class={C.label()}>Provider</label>
 								<Dropdown
 									value={provider()}
 									options={providers()}
@@ -163,31 +201,22 @@ const ModelManager: Component<ModelManagerProps> = (props) => {
 									onChange={setProvider}
 								/>
 							</div>
-							<div class="flex flex-col gap-1.5">
-								<label class="text-xs font-medium text-base-content/60">API Key</label>
+							<div class={C.field()}>
+								<label class={C.label()}>API Key</label>
 								<input
 									type="password"
-									class="input input-bordered input-sm font-mono text-xs"
+									class={C.apiKeyInput()}
 									placeholder="sk-..."
 									value={apiKey()}
 									onInput={(e) => setApiKey(e.currentTarget.value)}
 								/>
 							</div>
 						</div>
-						<div class="px-6 py-4 border-t border-base-200 flex justify-end gap-2">
-							<button
-								type="button"
-								class="btn btn-ghost btn-sm"
-								onClick={() => setModalOpen(false)}
-							>
+						<div class={C.modalFooter()}>
+							<button type="button" class={C.cancelBtn()} onClick={() => setModalOpen(false)}>
 								Cancel
 							</button>
-							<button
-								type="button"
-								class="btn btn-primary btn-sm"
-								disabled={!provider() || !apiKey().trim()}
-								onClick={handleSave}
-							>
+							<button type="button" class={C.saveBtn()} disabled={!provider() || !apiKey().trim()} onClick={handleSave}>
 								Save
 							</button>
 						</div>

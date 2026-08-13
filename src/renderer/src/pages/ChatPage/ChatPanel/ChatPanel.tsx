@@ -5,6 +5,7 @@ import ChatOutline from "@/components/ChatOutline/ChatOutline";
 
 import Composer, { type AgentConfig } from "../Composer/Composer";
 import ChatBubble, { type ChatBubbleProps } from "./ChatBubble";
+import { cstyle } from "@/utils/cstyle";
 
 export interface ChatTag {
 	id: string;
@@ -23,6 +24,62 @@ interface ChatPanelProps {
 	agentConfig?: AgentConfig;
 	onSend?: (text: string) => Promise<unknown> | undefined;
 }
+
+// ── Styles ──
+
+const C = {
+	root: cstyle({
+		display: "chat-panel relative flex flex-col items-center",
+		sizing: "h-full overflow-hidden",
+		interaction: "rounded-2xl shadow-xl",
+		color: "bg-app",
+	}),
+	header: cstyle({
+		display: "absolute flex shrink-0 items-center justify-between z-1",
+		sizing: "w-full",
+		spacing: "gap-4 px-4 py-3",
+		text: "font-medium text-base font-display",
+		color: "bg-transparent! text-base-content",
+	}),
+	tags: cstyle({ display: "flex items-center", spacing: "gap-2 ml-auto" }),
+	tagAction: cstyle({ display: "btn btn-ghost btn-sm", color: "text-base-content" }),
+	tagInfo: cstyle({
+		display: "inline-flex items-center",
+		spacing: "px-2.5 py-0.75",
+		interaction: "border rounded",
+		text: "font-mono text-[11px] leading-snug whitespace-nowrap",
+		color: "border-base-300 bg-base-200 text-base-content/70",
+	}),
+	testBtn: cstyle({
+		display: "btn btn-xs",
+		spacing: "ml-auto",
+		variants: { active: { true: "btn-primary", false: "btn-outline" } },
+	}),
+	messages: cstyle({
+		display: "flex flex-col",
+		sizing: "flex-1 w-full overflow-y-auto z-0",
+		spacing: "gap-1 pl-12 pr-20 pt-12 pb-[30%]",
+		color: "text-base-content",
+	}),
+	empty: cstyle({
+		display: "flex items-center justify-center",
+		sizing: "flex-1",
+		text: "text-sm",
+		color: "text-base-content/30",
+	}),
+	fadeTop: cstyle({
+		display: "pointer-events-none absolute top-0 left-0 right-0",
+		sizing: "h-1/12",
+		interaction: "backdrop-blur-md",
+		color: "bg-linear-to-b from-base-100 to-transparent",
+	}),
+	fadeBottom: cstyle({
+		display: "pointer-events-none absolute bottom-0 left-0 right-0",
+		sizing: "h-1/3",
+		interaction: "backdrop-blur-lg",
+		color: "bg-linear-to-b from-transparent to-base-100",
+	}),
+};
 
 const ChatPanel: Component<ChatPanelProps> = (props) => {
 	const agentConfig = () => props.agentConfig ?? {};
@@ -176,37 +233,27 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 	void hasStreaming();
 
 	return (
-		<div class="chat-panel relative flex flex-col items-center h-full overflow-hidden bg-app rounded-2xl shadow-xl">
+		<div class={C.root()}>
 			<ChatOutline messages={displayMessages()} />
-			<header class="absolute flex shrink-0 items-center justify-between w-full gap-4 px-4 py-3 font-medium text-base font-display bg-transparent! text-base-content z-1">
+			<header class={C.header()}>
 				{props.header}
 				{props.tags && props.tags.length > 0 && (
-					<div class="flex items-center gap-2 ml-auto">
+					<div class={C.tags()}>
 						<For each={props.tags}>
 							{(tag) =>
 								tag.type === "action" ? (
-									<button
-										type="button"
-										class="btn btn-ghost btn-sm text-base-content"
-										onClick={() => tag.onClick?.(tag.id)}
-									>
+									<button type="button" class={C.tagAction()} onClick={() => tag.onClick?.(tag.id)}>
 										<Plus class="w-3 h-3" />
 										{tag.label}
 									</button>
 								) : (
-									<span class="inline-flex items-center px-2.5 py-0.75 border border-base-300 rounded bg-base-200 text-base-content/70 font-mono text-[11px] leading-snug whitespace-nowrap">
-										{tag.label}
-									</span>
+									<span class={C.tagInfo()}>{tag.label}</span>
 								)
 							}
 						</For>
 					</div>
 				)}
-				<button
-					type="button"
-					class={`btn btn-xs ml-auto ${isTestMode() ? "btn-primary" : "btn-outline"}`}
-					onClick={toggleTestMessages}
-				>
+				<button type="button" class={C.testBtn({ active: isTestMode() })} onClick={toggleTestMessages}>
 					🧪 {isTestMode() ? "Clear" : "Test"}
 				</button>
 			</header>
@@ -215,16 +262,12 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 				ref={(el) => {
 					scrollEl = el;
 				}}
-				class="flex-1 w-full flex flex-col gap-1 overflow-y-auto pl-12 pr-20 pt-12 pb-[30%] text-base-content z-0"
+				class={C.messages()}
 				style="scroll-behavior: auto; scroll-padding-top: 64px; scroll-padding-bottom: 96px"
 				onScroll={onScroll}
 			>
 				<Show when={displayMessages().length === 0} fallback={null}>
-					{props.children ?? (
-						<div class="flex items-center justify-center flex-1 text-base-content/30 text-sm">
-							Send a message to start
-						</div>
-					)}
+					{props.children ?? <div class={C.empty()}>Send a message to start</div>}
 				</Show>
 				<For each={displayMessages()}>
 					{(msg) => (
@@ -247,14 +290,12 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 				</For>
 
 				<div
-					class="pointer-events-none absolute top-0 left-0 right-0 h-1/12 backdrop-blur-md
- bg-linear-to-b from-base-100 to-transparent"
+					class={C.fadeTop()}
 					style="mask-image: linear-gradient(to bottom, black 30%, transparent 100%);
  -webkit-mask-image: linear-gradient(to bottom, black 30%, transparent 100%);"
 				/>
 				<div
-					class="pointer-events-none absolute bottom-0 left-0 right-0 h-1/3 backdrop-blur-lg
- bg-linear-to-b from-transparent to-base-100"
+					class={C.fadeBottom()}
 					style="mask-image: linear-gradient(to top, black 30%, transparent 100%);
  -webkit-mask-image: linear-gradient(to top, black 30%, transparent 100%);"
 				/>

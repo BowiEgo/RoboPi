@@ -1,6 +1,8 @@
 import { GripHorizontal, GripVertical } from "lucide-solid";
 import { type Component, createEffect, createSignal, onCleanup } from "solid-js";
 
+import { cstyle } from "@/utils/cstyle";
+
 interface ResizerProps {
 	value: number;
 	min: number;
@@ -10,17 +12,38 @@ interface ResizerProps {
 	onChange: (value: number) => void;
 }
 
-// ── Layout ──
+// ── Styles ──
 
-const handle = "resizer-handle absolute z-10 flex items-center justify-center";
-const grip = "resizer-grip";
+const C = {
+	handle: cstyle({
+		display: "resizer-handle absolute z-10 flex items-center justify-center",
+		variants: {
+			vertical: {
+				true: "resizer-handle-v cursor-col-resize w-4 flex-col",
+				false: "resizer-handle-h cursor-row-resize h-4",
+			},
+			resizing: { true: "resizer-active" },
+		},
+	}),
+	grip: cstyle({
+		display: "resizer-grip",
+		color: "bg-base-300",
+		variants: {
+			visible: { true: "opacity-100", false: "opacity-0" },
+		},
+	}),
+};
 
 const positionClass = (pos: ResizerProps["position"]) => {
 	switch (pos) {
-		case "top": return "-top-2 left-0 right-0";
-		case "bottom": return "-bottom-2 left-0 right-0";
-		case "left": return "-left-2 top-0 bottom-0";
-		case "right": return "-right-2 top-0 bottom-0";
+		case "top":
+			return "-top-2 left-0 right-0";
+		case "bottom":
+			return "-bottom-2 left-0 right-0";
+		case "left":
+			return "-left-2 top-0 bottom-0";
+		case "right":
+			return "-right-2 top-0 bottom-0";
 	}
 };
 
@@ -69,7 +92,7 @@ const Resizer: Component<ResizerProps> = (props) => {
 
 	return (
 		<div
-			class={`${handle} ${v ? "resizer-handle-v cursor-col-resize w-4 flex-col" : "resizer-handle-h cursor-row-resize h-4"} ${isResizing() ? "resizer-active" : ""} ${positionClass(props.position)}`}
+			class={`${C.handle({ vertical: v, resizing: isResizing() })} ${positionClass(props.position)}`}
 			role="separator"
 			tabIndex={0}
 			aria-orientation={v ? "vertical" : "horizontal"}
@@ -78,7 +101,7 @@ const Resizer: Component<ResizerProps> = (props) => {
 			aria-valuemax={props.max}
 			onMouseDown={handleMouseDown}
 		>
-			<div class={`${grip} ${showGrip() ? "opacity-100" : "opacity-0"} bg-base-300`}>
+			<div class={C.grip({ visible: showGrip() })}>
 				{v ? (
 					<GripVertical class="w-3 h-3 text-base-content/40" />
 				) : (

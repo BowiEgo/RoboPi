@@ -15,29 +15,60 @@ interface ChatOutlineProps {
 	messages: ChatBubbleProps[];
 }
 
-// ── Class constants ──
+// ── Styles ──
 
-const wrapper = cstyle({ base: "absolute w-12.5 h-fit right-4 top-1/2 -translate-y-1/2 z-10" });
-
-const scrollArea =
-	"w-60 max-h-60 -translate-x-[calc(100%-3.125rem)] rounded-lg overflow-hidden transition-all duration-200 blur-mask-t-[32px] blur-mask-b-[32px]";
-const scrollAreaCollapsed = "border border-transparent pointer-events-none [--blur-mask-opacity:0]";
-const scrollAreaExpanded = "bg-base-100 border border-base-300/60 shadow-lg";
-
-const list = "min-w-0.25 max-w-full max-h-60 pr-2 overflow-y-auto overflow-x-hidden scroll-list";
-
-const listItems = "relative flex flex-col z-0 py-4";
-
-const row =
-	"flex items-center pl-4 py-1.5 w-full justify-between text-sm cursor-pointer text-base-content/60 hover:text-base-content transition-colors duration-200";
-
-const titleBase = "truncate transition-all duration-200";
-const titleCollapsed = "opacity-0";
-const titleActive = "font-bold text-primary";
-const titleInactive = "";
-
-const dashBase = "w-2.5 h-0.75 rounded-full shrink-0 bg-base-content/40 transition-all duration-200";
-const dashActive = "bg-primary scale-x-120";
+const C = {
+	wrapper: cstyle({
+		display: "absolute right-4 top-1/2 -translate-y-1/2 z-10",
+		sizing: "w-12.5 h-fit",
+	}),
+	scrollArea: cstyle({
+		display: "-translate-x-[calc(100%-3.125rem)]",
+		sizing: "w-60 max-h-60",
+		interaction: "rounded-lg overflow-hidden transition-all duration-200 blur-mask-t-[32px] blur-mask-b-[32px]",
+		variants: {
+			hovered: {
+				true: "bg-base-100 border border-base-300/60 shadow-lg",
+				false: "border border-transparent pointer-events-none [--blur-mask-opacity:0]",
+			},
+		},
+	}),
+	list: cstyle({
+		sizing: "min-w-0.25 max-w-full max-h-60 overflow-y-auto overflow-x-hidden",
+		spacing: "pr-2",
+		interaction: "scroll-list",
+		variants: {
+			hovered: { true: "scrollbar-thumb-base-300" },
+		},
+	}),
+	listItems: cstyle({
+		display: "relative flex flex-col z-0",
+		spacing: "py-4",
+	}),
+	row: cstyle({
+		display: "flex items-center justify-between",
+		spacing: "pl-4 py-1.5",
+		sizing: "w-full",
+		text: "text-sm",
+		interaction: "cursor-pointer transition-colors duration-200",
+		color: "text-base-content/60 hover:text-base-content",
+	}),
+	title: cstyle({
+		text: "truncate transition-all duration-200",
+		variants: {
+			active: { true: "font-bold text-primary" },
+			collapsed: { true: "opacity-0" },
+		},
+	}),
+	dash: cstyle({
+		sizing: "w-2.5 h-0.75",
+		interaction: "rounded-full shrink-0 transition-all duration-200",
+		color: "bg-base-content/40",
+		variants: {
+			active: { true: "bg-primary scale-x-120" },
+		},
+	}),
+};
 
 // ── Component ──
 
@@ -46,7 +77,6 @@ const ChatOutline: Component<ChatOutlineProps> = (props) => {
 	const [activeId, setActiveId] = createSignal<string | null>(null);
 	const [hovered, setHovered] = createSignal(false);
 
-	// ── Extract user messages ──
 	createEffect(() => {
 		const msgs = props.messages;
 		void msgs.length;
@@ -59,8 +89,6 @@ const ChatOutline: Component<ChatOutlineProps> = (props) => {
 		setMarks(items);
 	});
 
-	// ── Track active message via IntersectionObserver + visible Set ──
-
 	let listRef: HTMLDivElement | undefined;
 	const visibleEls = new Set<Element>();
 	let observer: IntersectionObserver | undefined;
@@ -71,7 +99,6 @@ const ChatOutline: Component<ChatOutlineProps> = (props) => {
 		const main = getScrollContainer();
 		if (!main) return;
 
-		// Observer: maintain Set of visible element IDs
 		observer?.disconnect();
 		observer = new IntersectionObserver(
 			(entries) => {
@@ -84,7 +111,6 @@ const ChatOutline: Component<ChatOutlineProps> = (props) => {
 			{ root: main, rootMargin: "-48px 0px -20% 0px", threshold: 0 },
 		);
 
-		// Scroll fallback + initial trigger
 		const onScroll = () => {
 			clearTimeout(scrollTimer);
 			scrollTimer = setTimeout(updateActiveId, 50);
@@ -104,7 +130,6 @@ const ChatOutline: Component<ChatOutlineProps> = (props) => {
 		const main = getScrollContainer();
 		if (!main) return;
 
-		// Fallback: at the bottom → last user message is active
 		const atBottom = main.scrollTop + main.clientHeight >= main.scrollHeight - 48;
 		if (atBottom) {
 			const items = marks();
@@ -127,7 +152,6 @@ const ChatOutline: Component<ChatOutlineProps> = (props) => {
 				if (nextEl && nextEl.getAttribute("data-role") === "user") {
 					setActiveId(nextEl.id);
 				} else {
-					// Agent visible — find preceding user message from marks
 					const items = marks();
 					for (let j = items.length - 1; j >= 0; j--) {
 						const userEl = document.getElementById(items[j].msgId);
@@ -141,10 +165,8 @@ const ChatOutline: Component<ChatOutlineProps> = (props) => {
 		}
 	}
 
-	// Memo: bake activeId into marks so <For> re-renders on active change.
 	const activeMarks = createMemo(() => marks().map((m) => ({ ...m, isActive: activeId() === m.msgId })));
 
-	// Re-observe when messages change (session switch, new messages)
 	createEffect(() => {
 		const msgs = props.messages;
 		void msgs.length;
@@ -158,8 +180,6 @@ const ChatOutline: Component<ChatOutlineProps> = (props) => {
 			}
 		});
 	});
-
-	// ── Page-flip outline when active dash leaves viewport ──
 
 	createEffect(() => {
 		const id = activeId();
@@ -177,7 +197,6 @@ const ChatOutline: Component<ChatOutlineProps> = (props) => {
 		}
 	});
 
-	// ── Scroll to ──
 	const SCROLL_OFFSET = 80;
 
 	function getScrollContainer(): HTMLElement | null {
@@ -201,26 +220,23 @@ const ChatOutline: Component<ChatOutlineProps> = (props) => {
 		}, 500);
 	}
 
-	// ── Render ──
 	return (
-		<div class={`${wrapper()}`} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
-			<div class={`${scrollArea} ${hovered() ? scrollAreaExpanded : scrollAreaCollapsed}`}>
+		<div class={C.wrapper()} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+			<div class={C.scrollArea({ hovered: hovered() })}>
 				<div
-					class={`${list} ${hovered() ? "scrollbar-thumb-base-300" : ""}`}
+					class={C.list({ hovered: hovered() })}
 					ref={(el) => {
 						listRef = el;
 					}}
 				>
-					<div class={`${listItems}`}>
+					<div class={C.listItems()}>
 						<For each={activeMarks()}>
 							{(mark) => (
-								<div class={row} onClick={() => jumpTo(mark.msgId)} aria-label={mark.userText}>
-									<span
-										class={`${titleBase} ${hovered() ? (mark.isActive ? titleActive : titleInactive) : titleCollapsed}`}
-									>
+								<div class={C.row()} onClick={() => jumpTo(mark.msgId)} aria-label={mark.userText}>
+									<span class={C.title({ active: hovered() && mark.isActive, collapsed: !hovered() })}>
 										{mark.userText}
 									</span>
-									<span class={`${dashBase} ${mark.isActive ? dashActive : ""}`} id={`dash-${mark.msgId}`} />
+									<span class={C.dash({ active: mark.isActive })} id={`dash-${mark.msgId}`} />
 								</div>
 							)}
 						</For>
