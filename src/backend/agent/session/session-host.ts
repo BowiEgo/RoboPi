@@ -18,9 +18,9 @@ import {
 } from "@earendil-works/pi-coding-agent";
 
 import { AgentMessageType, type SessionInfoPayload, type SessionMessagePayload } from "../../../shared/agent-types.ts";
+import { createLogger } from "../../../shared/logger/index.ts";
 import { getSessionsDir } from "../config.ts";
 import { DEFAULT_SESSION_NAME, ErrorCode, type ThinkingLevel } from "../constants.ts";
-import { createLogger } from "../../../shared/logger/index.ts";
 import { postMessageToHost, uid } from "../ipc.ts";
 import { extractLastUserText, loadMessagesFromSession } from "./message-loader.ts";
 import { TitleGenerator } from "./title-generator.ts";

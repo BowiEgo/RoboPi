@@ -5,7 +5,7 @@ import { type LocaleId, useLocale } from "@/contexts/LocaleContext";
 import Versions from "@/components/Versions/Versions";
 import ModelManager, { type SavedModel } from "@/components/ModelManager/ModelManager";
 
-import { getSettings, type SettingsInfo } from "@/agent/settings-ipc";
+import { getSettings, type SettingsInfo } from "@/agent/ipc/settings";
 
 const LOCALES: { id: LocaleId; labelKey: string }[] = [
 	{ id: "en", labelKey: "settings.localeEn" },

@@ -6,7 +6,7 @@ import { useLocale } from "@/contexts/LocaleContext";
 import TitleBar from "@/components/TitleBar/TitleBar";
 
 import NavMenuList from "./NavMenuList";
-import { define } from "@/utils/cx";
+import { cstyle } from "@/utils/cstyle";
 
 export interface NavItem {
 	id: string;
@@ -28,15 +28,15 @@ interface MainLayoutProps {
 
 // ── Layout ──
 
-const root = define({ base: "flex flex-col w-screen h-screen overflow-hidden pt-8" });
-const body = define({ base: "flex flex-1 overflow-hidden" });
-const nav = define({
+const root = cstyle({ base: "flex flex-col w-screen h-screen overflow-hidden pt-8" });
+const body = cstyle({ base: "flex flex-1 overflow-hidden" });
+const nav = cstyle({
 	base: "flex flex-col items-center select-none shrink-0 w-20 transition-[width] pt-6 py-3 px-1 gap-1",
 });
 const navTop = "flex items-center justify-center w-18 h-8 shrink-0 mb-4.5";
 const navBottom = "mt-auto flex flex-col items-center w-full";
 const toggle = "flex items-center justify-center w-full py-2 mt-2 rounded-box transition-colors";
-const main = define({ base: "flex flex-col flex-1 overflow-hidden" });
+const main = cstyle({ base: "flex flex-col flex-1 overflow-hidden" });
 
 const MainLayout: Component<MainLayoutProps> = (props) => {
 	const { t } = useLocale();

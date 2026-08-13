@@ -13,13 +13,8 @@ import { join } from "node:path";
 
 import { app, BrowserWindow } from "electron";
 
+import { type AgentMessage, AgentMessageType, isValidMessageType } from "../shared/agent-types.ts";
 import { createLogger } from "../shared/logger/index.ts";
-
-import {
-	type AgentMessage,
-	AgentMessageType,
-	isValidMessageType,
-} from "../shared/agent-types.ts";
 
 export type AgentMessageHandler = (msg: AgentMessage) => void;
 
@@ -181,9 +176,7 @@ class AgentHostManager {
 			};
 		}
 
-		throw new Error(
-			`Cannot find agent-host entry. Tried: ${tsSourcePath}, ${mjsPath}`,
-		);
+		throw new Error(`Cannot find agent-host entry. Tried: ${tsSourcePath}, ${mjsPath}`);
 	}
 
 	private flushQueue(): void {

@@ -6,7 +6,7 @@ import { useLocale } from "@/contexts/LocaleContext";
 
 import Resizer from "@/components/Resizer/Resizer";
 
-import { cx } from "@/utils/cx";
+import { cstyle } from "@/utils/cstyle";
 
 export interface AgentConfig {
 	model?: string;
@@ -55,40 +55,47 @@ function statusLabel(status: string | undefined, t: (key: string) => string): st
 }
 
 const C = {
-	dropdownBtn: {
+	dropdownBtn: cstyle({
 		display: "btn btn-ghost btn-xs",
 		interaction: "rounded-lg mr-3 transition-none border-1",
 		color: "bg-app-raised text-base-content border-base-content/15",
-	},
+	}),
+	dropdownMenu: cstyle({
+		display: "absolute bottom-full left-0 z-50 menu flex flex-col flex-nowrap",
+		spacing: "mb-2 p-2",
+		sizing: "max-h-48 overflow-y-auto",
+		interaction: "rounded-box shadow-xl border-1",
+		color: "bg-base-200 text-base-content border-base-300",
+	}),
 
-	toolbar: {
+	toolbar: cstyle({
 		display: "absolute flex items-center",
 		sizing: "w-full shrink-0 min-h-9",
 		spacing: "top-[-50px] gap-1 px-4 py-2",
-	},
-	inputArea: {
+	}),
+	inputArea: cstyle({
 		display: "flex items-center",
 		sizing: "flex-1 overflow-hidden",
 		spacing: "gap-2 mx-4 px-2 py-1 pl-3",
 		color: "",
-	},
-	textarea: {
+	}),
+	textarea: cstyle({
 		display: "border-none outline-none bg-transparent resize-none",
 		sizing: "flex-1 min-h-6 overflow-y-auto",
 		text: "font-display text-base leading-relaxed",
-	},
-	sendBtn: { display: "btn btn-circle btn-primary" },
-	wrapper: {
+	}),
+	sendBtn: cstyle({ display: "btn btn-circle btn-primary" }),
+	wrapper: cstyle({
 		display: "absolute flex flex-col",
 		sizing: "w-[70%]",
 		spacing: "bottom-[3%]",
 		interaction: "rounded-3xl shadow-xl border-1",
 		color: "input-field border-base-300",
-	},
-	wrapperFocused: { interaction: "border-accent" },
-	aura: { display: "flex flex-col", sizing: "h-full", interaction: "rounded-3xl" },
-	card: { display: "card", sizing: "h-full", interaction: "rounded-3xl", color: "bg-base-100" },
-	footer: { display: "flex items-center justify-between", sizing: "shrink-0", spacing: "px-4 py-2" },
+	}),
+	wrapperFocused: cstyle({ interaction: "border-accent" }),
+	aura: cstyle({ display: "flex flex-col", sizing: "h-full", interaction: "rounded-3xl" }),
+	card: cstyle({ display: "card", sizing: "h-full", interaction: "rounded-3xl", color: "bg-base-100" }),
+	footer: cstyle({ display: "flex items-center justify-between", sizing: "shrink-0", spacing: "px-4 py-2" }),
 };
 
 interface DropdownItem {
@@ -142,7 +149,7 @@ const DropdownMenu: Component<DropdownMenuProps> = (props) => {
 		<div class="relative">
 			<button
 				ref={btnRef}
-				class={cx(C.dropdownBtn)}
+				class={C.dropdownBtn()}
 				type="button"
 				onClick={toggle}
 				aria-expanded={open()}
@@ -153,7 +160,7 @@ const DropdownMenu: Component<DropdownMenuProps> = (props) => {
 			<Show when={open()}>
 				<ul
 					ref={menuRef}
-					class="absolute bottom-full left-0 mb-2 menu flex flex-col flex-nowrap bg-base-200 text-base-content rounded-box shadow-xl border-1 z-50 p-2 max-h-48 overflow-y-auto border-base-300"
+					class={C.dropdownMenu()}
 					style={{ width: props.width ?? "18rem" }}
 				>
 					<For each={props.items}>
@@ -202,7 +209,7 @@ const Toolbar: Component<ToolbarProps> = (props) => {
 		Object.keys(THINKING_LABELS).map((k) => ({ label: props.t(THINKING_LABELS[k]) }));
 
 	return (
-		<div class={cx(C.toolbar)}>
+		<div class={C.toolbar()}>
 			<DropdownMenu label={statusLabel(props.cfg?.status, props.t)} width="18rem" items={statusItems()} />
 			<DropdownMenu label={shortenModel(props.cfg?.model)} width="22rem" items={modelItems()} />
 			<DropdownMenu label={props.t("composer.prompt")} width="20rem" items={promptItems()} />
@@ -224,10 +231,10 @@ interface InputAreaProps {
 }
 
 const InputArea: Component<InputAreaProps> = (props) => (
-	<div class={cx(C.inputArea)}>
+	<div class={C.inputArea()}>
 		<textarea
 			ref={props.ref}
-			class={cx(C.textarea)}
+			class={C.textarea()}
 			placeholder={props.placeholder}
 			value={props.inputText}
 			onInput={props.onInput}
@@ -235,7 +242,7 @@ const InputArea: Component<InputAreaProps> = (props) => (
 			onFocus={props.onFocus}
 			onBlur={props.onBlur}
 		/>
-		<button class={cx(C.sendBtn)} type="button" onClick={props.onSend} disabled={props.disabled}>
+		<button class={C.sendBtn()} type="button" onClick={props.onSend} disabled={props.disabled}>
 			<Send class="w-4 h-4" />
 		</button>
 	</div>
@@ -264,7 +271,7 @@ const Composer: Component<ComposerProps> = (props) => {
 		}
 	}
 	const cfg = () => props.agentConfig;
-	const wrapperClass = () => `${cx(C.wrapper)} ${isFocused() ? cx(C.wrapperFocused) : ""}`;
+	const wrapperClass = () => `${C.wrapper()} ${isFocused() ? C.wrapperFocused() : ""}`;
 
 	return (
 		<div
@@ -275,11 +282,11 @@ const Composer: Component<ComposerProps> = (props) => {
 		>
 			<Resizer value={height()} min={minH} max={maxH} position="top" grip={false} onChange={(v) => setHeight(v)} />
 			<Toolbar cfg={cfg()} t={t} />
-			<div class={`${cx(C.aura)} ${"aura aura-xs aura-rainbow duration-6000"}`}>
-				<div class={cx(C.card)}>
+			<div class={`${C.aura()} ${"aura aura-xs aura-rainbow duration-6000"}`}>
+				<div class={C.card()}>
 					<InputArea
 						inputText={inputText()}
-						onInput={(e) => setInputText(e.currentTarget.value)}
+						onInput={(e) => setInputText((e.currentTarget as HTMLTextAreaElement).value)}
 						onKeyDown={handleKeyDown}
 						onFocus={() => setIsFocused(true)}
 						onBlur={() => setIsFocused(false)}
@@ -290,7 +297,7 @@ const Composer: Component<ComposerProps> = (props) => {
 							textareaRef = el;
 						}}
 					/>
-					<div class={cx(C.footer)} />
+					<div class={C.footer()} />
 				</div>
 			</div>
 		</div>

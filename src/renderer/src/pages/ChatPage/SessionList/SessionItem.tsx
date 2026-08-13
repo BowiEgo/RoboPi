@@ -3,7 +3,7 @@ import { type Component, createEffect, createSignal, onCleanup, Show } from "sol
 
 import { useLocale } from "@/contexts/LocaleContext";
 
-import { define } from "@/utils/cx";
+import { cstyle } from "@/utils/cstyle";
 
 export interface SessionItemProps {
 	id: string;
@@ -21,22 +21,103 @@ export interface SessionItemProps {
 	onRename?: (id: string, name: string) => void;
 }
 
-// ── Layout ──
+// ── Styles ──
 
-const row = define({ base: "list-row items-center gap-2 px-3 py-2 mb-2 cursor-pointer rounded-md transition-colors" });
-const content = "list-col-grow flex flex-col min-w-0";
-const titleRow = "flex items-center gap-2";
-const titleText = "text-sm font-medium truncate";
-const timeText = "text-[10px] ml-auto";
-const subtitleText = "list-col-wrap text-xs";
-const ellipsisWrapper = "relative shrink-0 self-center";
-const ellipsisBtn = "btn btn-ghost btn-xs btn-square";
-const menuDropdown = "absolute right-0 top-full z-50 mt-1 flex flex-col py-1 min-w-36 rounded-md shadow-lg border";
-const menuSeparator = "h-px my-1";
-const deleteBanner = "flex items-center gap-2 px-3 py-2 rounded-md";
-const renameInput = "w-full text-sm border rounded px-1 py-0.5 outline-none";
-const deleteBannerText = "flex-1 text-xs";
-const deleteBannerActions = "flex items-center gap-1";
+const C = {
+	row: cstyle({
+		display: "list-row items-center",
+		spacing: "gap-2 px-3 py-2 mb-2",
+		interaction: "cursor-pointer rounded-md transition-colors",
+		variants: {
+			active: {
+				true: "bg-primary text-primary-content",
+				false: "hover:bg-base-200 text-base-content/70",
+			},
+		},
+	}),
+	content: cstyle({
+		display: "list-col-grow flex flex-col",
+		sizing: "min-w-0",
+	}),
+	titleRow: cstyle({
+		display: "flex items-center",
+		spacing: "gap-2",
+	}),
+	titleText: cstyle({
+		text: "text-sm font-medium truncate",
+		variants: {
+			active: {
+				true: "text-primary-content",
+				false: "text-base-content/80",
+			},
+		},
+	}),
+	timeText: cstyle({
+		text: "text-[10px]",
+		spacing: "ml-auto",
+		variants: {
+			active: {
+				true: "text-primary-content/60",
+				false: "text-base-content/40",
+			},
+		},
+	}),
+	subtitleText: cstyle({
+		text: "list-col-wrap text-xs",
+		variants: {
+			active: {
+				true: "text-primary-content/60",
+				false: "text-base-content/50",
+			},
+		},
+	}),
+	ellipsisWrapper: cstyle({
+		display: "relative",
+		sizing: "shrink-0 self-center",
+	}),
+	ellipsisBtn: cstyle({
+		display: "btn btn-ghost btn-xs btn-square",
+		variants: {
+			active: {
+				true: "text-primary-content/60 hover:bg-primary/75",
+				false: "text-base-content/40",
+			},
+		},
+	}),
+	menuDropdown: cstyle({
+		display: "absolute right-0 top-full z-50 flex flex-col",
+		spacing: "mt-1 py-1",
+		sizing: "min-w-36",
+		interaction: "rounded-md shadow-lg border border-card",
+		color: "bg-app-elevated",
+	}),
+	menuSeparator: cstyle({
+		sizing: "h-px",
+		spacing: "my-1",
+		interaction: "border-card",
+	}),
+	deleteBanner: cstyle({
+		display: "flex items-center",
+		spacing: "gap-2 px-3 py-2",
+		interaction: "rounded-md",
+		color: "bg-card-hover",
+	}),
+	renameInput: cstyle({
+		sizing: "w-full",
+		text: "text-sm",
+		interaction: "border rounded outline-none",
+		spacing: "px-1 py-0.5",
+		color: "bg-app border-primary",
+	}),
+	deleteBannerText: cstyle({
+		display: "flex-1",
+		text: "text-xs text-card-subtitle",
+	}),
+	deleteBannerActions: cstyle({
+		display: "flex items-center",
+		spacing: "gap-1",
+	}),
+};
 
 // ── Component ──
 
@@ -96,7 +177,7 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 
 	return (
 		<div
-			class={`${row()} ${props.active ? "bg-primary text-primary-content" : "hover:bg-base-200 text-base-content/70"}`}
+			class={C.row({ active: props.active })}
 			role="tab"
 			tabIndex={props.active ? 0 : -1}
 			onClick={() => props.onClick?.(props.id)}
@@ -114,22 +195,16 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 				/>
 			)}
 
-			<div class={content}>
-				<div class={titleRow}>
+			<div class={C.content()}>
+				<div class={C.titleRow()}>
 					<Show
 						when={editingName() !== null}
-						fallback={
-							<span
-								class={`${titleText} ${props.active ? "text-primary-content" : "text-base-content/80"}`}
-							>
-								{props.label}
-							</span>
-						}
+						fallback={<span class={C.titleText({ active: props.active })}>{props.label}</span>}
 					>
 						<input
 							ref={renameEl}
 							type="text"
-							class={`${renameInput} bg-app border-primary`}
+							class={C.renameInput()}
 							value={editingName() ?? ""}
 							onInput={(e) => setEditingName(e.currentTarget.value)}
 							onBlur={commitRename}
@@ -140,34 +215,22 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 							onClick={(e) => e.stopPropagation()}
 						/>
 					</Show>
-					{props.time && (
-						<span
-							class={`${timeText} text-base-content/30 ${props.active ? "text-primary-content/60" : "text-base-content/40"}`}
-						>
-							{props.time}
-						</span>
-					)}
+					{props.time && <span class={C.timeText({ active: props.active })}>{props.time}</span>}
 				</div>
-				{props.subtitle && (
-					<p
-						class={`${subtitleText} ${props.active ? "text-primary-content/60" : "text-base-content/50"}`}
-					>
-						{props.subtitle}
-					</p>
-				)}
+				{props.subtitle && <p class={C.subtitleText({ active: props.active })}>{props.subtitle}</p>}
 			</div>
 
-			<div class={ellipsisWrapper}>
+			<div class={C.ellipsisWrapper()}>
 				<button
 					type="button"
-					class={`${ellipsisBtn} ${props.active ? "text-primary-content/60 hover:bg-primary/75" : "text-base-content/40"}`}
+					class={C.ellipsisBtn({ active: props.active })}
 					aria-label="Session menu"
 					onClick={toggleMenu}
 				>
 					<Ellipsis class="w-4 h-4" />
 				</button>
 				<Show when={menuOpen()}>
-					<div ref={menuRef} class={`${menuDropdown} bg-app-elevated border-card`}>
+					<div ref={menuRef} class={C.menuDropdown()}>
 						<button
 							type="button"
 							class="btn btn-ghost btn-sm justify-start rounded-none text-card-btn"
@@ -175,7 +238,7 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 						>
 							{t("chat.rename")}
 						</button>
-						<div class={`${menuSeparator} border-card`} />
+						<div class={C.menuSeparator()} />
 						<button
 							type="button"
 							class="btn btn-ghost btn-sm justify-start rounded-none text-error"
@@ -201,9 +264,9 @@ const SessionItem: Component<SessionItemProps> = (props) => {
 			</Show>
 
 			<Show when={pendingDelete()}>
-				<div class={`${deleteBanner} bg-card-hover`}>
-					<span class={`${deleteBannerText} text-card-subtitle`}>{t("chat.deleteActiveHint")}</span>
-					<div class={deleteBannerActions}>
+				<div class={C.deleteBanner()}>
+					<span class={C.deleteBannerText()}>{t("chat.deleteActiveHint")}</span>
+					<div class={C.deleteBannerActions()}>
 						<button
 							type="button"
 							class="btn btn-ghost btn-xs"

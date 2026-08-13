@@ -22,7 +22,7 @@ import type { ChatBubbleProps } from "@/pages/ChatPage/ChatPanel/ChatBubble";
 import type { AgentConfig } from "@/pages/ChatPage/Composer/Composer";
 import type { SessionItemProps } from "@/pages/ChatPage/SessionList/SessionItem";
 
-import { getAgentIpc } from "./ipc";
+import { getAgentIpc } from "./ipc/index";
 
 // ── Types ──
 
@@ -134,7 +134,7 @@ if (agent && !_storeReady) {
 
 		switch (msg.type) {
 			case AgentMessageType.AgentReady: {
-				const p = msg.payload as AgentReadyPayload;
+				const p = msg.payload as unknown as AgentReadyPayload;
 				setAgentConfig({
 					model: p.model,
 					thinkingLevel: p.thinkingLevel,

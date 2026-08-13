@@ -1,5 +1,5 @@
 import type { NavItem } from "./MainLayout";
-import { define } from "@/utils/cx";
+import { cstyle } from "@/utils/cstyle";
 
 interface NavMenuListProps {
 	items: NavItem[];
@@ -11,7 +11,7 @@ interface NavMenuListProps {
 
 // ── Layout ──
 
-const menu = define({ base: "menu w-full" });
+const menu = cstyle({ base: "menu w-full" });
 const item = "rounded-box mb-3 transition-colors";
 const btn = "rounded-box outline-none";
 const btnExpanded = "flex items-center w-full gap-3 px-3 py-2";

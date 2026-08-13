@@ -1,5 +1,5 @@
 /**
- * Agent IPC bridge
+ * Agent IPC bridge.
  *
  * Wraps window.agent (the Electron IPC bridge exposed by preload).
  * Any component that needs to talk to the Agent Host can import it.
@@ -16,8 +16,7 @@ export function getAgentIpc(): AgentIpc | null {
 	if (cached !== undefined) return cached;
 
 	try {
-		const w = window as Window & { agent?: AgentIpc };
-		cached = w.agent ?? null;
+		cached = window.agent ?? null;
 	} catch {
 		cached = null;
 	}

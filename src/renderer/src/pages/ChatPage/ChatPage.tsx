@@ -8,17 +8,17 @@ import Search from "@/components/Search/Search";
 
 import ChatPanel, { type ChatTag } from "./ChatPanel/ChatPanel";
 import SessionList from "./SessionList/SessionList";
-import { define } from "@/utils/cx";
+import { cstyle } from "@/utils/cstyle";
 
 // ── Layout ──
 
-const root = define({ base: "flex h-full overflow-hidden" });
+const root = cstyle({ base: "flex h-full overflow-hidden" });
 const drawer = "relative shrink-0";
 const aside = "flex flex-col h-full pt-3 overflow-hidden select-none";
 const sidebarHeader = "flex items-center gap-2 px-4 text-[15px] font-medium font-display shrink-0";
 const sidebarContent = "flex-1 p-3";
 const sidebarBottom = "shrink-0";
-const main = define({ base: "flex-1 flex flex-col overflow-hidden p-8 pt-0 pl-5" });
+const main = cstyle({ base: "flex-1 flex flex-col overflow-hidden p-8 pt-0 pl-5" });
 
 interface ChatPageProps {
 	sidebarHeader?: JSX.Element;

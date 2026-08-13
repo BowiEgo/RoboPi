@@ -2,7 +2,7 @@
  * Tailwind safelist — all dynamic class values used across JS objects.
  *
  * Tailwind v4 only scans `class="..."` attributes. Classes defined in
- * `define()` / `cx()` / JS objects are invisible to the scanner.
+ * `cstyle()` / JS objects are invisible to the scanner.
  *
  * Add any new dark: or dynamic class value here to ensure it gets generated.
  */

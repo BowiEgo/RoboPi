@@ -2,7 +2,7 @@ import { type Component, createEffect, createMemo, createSignal, For } from "sol
 
 import type { ChatBubbleProps } from "@/pages/ChatPage/ChatPanel/ChatBubble";
 
-import { define } from "@/utils/cx";
+import { cstyle } from "@/utils/cstyle";
 
 // ── Types ──
 
@@ -17,7 +17,7 @@ interface ChatOutlineProps {
 
 // ── Class constants ──
 
-const wrapper = define({ base: "absolute w-12.5 h-fit right-4 top-1/2 -translate-y-1/2 z-10" });
+const wrapper = cstyle({ base: "absolute w-12.5 h-fit right-4 top-1/2 -translate-y-1/2 z-10" });
 
 const scrollArea =
 	"w-60 max-h-60 -translate-x-[calc(100%-3.125rem)] rounded-lg overflow-hidden transition-all duration-200 blur-mask-t-[32px] blur-mask-b-[32px]";

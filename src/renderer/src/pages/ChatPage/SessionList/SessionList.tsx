@@ -5,21 +5,61 @@ import { useAgent } from "@/agent/useAgent";
 import { useLocale } from "@/contexts/LocaleContext";
 
 import SessionItem, { type SessionItemProps } from "./SessionItem";
-import { define } from "@/utils/cx";
+import { cstyle } from "@/utils/cstyle";
 
-// ── Layout ──
+// ── Styles ──
 
-const root = define({ base: "flex flex-col" });
-const header = define({ base: "flex items-center gap-2 px-1 py-2" });
-const headerIcon = "flex items-center justify-center w-4 h-4";
-const headerTitle = "flex-1 text-xs font-semibold uppercase tracking-wider";
-const headerCount = "text-xs";
-const actions = "flex items-center gap-1 relative";
-const menuDropdown = "absolute right-0 top-full z-50 mt-1 flex flex-col py-1 min-w-32 rounded-md shadow-lg border";
-const list = "list rounded-box";
-const empty = "text-xs px-1 py-4 text-center";
-const selectionBar = "flex items-center justify-between px-1 py-2";
-const selectionText = "text-xs";
+const C = {
+	root: cstyle({ display: "flex flex-col" }),
+	header: cstyle({
+		display: "flex items-center",
+		spacing: "gap-2 px-1 py-2",
+	}),
+	headerIcon: cstyle({
+		display: "flex items-center justify-center",
+		sizing: "w-4 h-4",
+		color: "text-base-content/50",
+	}),
+	headerTitle: cstyle({
+		display: "flex-1",
+		text: "text-xs font-semibold uppercase tracking-wider",
+		color: "text-base-content/50",
+	}),
+	headerCount: cstyle({
+		text: "text-xs",
+		color: "text-base-content/30",
+	}),
+	actions: cstyle({
+		display: "flex items-center relative",
+		spacing: "gap-1",
+	}),
+	menuDropdown: cstyle({
+		display: "absolute right-0 top-full z-50 flex flex-col",
+		spacing: "mt-1 py-1",
+		sizing: "min-w-32",
+		interaction: "rounded-md shadow-lg border",
+		color: "bg-app border-card",
+	}),
+	list: cstyle({
+		display: "list",
+		interaction: "rounded-box",
+	}),
+	empty: cstyle({
+		text: "text-xs text-center",
+		spacing: "px-1 py-4",
+		color: "text-base-content/40",
+	}),
+	selectionBar: cstyle({
+		display: "flex items-center justify-between",
+		spacing: "px-1 py-2",
+	}),
+	selectionText: cstyle({
+		text: "text-xs",
+		color: "text-base-content/60",
+	}),
+};
+
+// ── Component ──
 
 const SessionList: Component = () => {
 	const { t } = useLocale();
@@ -43,7 +83,7 @@ const SessionList: Component = () => {
 	}
 	function toggleSelect(id: string) {
 		setSelected((prev) => {
-			const n = new Set(prev);
+			const n = new Set<string>(prev);
 			n.has(id) ? n.delete(id) : n.add(id);
 			return n;
 		});
@@ -51,11 +91,11 @@ const SessionList: Component = () => {
 	function enterSelectionMode() {
 		setMenuOpen(false);
 		setSelectionMode(true);
-		setSelected(new Set());
+		setSelected(new Set<string>());
 	}
 	function exitSelectionMode() {
 		setSelectionMode(false);
-		setSelected(new Set());
+		setSelected(new Set<string>());
 	}
 	function bulkDelete() {
 		for (const id of selected()) deleteSession(id);
@@ -63,14 +103,14 @@ const SessionList: Component = () => {
 	}
 
 	return (
-		<section class={root()}>
-			<header class={header()}>
-				<span class={`${headerIcon} text-base-content/50`}>
+		<section class={C.root()}>
+			<header class={C.header()}>
+				<span class={C.headerIcon()}>
 					<MessageCircle />
 				</span>
-				<span class={`${headerTitle} text-base-content/50`}>{t("chat.sessions")}</span>
-				<span class={`${headerCount} text-base-content/30`}>{sessions().length}</span>
-				<div class={actions}>
+				<span class={C.headerTitle()}>{t("chat.sessions")}</span>
+				<span class={C.headerCount()}>{sessions().length}</span>
+				<div class={C.actions()}>
 					{selectionMode() ? (
 						<button
 							type="button"
@@ -103,7 +143,7 @@ const SessionList: Component = () => {
 						<Ellipsis class="w-4 h-4" />
 					</button>
 					<Show when={menuOpen()}>
-						<div ref={menuRef} class={`${menuDropdown} bg-app border-card`}>
+						<div ref={menuRef} class={C.menuDropdown()}>
 							<button
 								type="button"
 								class="btn btn-ghost btn-sm justify-start rounded-none text-card-btn"
@@ -116,11 +156,8 @@ const SessionList: Component = () => {
 				</div>
 			</header>
 
-			<div class={`${list}`} role="tablist">
-				<Show
-					when={sessions().length > 0}
-					fallback={<div class={`${empty} text-base-content/40`}>{t("chat.noSessions")}</div>}
-				>
+			<div class={C.list()} role="tablist">
+				<Show when={sessions().length > 0} fallback={<div class={C.empty()}>{t("chat.noSessions")}</div>}>
 					<For each={sessions()}>
 						{(item: SessionItemProps) => (
 							<SessionItem
@@ -147,8 +184,8 @@ const SessionList: Component = () => {
 			</div>
 
 			<Show when={selectionMode()}>
-				<div class={selectionBar}>
-					<span class={`${selectionText} text-base-content/60`}>
+				<div class={C.selectionBar()}>
+					<span class={C.selectionText()}>
 						{selected().size} {t("chat.selected")}
 					</span>
 					<button type="button" class="btn btn-ghost btn-xs" onClick={exitSelectionMode}>
