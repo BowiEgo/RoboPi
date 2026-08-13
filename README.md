@@ -4,7 +4,16 @@
 
 A desktop application built on Pi Agent that integrates conversational AI, task automation, and knowledge base construction into a unified interface.
 
-![preview.png](./docs/imgs/WechatIMG55.png)
+<table>
+  <tr>
+    <td><img src="./docs/imgs/light-home-mac.jpg" alt="Light theme home" width="400"/></td>
+    <td><img src="./docs/imgs/home-dark-mac.jpg" alt="Dark theme home" width="400"/></td>
+  </tr>
+  <tr>
+    <td><img src="./docs/imgs/theme-abyss-mac.jpg" alt="Abyss theme" width="400"/></td>
+    <td><img src="./docs/imgs/model-aqua-mac.jpg" alt="Aqua theme model" width="400"/></td>
+  </tr>
+</table>
 
 ## Documentation
 
