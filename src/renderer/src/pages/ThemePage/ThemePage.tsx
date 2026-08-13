@@ -9,15 +9,9 @@ import { cstyle } from "@/utils/cstyle";
 // ── Styles ──
 
 const C = {
-	page: cstyle({
+	sections: cstyle({
 		display: "flex flex-col",
-		spacing: "p-12 gap-8",
-		sizing: "max-w-180",
-	}),
-	pageTitle: cstyle({
-		text: "text-[28px] font-semibold font-display",
-		spacing: "m-0",
-		color: "text-base-content",
+		spacing: "gap-8",
 	}),
 	section: cstyle({
 		display: "flex flex-col",
@@ -58,9 +52,7 @@ const ThemePage: Component = () => {
 	const { t } = useLocale();
 
 	return (
-		<div class={C.page()}>
-			<h1 class={C.pageTitle()}>{t("theme.title")}</h1>
-
+		<div class={C.sections()}>
 			<section class={C.section()}>
 				<h2 class={C.eyebrow()}>{t("theme.mode")}</h2>
 				<div class={C.modeRow()}>

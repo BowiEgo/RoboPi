@@ -2,6 +2,7 @@ import { Plus, Trash2 } from "lucide-solid";
 import { type Component, createMemo, createSignal, For, Show } from "solid-js";
 
 import Dropdown from "@/components/Dropdown/Dropdown";
+import Modal from "@/components/Modal/Modal";
 
 import { setApiKey as persistApiKey } from "@/ipc/settings";
 import { cstyle } from "@/utils/cstyle";
@@ -64,26 +65,13 @@ const C = {
 		display: "btn btn-ghost btn-xs btn-square",
 		color: "text-base-content/30 hover:text-error",
 	}),
-	overlay: cstyle({
-		display: "fixed inset-0 z-50 flex items-center justify-center",
-		color: "bg-black/40",
-	}),
-	modal: cstyle({
-		sizing: "w-full max-w-md",
-		spacing: "mx-4",
-		interaction: "rounded-2xl shadow-2xl border",
-		color: "bg-base-100 border-base-300",
-	}),
-	modalHeader: cstyle({ spacing: "px-6 py-4", interaction: "border-b", color: "border-base-200" }),
-	modalTitle: cstyle({ text: "text-lg font-semibold", color: "text-base-content" }),
-	modalSubtitle: cstyle({ text: "text-xs", spacing: "mt-1", color: "text-base-content/40" }),
-	modalBody: cstyle({ display: "flex flex-col", spacing: "px-6 py-4 gap-4" }),
+	subtitle: cstyle({ text: "text-xs", color: "text-base-content/40" }),
 	field: cstyle({ display: "flex flex-col", spacing: "gap-1.5" }),
 	label: cstyle({ text: "text-xs font-medium", color: "text-base-content/60" }),
 	apiKeyInput: cstyle({ display: "input input-bordered input-sm", text: "font-mono text-xs" }),
-	modalFooter: cstyle({
+	footer: cstyle({
 		display: "flex justify-end",
-		spacing: "px-6 py-4 gap-2",
+		spacing: "pt-2 gap-2",
 		interaction: "border-t",
 		color: "border-base-200",
 	}),
@@ -183,45 +171,36 @@ const ModelManager: Component<ModelManagerProps> = (props) => {
 				</div>
 			</Show>
 
-			<Show when={modalOpen()}>
-				<div class={C.overlay()} onClick={() => setModalOpen(false)}>
-					<div class={C.modal()} onClick={(e) => e.stopPropagation()}>
-						<div class={C.modalHeader()}>
-							<h3 class={C.modalTitle()}>Add Provider</h3>
-							<p class={C.modalSubtitle()}>Only OpenAI-compatible API is supported</p>
-						</div>
-						<div class={C.modalBody()}>
-							<div class={C.field()}>
-								<label class={C.label()}>Provider</label>
-								<Dropdown
-									value={provider()}
-									options={providers()}
-									placeholder="Select provider..."
-									onChange={setProvider}
-								/>
-							</div>
-							<div class={C.field()}>
-								<label class={C.label()}>API Key</label>
-								<input
-									type="password"
-									class={C.apiKeyInput()}
-									placeholder="sk-..."
-									value={apiKey()}
-									onInput={(e) => setApiKey(e.currentTarget.value)}
-								/>
-							</div>
-						</div>
-						<div class={C.modalFooter()}>
-							<button type="button" class={C.cancelBtn()} onClick={() => setModalOpen(false)}>
-								Cancel
-							</button>
-							<button type="button" class={C.saveBtn()} disabled={!provider() || !apiKey().trim()} onClick={handleSave}>
-								Save
-							</button>
-						</div>
-					</div>
+			<Modal open={modalOpen()} onClose={() => setModalOpen(false)} title="Add Provider" width="28rem">
+				<p class={C.subtitle()}>Only OpenAI-compatible API is supported</p>
+				<div class={C.field()}>
+					<label class={C.label()}>Provider</label>
+					<Dropdown
+						value={provider()}
+						options={providers()}
+						placeholder="Select provider..."
+						onChange={setProvider}
+					/>
 				</div>
-			</Show>
+				<div class={C.field()}>
+					<label class={C.label()}>API Key</label>
+					<input
+						type="password"
+						class={C.apiKeyInput()}
+						placeholder="sk-..."
+						value={apiKey()}
+						onInput={(e) => setApiKey(e.currentTarget.value)}
+					/>
+				</div>
+				<div class={C.footer()}>
+					<button type="button" class={C.cancelBtn()} onClick={() => setModalOpen(false)}>
+						Cancel
+					</button>
+					<button type="button" class={C.saveBtn()} disabled={!provider() || !apiKey().trim()} onClick={handleSave}>
+						Save
+					</button>
+				</div>
+			</Modal>
 		</div>
 	);
 };

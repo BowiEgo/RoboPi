@@ -16,16 +16,8 @@ const LOCALES: { id: LocaleId; labelKey: string }[] = [
 // ── Styles ──
 
 const C = {
-	page: cstyle({
-		spacing: "p-12",
-		sizing: "max-w-200",
-	}),
-	title: cstyle({
-		text: "text-[28px] font-semibold font-display",
-		spacing: "m-0 mb-2",
-		color: "text-base-content",
-	}),
-	section: cstyle({ spacing: "mb-12" }),
+	sections: cstyle({ display: "flex flex-col", spacing: "gap-8" }),
+	section: cstyle({ spacing: "mb-4" }),
 	sectionTitle: cstyle({
 		text: "font-mono text-[11px] font-medium uppercase tracking-wider",
 		spacing: "mb-4",
@@ -102,9 +94,7 @@ const SettingsPage: Component = () => {
 	});
 
 	return (
-		<div class={C.page()}>
-			<h1 class={C.title()}>{t("settings.title")}</h1>
-
+		<div class={C.sections()}>
 			{/* ── Storage ── */}
 			<section class={C.section()}>
 				<h2 class={C.sectionTitle()}>Storage</h2>
