@@ -1,5 +1,5 @@
 import { X } from "lucide-solid";
-import { type Component, type JSX, onCleanup, onMount, Show } from "solid-js";
+import { type Component, type JSX, createEffect, onCleanup, Show } from "solid-js";
 
 import { cstyle } from "@/utils/cstyle";
 
@@ -58,16 +58,34 @@ const C = {
  * Modal dialog with click-outside close and Escape-to-close.
  * Renders nothing while `open` is false.
  */
-const Modal: Component<ModalProps> = (props) => {
-	function onKeyDown(e: KeyboardEvent) {
-		if (e.key === "Escape") props.onClose();
-	}
 
-	onMount(() => {
-		document.addEventListener("keydown", onKeyDown);
+// ── Escape-to-close stack ──
+// Multiple modals can be open at once (e.g. Settings → Add Provider).
+// Escape should close only the top-most modal, not all of them.
+
+const modalStack: Array<() => void> = [];
+let escapeListenerBound = false;
+
+function ensureEscapeListener(): void {
+	if (escapeListenerBound) return;
+	escapeListenerBound = true;
+	document.addEventListener("keydown", (e) => {
+		if (e.key !== "Escape") return;
+		const top = modalStack[modalStack.length - 1];
+		top?.();
 	});
-	onCleanup(() => {
-		document.removeEventListener("keydown", onKeyDown);
+}
+
+const Modal: Component<ModalProps> = (props) => {
+	createEffect(() => {
+		if (!props.open) return;
+		ensureEscapeListener();
+		const onClose = props.onClose;
+		modalStack.push(onClose);
+		onCleanup(() => {
+			const idx = modalStack.lastIndexOf(onClose);
+			if (idx >= 0) modalStack.splice(idx, 1);
+		});
 	});
 
 	return (
