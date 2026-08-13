@@ -40,6 +40,10 @@ export const AgentMessageType = {
 	AgentReady: "agent:ready",
 	AgentConfig: "agent:config",
 	AgentShutdown: "agent:shutdown",
+	// Model management
+	ModelRefresh: "model:refresh",
+	ModelRefreshed: "model:refreshed",
+	ModelSetApiKey: "model:set_api_key",
 	// Session management
 	SessionCreate: "session:create",
 	SessionList: "session:list",
@@ -74,6 +78,9 @@ export type AgentPayload =
 	| AgentStatusPayload
 	| AgentReadyPayload
 	| AgentConfigPayload
+	| ModelRefreshPayload
+	| ModelRefreshedPayload
+	| ModelSetApiKeyPayload
 	// Session
 	| SessionCreatePayload
 	| SessionListPayload
@@ -172,12 +179,11 @@ export interface AgentStatusPayload {
 export interface AgentReadyPayload {
 	pid: number;
 	version: string;
-	/** Currently active model ID. */
 	model?: string;
-	/** Current thinking level. */
 	thinkingLevel?: string;
-	/** Available model list. */
 	availableModels?: string[];
+	configuredModels?: string[];
+	providerList?: { id: string; name: string }[];
 }
 
 /** Agent configuration (query / response). */
@@ -187,6 +193,25 @@ export interface AgentConfigPayload {
 	/** Available model list. */
 	availableModels?: string[];
 	status?: "idle" | "thinking" | "responding" | "error";
+}
+
+// ============================================================================
+// Model management
+// ============================================================================
+
+/** Request model catalog refresh from network. */
+export interface ModelRefreshPayload {
+	force?: boolean;
+}
+
+/** Updated model list after refresh. */
+export interface ModelRefreshedPayload {
+	models: string[];
+}
+
+export interface ModelSetApiKeyPayload {
+	provider: string;
+	apiKey: string;
 }
 
 // ============================================================================
@@ -240,6 +265,7 @@ export interface SessionSwitchedPayload {
 	sessionId: string;
 	name: string;
 	messages: SessionMessagePayload[];
+	model?: string;
 }
 
 /** Session deleted successfully. */

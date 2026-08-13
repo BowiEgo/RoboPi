@@ -1,10 +1,12 @@
 import { join } from "node:path";
+import { readFile, writeFile } from "node:fs/promises";
 
 import { electronApp, is, optimizer } from "@electron-toolkit/utils";
 import { app, BrowserWindow, ipcMain, Menu, shell } from "electron";
 
 import icon from "../../resources/icon.png?asset";
-import { setupAgentHost } from "./agent-host-manager";
+import { setupAgentHost, agentHostManager } from "./agent-host-manager";
+import { getConfigDir, getSessionsDir, getAuthPath } from "../agent-host/config.ts";
 
 function createWindow(): void {
 	// Create the browser window.
@@ -80,6 +82,74 @@ app.whenReady().then(() => {
 
 	// ── Agent Host ──
 	setupAgentHost(ipcMain);
+
+	// ── Settings IPC ──
+	ipcMain.handle("settings:get", async () => {
+		const configDir = getConfigDir();
+		const sessionsDir = getSessionsDir();
+
+		// Read API keys from credentials file
+		let hasAnthropic = false;
+		let hasOpenAI = false;
+		try {
+			const raw = await readFile(getAuthPath(), "utf-8");
+			const creds = JSON.parse(raw);
+			hasAnthropic = !!creds?.anthropic?.apiKey;
+			hasOpenAI = !!creds?.openai?.apiKey;
+		} catch {
+			// credentials file doesn't exist yet
+		}
+
+		// Get available models from agent host
+		const availableModels = agentHostManager.getAvailableModels?.() ?? [];
+		const providerList = agentHostManager.getProviderList?.() ?? [];
+
+		return { configDir, sessionsDir, hasAnthropic, hasOpenAI, availableModels, providerList };
+	});
+
+	ipcMain.handle("settings:setApiKey", async (_e, { provider, apiKey }: { provider: string; apiKey: string }) => {
+		const authPath = getAuthPath();
+		let creds: Record<string, unknown> = {};
+		try {
+			const raw = await readFile(authPath, "utf-8");
+			creds = JSON.parse(raw);
+		} catch {
+			// file doesn't exist, start fresh
+		}
+
+		if (!creds[provider]) creds[provider] = {};
+		(creds[provider] as Record<string, unknown>).type = "api_key";
+		(creds[provider] as Record<string, unknown>).key = apiKey;
+
+		await writeFile(authPath, JSON.stringify(creds, null, 2), "utf-8");
+
+		// Notify agent host to set API key and reload models
+		agentHostManager.send({
+			id: `key-${Date.now()}`,
+			type: "model:set_api_key" as any,
+			payload: { provider, apiKey },
+		});
+
+		return { success: true };
+	});
+
+	ipcMain.handle("settings:refreshModels", async () => {
+		return new Promise((resolve) => {
+			const id = `refresh-${Date.now()}`;
+			const handler = (msg: any) => {
+				if (msg.id === id && msg.type === "model:refreshed") {
+					resolve((msg.payload as any).models ?? []);
+				}
+			};
+			agentHostManager.onMessage(handler);
+			agentHostManager.send({
+				id,
+				type: "model:refresh" as any,
+				payload: { force: false },
+			});
+			setTimeout(() => resolve([]), 10000);
+		});
+	});
 
 	createWindow();
 

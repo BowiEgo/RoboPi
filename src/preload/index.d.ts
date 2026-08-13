@@ -5,6 +5,7 @@ export interface WindowApi {
 	maximize: () => void;
 	close: () => void;
 	platform: NodeJS.Platform;
+	invoke: (channel: string, ...args: unknown[]) => Promise<unknown>;
 }
 
 export interface AgentApi {

@@ -1,6 +1,7 @@
 import { Send } from "lucide-solid";
 import { type Component, createSignal, For, onCleanup, onMount, Show } from "solid-js";
 
+import { useAgent } from "@/agent/useAgent";
 import { useLocale } from "@/contexts/LocaleContext";
 
 import Resizer from "@/components/Resizer/Resizer";
@@ -10,7 +11,7 @@ import { cx } from "@/utils/cx";
 export interface AgentConfig {
 	model?: string;
 	thinkingLevel?: string;
-	availableModels?: string[];
+	configuredModels?: string[];
 	status?: string;
 }
 
@@ -93,6 +94,7 @@ const C = {
 interface DropdownItem {
 	label: string;
 	active?: boolean;
+	onClick?: () => void;
 }
 interface DropdownMenuProps {
 	label: string;
@@ -153,16 +155,14 @@ const DropdownMenu: Component<DropdownMenuProps> = (props) => {
 					ref={menuRef}
 					class="absolute bottom-full left-0 mb-2 menu flex flex-col flex-nowrap bg-base-200 text-base-content rounded-box shadow-xl border-1 z-50 p-2 max-h-48 overflow-y-auto border-base-300"
 					style={{ width: props.width ?? "18rem" }}
-					role="menu"
 				>
 					<For each={props.items}>
 						{(item) => (
-							<li role="menuitem">
+							<li>
 								<a
 									class={item.active ? "active" : ""}
-									onClick={(e) => {
-										e.preventDefault();
-										close();
+									onClick={(_e) => {
+										item.onClick();
 									}}
 								>
 									{item.label}
@@ -182,12 +182,18 @@ interface ToolbarProps {
 }
 
 const Toolbar: Component<ToolbarProps> = (props) => {
+	const { selectModel } = useAgent();
+
 	const statusItems = (): DropdownItem[] => [
 		{ label: props.t("composer.mode.idle") },
 		{ label: props.t("composer.mode.responding") },
 	];
 	const modelItems = (): DropdownItem[] =>
-		(props.cfg?.availableModels ?? []).map((m) => ({ label: shortenModel(m), active: m === props.cfg?.model }));
+		(props.cfg?.configuredModels ?? []).map((m) => ({
+			label: shortenModel(m),
+			active: m === props.cfg?.model,
+			onClick: () => selectModel(m),
+		}));
 	const promptItems = (): DropdownItem[] => [
 		{ label: `${props.t("composer.prompt")} 1` },
 		{ label: `${props.t("composer.prompt")} 2` },

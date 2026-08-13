@@ -26,6 +26,16 @@ class AgentHostManager {
 	private handlers = new Set<AgentMessageHandler>();
 	private messageQueue: AgentMessage[] = [];
 	private isReady = false;
+	private _availableModels: string[] = [];
+	private _providerList: { id: string; name: string }[] = [];
+
+	getAvailableModels(): string[] {
+		return this._availableModels;
+	}
+
+	getProviderList(): { id: string; name: string }[] {
+		return this._providerList;
+	}
 
 	/** 启动 Agent Host 子进程 */
 	start(): void {
@@ -54,6 +64,9 @@ class AgentHostManager {
 
 			if (msg.type === AgentMessageType.AgentReady) {
 				this.isReady = true;
+				const p = msg.payload as Record<string, unknown>;
+				this._availableModels = (p.availableModels as string[]) ?? [];
+				this._providerList = (p.providerList as { id: string; name: string }[]) ?? [];
 				this.flushQueue();
 			}
 

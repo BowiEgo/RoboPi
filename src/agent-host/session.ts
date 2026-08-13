@@ -13,7 +13,7 @@ import {
 	createAgentSession,
 	type ModelRuntime,
 	SessionManager,
-	SettingsManager,
+	type SettingsManager,
 } from "@earendil-works/pi-coding-agent";
 
 import {
@@ -22,6 +22,7 @@ import {
 	type SessionInfoPayload,
 	type SessionMessagePayload,
 } from "../shared/agent-types.ts";
+import { getSessionsDir } from "./config.ts";
 
 // ============================================================================
 // IPC helpers (stateless, module-level exports)
@@ -43,6 +44,7 @@ export interface SessionHostOptions {
 	modelRuntime: Awaited<ReturnType<typeof ModelRuntime.create>>;
 	agentModelRef: { value: string | undefined };
 	thinkingLevelRef: { value: string | undefined };
+	settingsManager: SettingsManager;
 }
 
 export class SessionHost {
@@ -51,10 +53,10 @@ export class SessionHost {
 	currentSessionManager: ReturnType<typeof SessionManager.open> | null = null;
 	currentSessionId: string | null = null;
 	currentSessionName: string | null = null;
+	settingsManager: SettingsManager | null = null;
 
 	// ---- Constructor-injected dependencies ----
-	private modelRuntime: Awaited<ReturnType<typeof ModelRuntime.create>> | null =
-		null;
+	private modelRuntime: Awaited<ReturnType<typeof ModelRuntime.create>> | null = null;
 	private agentModelRef: { value: string | undefined };
 	private thinkingLevelRef: { value: string | undefined };
 
@@ -66,17 +68,21 @@ export class SessionHost {
 	private leafBeforeTitleGen: string | null = null;
 
 	// Background sessions — kept alive across switches so generation continues
-	private backgroundSessions = new Map<string, {
-		session: AgentSession;
-		manager: ReturnType<typeof SessionManager.open>;
-		name: string;
-		unsubscribe: () => void;
-	}>();
+	private backgroundSessions = new Map<
+		string,
+		{
+			session: AgentSession;
+			manager: ReturnType<typeof SessionManager.open>;
+			name: string;
+			unsubscribe: () => void;
+		}
+	>();
 
 	constructor(opts: SessionHostOptions) {
 		this.modelRuntime = opts.modelRuntime;
 		this.agentModelRef = opts.agentModelRef;
 		this.thinkingLevelRef = opts.thinkingLevelRef;
+		this.settingsManager = opts.settingsManager;
 	}
 
 	// ---- Init / Dispose ----
@@ -95,9 +101,7 @@ export class SessionHost {
 				this.currentSessionName = mostRecent.name ?? "Untitled";
 				this.session = await this.createAgentSessionFor(sm);
 				this.subscribeToSession(this.session, this.currentSessionId ?? "");
-				console.log(
-					`[AgentHost] Restored session: ${this.currentSessionId} (${this.currentSessionName})`,
-				);
+				console.log(`[AgentHost] Restored session: ${this.currentSessionId} (${this.currentSessionName})`);
 			} else {
 				const sm = SessionManager.create(process.cwd(), dir);
 				this.currentSessionManager = sm;
@@ -105,9 +109,7 @@ export class SessionHost {
 				this.currentSessionName = "Untitled";
 				this.session = await this.createAgentSessionFor(sm);
 				this.subscribeToSession(this.session, this.currentSessionId ?? "");
-				console.log(
-					`[AgentHost] Created default session: ${this.currentSessionId}`,
-				);
+				console.log(`[AgentHost] Created default session: ${this.currentSessionId}`);
 			}
 		} catch (err) {
 			console.error("[AgentHost] Session init error:", err);
@@ -121,9 +123,7 @@ export class SessionHost {
 			}
 		}
 
-		console.log(
-			`[AgentHost] Pi Agent session ready (model: ${this.session?.model?.id ?? "auto"})`,
-		);
+		console.log(`[AgentHost] Pi Agent session ready (model: ${this.session?.model?.id ?? "auto"})`);
 	}
 
 	async dispose(): Promise<void> {
@@ -133,17 +133,27 @@ export class SessionHost {
 	// ---- Public queries ----
 
 	getInitialMessages(): SessionMessagePayload[] {
-		return this.currentSessionManager
-			? loadMessagesFromSession(this.currentSessionManager)
-			: [];
+		return this.currentSessionManager ? loadMessagesFromSession(this.currentSessionManager) : [];
+	}
+
+	getCurrentModel(): string | undefined {
+		return this.session?.model?.id;
+	}
+
+	async setModel(modelId: string): Promise<void> {
+		if (!this.session || !this.modelRuntime) return;
+		const model = this.modelRuntime.getModel(
+			modelId.split("/")[0],
+			modelId.slice(modelId.indexOf("/") + 1),
+		);
+		if (!model) return;
+		await this.session.setModel(model);
+		if (this.agentModelRef) this.agentModelRef.value = model.id;
 	}
 
 	// ---- IPC Handlers ----
 
-	async createSession(
-		msgId: string,
-		payload: { name?: string },
-	): Promise<void> {
+	async createSession(msgId: string, payload: { name?: string }): Promise<void> {
 		try {
 			await this.closeCurrentSession();
 			const cwd = process.cwd();
@@ -170,9 +180,7 @@ export class SessionHost {
 					file: sm.getSessionFile() ?? "",
 				},
 			});
-			console.log(
-				`[AgentHost] Session created: ${this.currentSessionId} (${this.currentSessionName})`,
-			);
+			console.log(`[AgentHost] Session created: ${this.currentSessionId} (${this.currentSessionName})`);
 		} catch (err) {
 			const message = err instanceof Error ? err.message : String(err);
 			console.error("[AgentHost] Session create error:", message);
@@ -202,18 +210,13 @@ export class SessionHost {
 		}
 	}
 
-	async switchSession(
-		msgId: string,
-		payload: { sessionId: string },
-	): Promise<void> {
+	async switchSession(msgId: string, payload: { sessionId: string }): Promise<void> {
 		try {
 			const targetId = payload.sessionId;
 
 			// Same session — just return current messages
 			if (this.currentSessionId === targetId && this.session) {
-				const messages = this.currentSessionManager
-					? loadMessagesFromSession(this.currentSessionManager)
-					: [];
+				const messages = this.currentSessionManager ? loadMessagesFromSession(this.currentSessionManager) : [];
 				postMessageToHost({
 					id: msgId,
 					type: AgentMessageType.SessionSwitched,
@@ -234,9 +237,7 @@ export class SessionHost {
 					name: this.currentSessionName ?? "Untitled",
 					unsubscribe: this.unsubscribe,
 				});
-				console.log(
-					`[AgentHost] Moved to background: ${this.currentSessionId}`,
-				);
+				console.log(`[AgentHost] Moved to background: ${this.currentSessionId}`);
 				// Detach from foreground without disposing
 				this.session = null;
 				this.currentSessionManager = null;
@@ -264,9 +265,7 @@ export class SessionHost {
 						messages,
 					},
 				});
-				console.log(
-					`[AgentHost] Brought to foreground: ${targetId} (${bg.name})`,
-				);
+				console.log(`[AgentHost] Brought to foreground: ${targetId} (${bg.name})`);
 				return;
 			}
 
@@ -287,9 +286,7 @@ export class SessionHost {
 			}
 
 			const sm = SessionManager.open(target.path);
-			const sessionEntry = sm
-				.getEntries()
-				.find((e) => (e as { type: string }).type === "session_info") as
+			const sessionEntry = sm.getEntries().find((e) => (e as { type: string }).type === "session_info") as
 				| { name?: string }
 				| undefined;
 
@@ -309,9 +306,7 @@ export class SessionHost {
 					messages,
 				},
 			});
-			console.log(
-				`[AgentHost] Session switched: ${this.currentSessionId} (${this.currentSessionName})`,
-			);
+			console.log(`[AgentHost] Session switched: ${this.currentSessionId} (${this.currentSessionName})`);
 		} catch (err) {
 			const message = err instanceof Error ? err.message : String(err);
 			console.error("[AgentHost] Session switch error:", message);
@@ -323,10 +318,7 @@ export class SessionHost {
 		}
 	}
 
-	async deleteSession(
-		msgId: string,
-		payload: { sessionId: string },
-	): Promise<void> {
+	async deleteSession(msgId: string, payload: { sessionId: string }): Promise<void> {
 		try {
 			const fs = await import("node:fs/promises");
 			const isActive = this.currentSessionId === payload.sessionId;
@@ -358,9 +350,7 @@ export class SessionHost {
 
 			if (isActive) {
 				await this.createDefaultSession();
-				const messages = this.currentSessionManager
-					? loadMessagesFromSession(this.currentSessionManager)
-					: [];
+				const messages = this.currentSessionManager ? loadMessagesFromSession(this.currentSessionManager) : [];
 				postMessageToHost({
 					id: uid(),
 					type: AgentMessageType.SessionCreated,
@@ -390,10 +380,7 @@ export class SessionHost {
 		}
 	}
 
-	async renameSession(
-		msgId: string,
-		payload: { sessionId: string; name: string },
-	): Promise<void> {
+	async renameSession(msgId: string, payload: { sessionId: string; name: string }): Promise<void> {
 		try {
 			const trimmedName = payload.name.trim();
 			if (!trimmedName) {
@@ -425,17 +412,14 @@ export class SessionHost {
 
 			const sm = SessionManager.open(target.path);
 			sm.appendSessionInfo(trimmedName);
-			if (this.currentSessionId === payload.sessionId)
-				this.currentSessionName = trimmedName;
+			if (this.currentSessionId === payload.sessionId) this.currentSessionName = trimmedName;
 
 			postMessageToHost({
 				id: msgId,
 				type: AgentMessageType.SessionRenamed,
 				payload: { sessionId: payload.sessionId, name: trimmedName },
 			});
-			console.log(
-				`[AgentHost] Session renamed: ${payload.sessionId} → "${trimmedName}"`,
-			);
+			console.log(`[AgentHost] Session renamed: ${payload.sessionId} → "${trimmedName}"`);
 		} catch (err) {
 			const message = err instanceof Error ? err.message : String(err);
 			postMessageToHost({
@@ -448,10 +432,7 @@ export class SessionHost {
 
 	async history(msgId: string, payload: { sessionId: string }): Promise<void> {
 		try {
-			if (
-				this.currentSessionId === payload.sessionId &&
-				this.currentSessionManager
-			) {
+			if (this.currentSessionId === payload.sessionId && this.currentSessionManager) {
 				const messages = loadMessagesFromSession(this.currentSessionManager);
 				postMessageToHost({
 					id: msgId,
@@ -497,10 +478,8 @@ export class SessionHost {
 
 	private async getSessionsDir(): Promise<string> {
 		if (this.sessionsDir) return this.sessionsDir;
-		const path = await import("node:path");
-		const os = await import("node:os");
 		const fs = await import("node:fs/promises");
-		const dir = path.join(os.homedir(), ".pi", "agent", "sessions");
+		const dir = getSessionsDir();
 		await fs.mkdir(dir, { recursive: true });
 		this.sessionsDir = dir;
 		return dir;
@@ -551,35 +530,22 @@ export class SessionHost {
 		});
 	}
 
-	private async createAgentSessionFor(
-		sm: ReturnType<typeof SessionManager.open>,
-	): Promise<AgentSession> {
+	private async createAgentSessionFor(sm: ReturnType<typeof SessionManager.open>): Promise<AgentSession> {
 		if (!this.modelRuntime) throw new Error("ModelRuntime not initialized");
 
 		const level =
-			(process.env.PI_THINKING_LEVEL as
-				| "off"
-				| "minimal"
-				| "low"
-				| "medium"
-				| "high"
-				| "xhigh"
-				| "max") ?? "medium";
+			(process.env.PI_THINKING_LEVEL as "off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max") ?? "medium";
 
 		const result = await createAgentSession({
 			modelRuntime: this.modelRuntime,
 			sessionManager: sm,
-			settingsManager: SettingsManager.inMemory({
-				compaction: { enabled: false },
-				retry: { enabled: false },
-			}),
+			settingsManager: this.settingsManager ?? undefined,
 			tools: ["read", "bash", "edit", "write"],
 			thinkingLevel: level,
 		});
 
 		if (this.agentModelRef) this.agentModelRef.value = result.session.model?.id;
-		if (this.thinkingLevelRef)
-			this.thinkingLevelRef.value = process.env.PI_THINKING_LEVEL ?? "medium";
+		if (this.thinkingLevelRef) this.thinkingLevelRef.value = process.env.PI_THINKING_LEVEL ?? "medium";
 
 		return result.session;
 	}
@@ -595,10 +561,7 @@ export class SessionHost {
 			this.session = await this.createAgentSessionFor(sm);
 			this.subscribeToSession(this.session, this.currentSessionId ?? "");
 		} catch (err) {
-			console.error(
-				"[AgentHost] Failed to create default session, falling back to in-memory:",
-				err,
-			);
+			console.error("[AgentHost] Failed to create default session, falling back to in-memory:", err);
 			const sm = SessionManager.inMemory(process.cwd());
 			this.currentSessionManager = sm;
 			this.currentSessionId = sm.getSessionId();
@@ -648,10 +611,7 @@ export class SessionHost {
 		});
 	}
 
-	private handleMessageUpdate(
-		event: Extract<AgentSessionEvent, { type: "message_update" }>,
-		sessionId: string,
-	): void {
+	private handleMessageUpdate(event: Extract<AgentSessionEvent, { type: "message_update" }>, sessionId: string): void {
 		if (this.generatingTitle) return;
 		const { assistantMessageEvent } = event;
 		if (assistantMessageEvent.type === "text_delta") {
@@ -677,26 +637,17 @@ export class SessionHost {
 		}
 	}
 
-	private handleToolExecutionStart(
-		event: Extract<AgentSessionEvent, { type: "tool_execution_start" }>,
-	): void {
+	private handleToolExecutionStart(event: Extract<AgentSessionEvent, { type: "tool_execution_start" }>): void {
 		console.log(`[AgentHost] Tool: ${event.toolName}`);
 	}
 
-	private handleToolExecutionEnd(
-		event: Extract<AgentSessionEvent, { type: "tool_execution_end" }>,
-	): void {
+	private handleToolExecutionEnd(event: Extract<AgentSessionEvent, { type: "tool_execution_end" }>): void {
 		console.log(`[AgentHost] Tool result: ${event.isError ? "error" : "ok"}`);
 	}
 
-	private handleAgentEnd(
-		event: Extract<AgentSessionEvent, { type: "agent_end" }>,
-		sessionId: string,
-	): void {
+	private handleAgentEnd(event: Extract<AgentSessionEvent, { type: "agent_end" }>, sessionId: string): void {
 		const newMessages = event.messages;
-		const lastAssistant = [...newMessages]
-			.reverse()
-			.find((m) => m.role === "assistant");
+		const lastAssistant = [...newMessages].reverse().find((m) => m.role === "assistant");
 		let content = "";
 		let thinking = "";
 		if (lastAssistant) {
@@ -733,7 +684,11 @@ export class SessionHost {
 		if (this.backgroundSessions.has(sessionId)) {
 			const bg = this.backgroundSessions.get(sessionId)!;
 			bg.unsubscribe();
-			try { bg.session.dispose(); } catch { /* ignore */ }
+			try {
+				bg.session.dispose();
+			} catch {
+				/* ignore */
+			}
 			this.backgroundSessions.delete(sessionId);
 			return;
 		}
@@ -792,9 +747,7 @@ export class SessionHost {
 // Pure functions
 // ============================================================================
 
-export function loadMessagesFromSession(
-	sm: ReturnType<typeof SessionManager.open>,
-): SessionMessagePayload[] {
+export function loadMessagesFromSession(sm: ReturnType<typeof SessionManager.open>): SessionMessagePayload[] {
 	const entries = sm.getBranch();
 	const messages: SessionMessagePayload[] = [];
 
@@ -861,9 +814,7 @@ export function loadMessagesFromSession(
 }
 
 /** Extract the text content from the last user message in a message list. */
-export function extractLastUserText(
-	messages: Array<{ role: string; content: unknown }>,
-): string {
+export function extractLastUserText(messages: Array<{ role: string; content: unknown }>): string {
 	const lastUser = [...messages].reverse().find((m) => m.role === "user");
 	if (!lastUser) return "";
 	const uc = lastUser.content;

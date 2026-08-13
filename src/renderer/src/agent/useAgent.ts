@@ -14,16 +14,12 @@
  *    页面切换不会取消订阅，确保回来时 store 仍然能接收 agent 消息。
  */
 
-import {
-	AgentMessageType,
-	type AgentReadyPayload,
-	isValidMessageType,
-} from "@shared/agent-types";
+import { AgentMessageType, type AgentReadyPayload, isValidMessageType } from "@shared/agent-types";
 import { createMemo, createSignal } from "solid-js";
 
-import type { SessionItemProps } from "@/pages/ChatPage/SessionList/SessionItem";
 import type { ChatBubbleProps } from "@/pages/ChatPage/ChatPanel/ChatBubble";
 import type { AgentConfig } from "@/pages/ChatPage/Composer/Composer";
+import type { SessionItemProps } from "@/pages/ChatPage/SessionList/SessionItem";
 
 import { getAgentIpc } from "./ipc";
 
@@ -91,10 +87,7 @@ function fmtTime(ms: number): string {
 	return d.toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
 }
 
-function sessionToItem(
-	s: SessionInfoPayload,
-	activeId: string | null,
-): SessionItemProps {
+function sessionToItem(s: SessionInfoPayload, activeId: string | null): SessionItemProps {
 	return {
 		id: s.id,
 		label: s.name,
@@ -176,9 +169,13 @@ if (agent && !_storeReady) {
 					sessionId: string;
 					name: string;
 					messages: ChatBubbleProps[];
+					model?: string;
 				};
 				setActiveId(p.sessionId);
 				setActiveName(p.name);
+				if (p.model) {
+					setAgentConfig((prev) => ({ ...prev, model: p.model }));
+				}
 				// Prefer cached messages (may contain streaming progress not yet on disk).
 				// Keep cache entry alive — background streaming events may still write to it.
 				const cached = sessionMsgCache.get(p.sessionId);
@@ -187,7 +184,7 @@ if (agent && !_storeReady) {
 				} else {
 					setMessages(p.messages ?? []);
 				}
-				setResetKey(p.sessionId + "-" + Date.now());
+				setResetKey(`${p.sessionId}-${Date.now()}`);
 				setLoading(false);
 				settle(msg.id, p);
 				break;
@@ -223,7 +220,7 @@ if (agent && !_storeReady) {
 					const text = pendingMessage;
 					pendingMessage = null;
 					agent.send({
-						id: "msg-" + Date.now(),
+						id: `msg-${Date.now()}`,
 						type: AgentMessageType.ChatSend,
 						payload: { content: text, sessionId: p.sessionId },
 					});
@@ -253,11 +250,18 @@ if (agent && !_storeReady) {
 				break;
 			}
 
+			case AgentMessageType.ModelRefreshed: {
+				const p = msg.payload as { models: string[] };
+				if (p.models?.length) {
+					setAgentConfig((prev) => ({ ...prev, configuredModels: p.models }));
+				}
+				break;
+			}
+
 			case AgentMessageType.SessionError: {
 				console.error("[useAgent] Session error:", msg.payload);
 				setLoading(false);
-				const message =
-					(msg.payload as { message?: string }).message ?? "Unknown error";
+				const message = (msg.payload as { message?: string }).message ?? "Unknown error";
 				fail(msg.id, new Error(message));
 				break;
 			}
@@ -265,18 +269,18 @@ if (agent && !_storeReady) {
 			// ── Streaming events ──
 
 			case AgentMessageType.ChatChunk: {
-				const { delta, kind, sessionId: sid } = msg.payload as {
+				const {
+					delta,
+					kind,
+					sessionId: sid,
+				} = msg.payload as {
 					delta?: string;
 					kind?: string;
 					sessionId?: string;
 				};
 				if (!delta || kind !== "content") return;
 				const applyChunk = (msgs: ChatBubbleProps[]) =>
-					msgs.map((m, i) =>
-						i === msgs.length - 1 && m.streaming
-							? { ...m, content: m.content + delta }
-							: m,
-					);
+					msgs.map((m, i) => (i === msgs.length - 1 && m.streaming ? { ...m, content: m.content + delta } : m));
 				if (sid && sid !== activeId()) {
 					// Update cache for non-active session (generation continues in background)
 					const cached = sessionMsgCache.get(sid);
@@ -292,9 +296,7 @@ if (agent && !_storeReady) {
 				if (!text) return;
 				const applyThink = (msgs: ChatBubbleProps[]) =>
 					msgs.map((m, i) =>
-						i === msgs.length - 1 && m.streaming
-							? { ...m, thinking: (m.thinking ?? "") + text }
-							: m,
+						i === msgs.length - 1 && m.streaming ? { ...m, thinking: (m.thinking ?? "") + text } : m,
 					);
 				if (sid && sid !== activeId()) {
 					const cached = sessionMsgCache.get(sid);
@@ -306,7 +308,11 @@ if (agent && !_storeReady) {
 			}
 
 			case AgentMessageType.ChatDone: {
-				const { content, thinking, sessionId: sid } = msg.payload as {
+				const {
+					content,
+					thinking,
+					sessionId: sid,
+				} = msg.payload as {
 					content?: string;
 					thinking?: string;
 					sessionId?: string;
@@ -363,11 +369,25 @@ if (agent && !_storeReady) {
 //  Module-level functions
 // ════════════════════════════════════════════════════════════════
 
+function selectModel(modelId: string) {
+	if (!agent) return;
+	setAgentConfig((prev) => ({ ...prev, model: modelId }));
+	agent.send({
+		id: `set-model-${modelId}`,
+		type: AgentMessageType.AgentConfig,
+		payload: { model: modelId },
+	});
+}
+
+// ════════════════════════════════════════════════════════════════
+//  Module-level functions
+// ════════════════════════════════════════════════════════════════
+
 function refreshSessions() {
 	if (!agent) return;
 	queueMicrotask(() => {
 		agent.send({
-			id: "list-" + Date.now(),
+			id: `list-${Date.now()}`,
 			type: AgentMessageType.SessionList,
 			payload: {},
 		});
@@ -379,7 +399,7 @@ function createSession(name?: string) {
 	setActiveId(null);
 	setActiveName(name ?? "");
 	setMessages([]);
-	setResetKey("new-" + Date.now());
+	setResetKey(`new-${Date.now()}`);
 	setLoading(false);
 }
 
@@ -391,9 +411,9 @@ async function handleSend(text: string): Promise<{ sessionId: string }> {
 
 	setMessages((prev) => [
 		...prev,
-		{ id: "u-" + Date.now(), role: "user" as const, content: text, timestamp: now },
+		{ id: `u-${Date.now()}`, role: "user" as const, content: text, timestamp: now },
 		{
-			id: "a-" + (Date.now() + 1),
+			id: `a-${Date.now() + 1}`,
 			role: "agent" as const,
 			content: "",
 			thinking: "",
@@ -406,7 +426,7 @@ async function handleSend(text: string): Promise<{ sessionId: string }> {
 
 	if (activeId()) {
 		agent.send({
-			id: "msg-" + Date.now(),
+			id: `msg-${Date.now()}`,
 			type: AgentMessageType.ChatSend,
 			payload: { content: text, sessionId: activeId()! },
 		});
@@ -415,15 +435,13 @@ async function handleSend(text: string): Promise<{ sessionId: string }> {
 
 	setLoading(true);
 	pendingMessage = text;
-	const id = "create-" + Date.now();
+	const id = `create-${Date.now()}`;
 	const promise = track<{ sessionId: string; name: string; createdAt: number }>(id);
 	agent.send({ id, type: AgentMessageType.SessionCreate, payload: {} });
 	return promise;
 }
 
-async function switchSession(
-	id: string,
-): Promise<{ sessionId: string; name: string; messages: ChatBubbleProps[] }> {
+async function switchSession(id: string): Promise<{ sessionId: string; name: string; messages: ChatBubbleProps[] }> {
 	if (!agent) throw new Error("Agent not ready");
 
 	if (id === activeId()) {
@@ -435,7 +453,7 @@ async function switchSession(
 	if (curId) sessionMsgCache.set(curId, messages());
 
 	setLoading(true);
-	const msgId = "switch-" + Date.now();
+	const msgId = `switch-${Date.now()}`;
 	const promise = track<{
 		sessionId: string;
 		name: string;
@@ -452,7 +470,7 @@ async function switchSession(
 async function deleteSession(id: string): Promise<void> {
 	if (!agent) throw new Error("Agent not ready");
 
-	const msgId = "delete-" + Date.now();
+	const msgId = `delete-${Date.now()}`;
 	const promise = track<void>(msgId);
 	agent.send({
 		id: msgId,
@@ -462,13 +480,10 @@ async function deleteSession(id: string): Promise<void> {
 	return promise;
 }
 
-async function renameSession(
-	id: string,
-	name: string,
-): Promise<{ sessionId: string; name: string }> {
+async function renameSession(id: string, name: string): Promise<{ sessionId: string; name: string }> {
 	if (!agent) throw new Error("Agent not ready");
 
-	const msgId = "rename-" + Date.now();
+	const msgId = `rename-${Date.now()}`;
 	const promise = track<{ sessionId: string; name: string }>(msgId);
 	agent.send({
 		id: msgId,
@@ -482,9 +497,7 @@ async function renameSession(
 //  Public hook — returns the singleton state
 // ════════════════════════════════════════════════════════════════
 
-const sessionItems = createMemo(() =>
-	sessions().map((s) => sessionToItem(s, activeId())),
-);
+const sessionItems = createMemo(() => sessions().map((s) => sessionToItem(s, activeId())));
 
 export function useAgent() {
 	return {
@@ -496,6 +509,7 @@ export function useAgent() {
 		loading,
 		agentConfig,
 		createSession,
+		selectModel,
 		switchSession,
 		deleteSession,
 		renameSession,

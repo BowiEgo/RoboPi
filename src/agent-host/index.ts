@@ -45,6 +45,8 @@ async function startup(): Promise<void> {
 				model: agentHost.modelRef.value,
 				thinkingLevel: agentHost.thinkingLevelRef.value,
 				availableModels: agentHost.getAvailableModels(),
+			configuredModels: agentHost.getConfiguredModels(),
+			providerList: agentHost.getProviderList(),
 			},
 		});
 
@@ -105,7 +107,7 @@ process.on("message", (raw: unknown) => {
 			handleAgentStatus(msg.id);
 			break;
 		case AgentMessageType.AgentConfig:
-			handleAgentConfig(msg.id);
+			handleAgentConfig(msg.id, msg.payload as { model?: string; thinkingLevel?: string });
 			break;
 		case AgentMessageType.SessionCreate:
 			sh().createSession(msg.id, msg.payload as { name?: string });
@@ -130,6 +132,12 @@ process.on("message", (raw: unknown) => {
 			break;
 		case AgentMessageType.AgentShutdown:
 			handleShutdown();
+			break;
+		case AgentMessageType.ModelRefresh:
+			handleModelRefresh(msg);
+			break;
+		case AgentMessageType.ModelSetApiKey:
+			handleModelSetApiKey(msg);
 			break;
 	}
 });
@@ -201,17 +209,67 @@ function handleAgentStatus(msgId: string): void {
 	});
 }
 
-function handleAgentConfig(msgId: string): void {
+async function handleAgentConfig(msgId: string, payload?: { model?: string; thinkingLevel?: string }): Promise<void> {
+	// Apply and persist model change
+	if (payload?.model) {
+		// Per-session model: set on the current session + persist to settings
+		await sh().setModel(payload.model);
+		const slash = payload.model.indexOf("/");
+		if (slash > 0) {
+			sh().settingsManager?.setDefaultModelAndProvider(
+				payload.model.slice(0, slash),
+				payload.model.slice(slash + 1),
+			);
+		}
+		void sh().settingsManager?.flush();
+	}
+	if (payload?.thinkingLevel) {
+		agentHost.thinkingLevelRef.value = payload.thinkingLevel;
+		sh().settingsManager?.setDefaultThinkingLevel(payload.thinkingLevel as any);
+		void sh().settingsManager?.flush();
+	}
 	postMessageToHost({
 		id: msgId,
 		type: AgentMessageType.AgentConfig,
 		payload: {
-			model: agentHost.modelRef.value,
+			model: sh().getCurrentModel() ?? agentHost.modelRef.value,
 			thinkingLevel: agentHost.thinkingLevelRef.value,
 			availableModels: agentHost.getAvailableModels(),
+			configuredModels: agentHost.getConfiguredModels(),
+			providerList: agentHost.getProviderList(),
 			status: sh().session?.isStreaming ? "responding" : "idle",
 		},
 	});
+}
+
+async function handleModelSetApiKey(msg: AgentMessage): Promise<void> {
+	const p = msg.payload as { provider: string; apiKey: string };
+	if (!p?.provider || !p?.apiKey) return;
+	await agentHost.setApiKey(p.provider, p.apiKey);
+	postMessageToHost({
+		id: msg.id,
+		type: AgentMessageType.ModelRefreshed,
+		payload: {
+			models: agentHost.getConfiguredModels(),
+			availableModels: agentHost.getAvailableModels(),
+		},
+	});
+}
+
+async function handleModelRefresh(msg: AgentMessage): Promise<void> {
+	try {
+		await agentHost.refreshModels(true);
+		postMessageToHost({
+			id: msg.id,
+			type: AgentMessageType.ModelRefreshed,
+			payload: {
+				models: agentHost.getConfiguredModels(),
+				availableModels: agentHost.getAvailableModels(),
+			},
+		});
+	} catch (err) {
+		console.error("[AgentHost] Model refresh failed:", err);
+	}
 }
 
 function handleShutdown(): void {

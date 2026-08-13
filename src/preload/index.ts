@@ -9,6 +9,8 @@ const api: WindowApi = {
 	maximize: () => ipcRenderer.send("window:maximize"),
 	close: () => ipcRenderer.send("window:close"),
 	platform: process.platform,
+	invoke: (channel: string, ...args: unknown[]) =>
+		ipcRenderer.invoke(channel, ...args),
 };
 
 const agentApi: AgentApi = {

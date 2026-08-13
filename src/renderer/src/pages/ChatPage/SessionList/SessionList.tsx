@@ -116,7 +116,7 @@ const SessionList: Component = () => {
 				</div>
 			</header>
 
-			<div class={`${list} bg-app`} role="tablist">
+			<div class={`${list}`} role="tablist">
 				<Show
 					when={sessions().length > 0}
 					fallback={<div class={`${empty} text-base-content/40`}>{t("chat.noSessions")}</div>}
