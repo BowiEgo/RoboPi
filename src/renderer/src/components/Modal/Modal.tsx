@@ -7,8 +7,18 @@ export interface ModalProps {
 	open: boolean;
 	onClose: () => void;
 	title?: string;
-	/** Max width of the panel. Accepts any CSS width value (default "32rem"). */
+	/** Exact panel width (CSS value). */
 	width?: string;
+	/** Exact panel height (CSS value). */
+	height?: string;
+	/** Minimum panel width (CSS value). */
+	minWidth?: string;
+	/** Minimum panel height (CSS value). */
+	minHeight?: string;
+	/** Maximum panel width (CSS value, default "32rem"). */
+	maxWidth?: string;
+	/** Maximum panel height (CSS value, default "85vh"). */
+	maxHeight?: string;
 	children: JSX.Element;
 }
 
@@ -22,7 +32,7 @@ const C = {
 	}),
 	panel: cstyle({
 		display: "flex flex-col",
-		sizing: "w-full max-h-[85vh] overflow-hidden",
+		sizing: "w-full overflow-hidden",
 		interaction: "rounded-2xl shadow-2xl border",
 		color: "bg-base-100 border-base-300",
 	}),
@@ -38,7 +48,7 @@ const C = {
 		color: "text-base-content/50 hover:text-base-content",
 	}),
 	body: cstyle({
-		display: "flex flex-col",
+		display: "flex flex-col flex-1",
 		spacing: "p-6 gap-4",
 		sizing: "overflow-y-auto",
 	}),
@@ -65,7 +75,14 @@ const Modal: Component<ModalProps> = (props) => {
 			<div class={C.overlay()} onClick={props.onClose}>
 				<div
 					class={C.panel()}
-					style={{ "max-width": props.width ?? "32rem" }}
+					style={{
+						width: props.width,
+						height: props.height,
+						"min-width": props.minWidth,
+						"min-height": props.minHeight,
+						"max-width": props.maxWidth ?? "32rem",
+						"max-height": props.maxHeight ?? "85vh",
+					}}
 					onClick={(e) => e.stopPropagation()}
 					role="dialog"
 					aria-modal="true"

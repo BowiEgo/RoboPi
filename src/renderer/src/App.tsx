@@ -1,10 +1,4 @@
-import {
-	BotMessageSquare,
-	MessageCircle,
-	Moon,
-	Settings,
-	Sun,
-} from "lucide-solid";
+import { BotMessageSquare, MessageCircle, Moon, Settings, Sun } from "lucide-solid";
 import { type Component, createSignal } from "solid-js";
 
 import { LocaleProvider, useLocale } from "@/contexts/LocaleContext";
@@ -23,9 +17,7 @@ const AppContent: Component = () => {
 	const { t } = useLocale();
 	const { isDark, toggleDark } = useTheme();
 
-	const topNav: NavItem[] = [
-		{ id: "chat", icon: <MessageCircle />, label: t("nav.chat") },
-	];
+	const topNav: NavItem[] = [{ id: "chat", icon: <MessageCircle />, label: t("nav.chat") }];
 
 	const bottomNav: NavItem[] = [
 		{
@@ -57,25 +49,15 @@ const AppContent: Component = () => {
 			<MainLayout
 				topNavItems={topNav}
 				bottomNavItems={bottomNav}
-			isDark={isDark()}
+				isDark={isDark()}
 				activeNav={activeNav()}
 				onNavSelect={onNavSelect}
 				navTop={<BotMessageSquare class="w-10 h-10 text-primary" />}
 			>
-				{activeNav() === "chat" && (
-					<ChatPage
-						sidebarHeader={<AppBanner />}
-						sidebarBottom={<div class="h-12" />}
-					/>
-				)}
+				{activeNav() === "chat" && <ChatPage sidebarHeader={<AppBanner />} sidebarBottom={<div class="h-12" />} />}
 			</MainLayout>
 
-			<Modal
-				open={settingsOpen()}
-				onClose={() => setSettingsOpen(false)}
-				title={t("settings.title")}
-				width="44rem"
-			>
+			<Modal open={settingsOpen()} onClose={() => setSettingsOpen(false)} title={t("settings.title")} minWidth="66rem">
 				<SettingsPage />
 				<div class="divider" />
 				<ThemePage />

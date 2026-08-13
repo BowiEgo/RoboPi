@@ -51,7 +51,7 @@ const C = {
 		color: "placeholder:text-base-content/30",
 	}),
 	optionsList: cstyle({
-		sizing: "max-h-48 overflow-y-auto",
+		sizing: "max-h-66 overflow-y-auto",
 		spacing: "p-1",
 	}),
 	option: cstyle({

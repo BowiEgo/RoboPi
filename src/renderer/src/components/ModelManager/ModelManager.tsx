@@ -1,10 +1,11 @@
 import { Plus, Trash2 } from "lucide-solid";
 import { type Component, createMemo, createSignal, For, Show } from "solid-js";
 
+import { useLocale } from "@/contexts/LocaleContext";
+
 import Dropdown from "@/components/Dropdown/Dropdown";
 import Modal from "@/components/Modal/Modal";
 
-import { useLocale } from "@/contexts/LocaleContext";
 import { setApiKey as persistApiKey } from "@/ipc/settings";
 import { cstyle } from "@/utils/cstyle";
 
@@ -105,10 +106,7 @@ const ModelManager: Component<ModelManagerProps> = (props) => {
 	const [provider, setProvider] = createSignal("");
 	const [apiKey, setApiKey] = createSignal("");
 
-	const providers = createMemo(() => [
-		...props.providerList,
-		{ id: "custom", name: t("settings.customProvider") },
-	]);
+	const providers = createMemo(() => [...props.providerList, { id: "custom", name: t("settings.customProvider") }]);
 
 	function handleSave() {
 		const p = provider();
@@ -169,7 +167,13 @@ const ModelManager: Component<ModelManagerProps> = (props) => {
 				</div>
 			</Show>
 
-			<Modal open={modalOpen()} onClose={() => setModalOpen(false)} title={t("settings.addProvider")} width="28rem">
+			<Modal
+				open={modalOpen()}
+				onClose={() => setModalOpen(false)}
+				title={t("settings.addProvider")}
+				minWidth="45rem"
+				minHeight="48vh"
+			>
 				<p class={C.subtitle()}>{t("settings.addProviderSubtitle")}</p>
 				<div class={C.field()}>
 					<label class={C.label()}>{t("settings.provider")}</label>
