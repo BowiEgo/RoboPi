@@ -8,6 +8,8 @@ export interface DropdownOption {
 	name: string;
 	/** Optional group label — consecutive options with the same group render under one header. */
 	group?: string;
+	/** Optional extra search keywords for the group (e.g. other-language terms). */
+	groupSearch?: string;
 	/** Optional icon rendered next to the group label. */
 	groupIcon?: JSX.Element;
 	/** Optional icon rendered before the option name. */
@@ -25,6 +27,10 @@ export interface DropdownProps {
 	direction?: "up" | "down";
 	/** Replace the trigger's default style (used to match surrounding buttons). */
 	triggerClass?: string;
+	/** Called when the highlight moves (keyboard/hover) without selecting. */
+	onPreview?: (id: string) => void;
+	/** Called when the menu closes without selecting (Escape / click outside). */
+	onClose?: () => void;
 	onChange: (id: string) => void;
 }
 
@@ -58,7 +64,7 @@ const C = {
 	searchRow: cstyle({
 		display: "flex items-center",
 		spacing: "gap-2 px-3 py-2",
-		interaction: "border-b",
+		interaction: "border-none",
 		color: "border-base-200",
 	}),
 	searchInput: cstyle({
@@ -75,7 +81,7 @@ const C = {
 		display: "sticky top-0 z-10 flex items-center",
 		spacing: "px-3 py-1.5 gap-1.5",
 		text: "text-[11px] font-semibold uppercase tracking-wider",
-		color: "bg-base-200 text-base-content/60",
+		color: "bg-base-300 text-base-content/60",
 	}),
 	option: cstyle({
 		display: "flex items-center justify-between",
@@ -103,11 +109,20 @@ const Dropdown: Component<DropdownProps> = (props) => {
 	let containerRef: HTMLDivElement | undefined;
 	// Whether the current highlight came from keyboard navigation (scroll) or mouse hover (no scroll).
 	let highlightByKeyboard = true;
+	// Suppress mouse-enter events right after keyboard navigation — scrollIntoView
+	// can move options under a stationary cursor and fire a spurious mouseenter.
+	let suppressHover = false;
 
 	const filtered = createMemo(() => {
 		const q = search().toLowerCase();
 		if (!q) return props.options;
-		return props.options.filter((o) => o.name.toLowerCase().includes(q) || o.id.toLowerCase().includes(q));
+		return props.options.filter(
+			(o) =>
+				o.name.toLowerCase().includes(q) ||
+				o.id.toLowerCase().includes(q) ||
+				(o.group?.toLowerCase().includes(q) ?? false) ||
+				(o.groupSearch?.toLowerCase().includes(q) ?? false),
+		);
 	});
 
 	// Group consecutive options sharing the same `group` label, while keeping
@@ -138,14 +153,27 @@ const Dropdown: Component<DropdownProps> = (props) => {
 
 	function onKeyDown(e: KeyboardEvent) {
 		const items = filtered();
+		if (items.length === 0) {
+			if (e.key === "Escape") {
+				setOpen(false);
+				props.onClose?.();
+			}
+			return;
+		}
 		if (e.key === "ArrowDown") {
 			e.preventDefault();
 			highlightByKeyboard = true;
-			setHighlightedIndex((i) => (i + 1 >= items.length ? 0 : i + 1));
+			suppressHover = true;
+			const next = highlightedIndex() + 1 >= items.length ? 0 : highlightedIndex() + 1;
+			setHighlightedIndex(next);
+			props.onPreview?.(items[next].id);
 		} else if (e.key === "ArrowUp") {
 			e.preventDefault();
 			highlightByKeyboard = true;
-			setHighlightedIndex((i) => (i - 1 < 0 ? items.length - 1 : i - 1));
+			suppressHover = true;
+			const next = highlightedIndex() - 1 < 0 ? items.length - 1 : highlightedIndex() - 1;
+			setHighlightedIndex(next);
+			props.onPreview?.(items[next].id);
 		} else if (e.key === "Enter") {
 			const idx = highlightedIndex();
 			if (idx >= 0 && idx < items.length) {
@@ -154,6 +182,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
 			}
 		} else if (e.key === "Escape") {
 			setOpen(false);
+			props.onClose?.();
 		}
 	}
 
@@ -178,6 +207,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
 			if (containerRef && !containerRef.contains(e.target as Node)) {
 				setOpen(false);
 				setSearch("");
+				props.onClose?.();
 			}
 		};
 		document.addEventListener("click", handler);
@@ -185,7 +215,9 @@ const Dropdown: Component<DropdownProps> = (props) => {
 	});
 
 	return (
-		<div class={C.container()} ref={containerRef}>
+		<div class={C.container()} ref={containerRef} onMouseMove={() => {
+			suppressHover = false;
+		}}>
 			<button
 				type="button"
 				class={props.triggerClass ?? C.trigger({ hasValue: !!props.value })}
@@ -232,6 +264,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
 													highlightedIndex() === index ? "bg-base-200" : ""
 												}`}
 												onMouseEnter={() => {
+													if (suppressHover) return;
 													highlightByKeyboard = false;
 													setHighlightedIndex(index);
 												}}

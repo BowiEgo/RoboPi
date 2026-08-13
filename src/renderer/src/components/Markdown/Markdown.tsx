@@ -58,7 +58,6 @@ function resolveTheme(): string {
 	if (typeof document === "undefined") return "github-light";
 	const t = document.documentElement.dataset.theme || "";
 	const darkThemes = [
-		"robo-dark",
 		"dark",
 		"night",
 		"dracula",

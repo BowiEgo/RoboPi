@@ -119,7 +119,9 @@ const Modal: Component<ModalProps> = (props) => {
 							</button>
 						</div>
 					</Show>
-					<div class={C.body()} style={{ overflow: props.bodyOverflow ?? "auto" }}>{props.children}</div>
+					<div class={C.body()} style={{ overflow: props.bodyOverflow ?? "auto" }}>
+						{props.children}
+					</div>
 				</div>
 			</div>
 		</Show>

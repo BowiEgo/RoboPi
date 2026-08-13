@@ -5,10 +5,9 @@ import { type Component, createContext, createSignal, type JSX, useContext } fro
 // ============================================================================
 
 export const THEMES = [
-	"robo",
-	"robo-dark",
-	"Daisy",
+	"light",
 	"dark",
+	"daisy",
 	"cupcake",
 	"bumblebee",
 	"emerald",
@@ -60,20 +59,38 @@ const ThemeCtx = createContext<ThemeContextValue>();
 
 const STORAGE_KEY = "robo-pi-theme";
 
+// Dark theme list — light's own dark variant + daisyUI built-in dark themes.
+const DARK_THEMES = [
+	"dark",
+	"night",
+	"dracula",
+	"synthwave",
+	"cyberpunk",
+	"halloween",
+	"forest",
+	"black",
+	"luxury",
+	"coffee",
+	"dim",
+	"sunset",
+	"abyss",
+	"business",
+];
+
+/** Whether a theme id is a dark theme. */
+export function isDarkTheme(id: string): boolean {
+	return DARK_THEMES.includes(id);
+}
+
 function getInitialTheme(): string {
-	return localStorage.getItem(STORAGE_KEY) ?? "robo";
+	const saved = localStorage.getItem(STORAGE_KEY) ?? "light";
+	// Ignore themes that no longer exist in THEMES.
+	return (THEMES as readonly string[]).includes(saved) ? saved : "light";
 }
 
 export const ThemeProvider: Component<{ children: JSX.Element }> = (props) => {
 	const [theme, setThemeSignal] = createSignal(getInitialTheme());
-	const DARK_THEMES = [
-		"robo-dark",
-		"dark", "night", "dracula", "synthwave", "cyberpunk", "halloween",
-		"forest", "black", "luxury", "coffee", "dim", "sunset", "abyss", "business",
-	];
-	const [isDark, setIsDark] = createSignal(
-		DARK_THEMES.includes(getInitialTheme()),
-	);
+	const [isDark, setIsDark] = createSignal(DARK_THEMES.includes(getInitialTheme()));
 
 	const setTheme = (id: string) => {
 		setThemeSignal(id);
@@ -82,20 +99,20 @@ export const ThemeProvider: Component<{ children: JSX.Element }> = (props) => {
 		localStorage.setItem(STORAGE_KEY, id);
 	};
 
-	// Dark theme list — robo's own dark variant + daisyUI built-in dark themes
-
 	const toggleDark = () => {
-		setTheme(isDark() ? "robo" : "robo-dark");
+		setTheme(isDark() ? "light" : "dark");
 	};
 
 	const setDark = (dark: boolean) => {
-		setTheme(dark ? "robo-dark" : "robo");
+		setTheme(dark ? "dark" : "light");
 	};
 
 	// Apply theme on mount
 	document.documentElement.setAttribute("data-theme", getInitialTheme());
 
-	return <ThemeCtx.Provider value={{ theme, setTheme, isDark, toggleDark, setDark }}>{props.children}</ThemeCtx.Provider>;
+	return (
+		<ThemeCtx.Provider value={{ theme, setTheme, isDark, toggleDark, setDark }}>{props.children}</ThemeCtx.Provider>
+	);
 };
 
 export function useTheme(): ThemeContextValue {

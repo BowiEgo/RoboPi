@@ -6,10 +6,9 @@ import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
 
 import MainLayout, { type NavItem } from "@/layouts/MainLayout/MainLayout";
 import ChatPage from "@/pages/ChatPage/ChatPage";
-import SettingsPage from "@/pages/SettingsPage/SettingsPage";
-import ThemePage from "@/pages/ThemePage/ThemePage";
 import AppBanner from "@/components/AppBanner/AppBanner";
 import Modal from "@/components/Modal/Modal";
+import SettingPanel from "@/components/SettingPanel/SettingPanel";
 
 const AppContent: Component = () => {
 	const [activeNav, setActiveNav] = createSignal("chat");
@@ -64,9 +63,7 @@ const AppContent: Component = () => {
 				minWidth="66rem"
 				backdropBlur={true}
 			>
-				<SettingsPage />
-				<div class="divider" />
-				<ThemePage />
+				<SettingPanel />
 			</Modal>
 		</div>
 	);
