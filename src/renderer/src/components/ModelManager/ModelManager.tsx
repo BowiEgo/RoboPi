@@ -1,7 +1,7 @@
 import { Plus, Trash2 } from "lucide-solid";
 import { type Component, createMemo, createSignal, For, Show } from "solid-js";
 
-import { setApiKey as persistApiKey } from "@/agent/ipc/settings";
+import { setApiKey as persistApiKey } from "@/ipc/settings";
 
 import Dropdown from "@/components/Dropdown/Dropdown";
 

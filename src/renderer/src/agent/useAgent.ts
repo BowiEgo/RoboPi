@@ -15,88 +15,20 @@
  *    receiving agent messages after navigating back.
  */
 
-import { AgentMessageType, type AgentReadyPayload, isValidMessageType } from "@shared/agent-types";
+import {
+	AgentMessageType,
+	type AgentReadyPayload,
+	isValidMessageType,
+	type SessionInfoPayload,
+} from "@shared/agent-types";
 import { createMemo, createSignal } from "solid-js";
 
 import type { ChatBubbleProps } from "@/pages/ChatPage/ChatPanel/ChatBubble";
 import type { AgentConfig } from "@/pages/ChatPage/Composer/Composer";
-import type { SessionItemProps } from "@/pages/ChatPage/SessionList/SessionItem";
 
-import { getAgentIpc } from "./ipc/index";
-
-// ── Types ──
-
-export interface SessionInfoPayload {
-	file: string;
-	id: string;
-	name: string;
-	createdAt: number;
-	lastMessage?: string;
-	lastActiveAt: number;
-}
-
-// ── Promise tracking ──
-
-class Deferred<T = void> {
-	resolve!: (value: T) => void;
-	reject!: (error: Error) => void;
-	promise: Promise<T>;
-
-	constructor() {
-		this.promise = new Promise<T>((res, rej) => {
-			this.resolve = res;
-			this.reject = rej;
-		});
-	}
-}
-
-const pending = new Map<string, Deferred<unknown>>();
-
-function track<T>(id: string): Promise<T> {
-	const d = new Deferred<T>();
-	pending.set(id, d as Deferred<unknown>);
-	return d.promise;
-}
-
-function settle(id: string, value?: unknown) {
-	const d = pending.get(id);
-	if (d) {
-		pending.delete(id);
-		d.resolve(value);
-	}
-}
-
-function fail(id: string, error: Error) {
-	const d = pending.get(id);
-	if (d) {
-		pending.delete(id);
-		d.reject(error);
-	}
-}
-
-// ── Helpers ──
-
-function fmtTime(ms: number): string {
-	const d = new Date(ms);
-	const now = new Date();
-	if (d.toDateString() === now.toDateString()) {
-		return d.toLocaleTimeString("zh-CN", {
-			hour: "2-digit",
-			minute: "2-digit",
-		});
-	}
-	return d.toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
-}
-
-function sessionToItem(s: SessionInfoPayload, activeId: string | null): SessionItemProps {
-	return {
-		id: s.id,
-		label: s.name,
-		subtitle: s.lastMessage?.slice(0, 60) ?? undefined,
-		time: fmtTime(s.lastActiveAt),
-		status: s.id === activeId ? "active" : "idle",
-	};
-}
+import { getAgentIpc } from "@/ipc/index";
+import { fail, settle, track } from "@/utils/promise-tracker";
+import { sessionToItem } from "@/utils/session-mapper";
 
 // ════════════════════════════════════════════════════════════════
 //  Module-level reactive state + IPC listener

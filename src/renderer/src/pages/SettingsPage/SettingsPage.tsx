@@ -1,6 +1,6 @@
 import { type Component, createSignal, onMount } from "solid-js";
 
-import { getSettings, type SettingsInfo } from "@/agent/ipc/settings";
+import { getSettings, type SettingsInfo } from "@/ipc/settings";
 import { type LocaleId, useLocale } from "@/contexts/LocaleContext";
 
 import ModelManager, { type SavedModel } from "@/components/ModelManager/ModelManager";

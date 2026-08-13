@@ -1,7 +1,8 @@
 import { Plus } from "lucide-solid";
-import { type Component, createEffect, createMemo, createSignal, For, type JSX, Show } from "solid-js";
+import { type Component, createMemo, createSignal, For, type JSX, Show } from "solid-js";
 
 import ChatOutline from "@/components/ChatOutline/ChatOutline";
+import { useAutoScroll } from "@/hooks/useAutoScroll";
 
 import Composer, { type AgentConfig } from "../Composer/Composer";
 import ChatBubble, { type ChatBubbleProps } from "./ChatBubble";
@@ -88,62 +89,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 	// No local state — the store is the single source of truth.
 	const messages = () => props.initialMessages ?? [];
 
-	// ── Scroll ──
-
-	let scrollEl: HTMLElement | undefined;
-	let suppressScrollEvent = false;
-
-	const [isNearBottom, setIsNearBottom] = createSignal(true);
-
-	const onScroll = () => {
-		if (suppressScrollEvent || !scrollEl) return;
-		const el = scrollEl;
-		setIsNearBottom(el.scrollHeight - el.scrollTop - el.clientHeight <= 4);
-	};
-
-	const scrollToBottom = (behavior: ScrollBehavior = "auto") => {
-		if (!scrollEl) return;
-		suppressScrollEvent = true;
-		scrollEl.scrollTo({ top: scrollEl.scrollHeight, behavior });
-		// Re-enable after animation frame + buffer
-		requestAnimationFrame(() => {
-			requestAnimationFrame(() => {
-				suppressScrollEvent = false;
-				setIsNearBottom(true);
-			});
-		});
-	};
-
-	// Instant jump to last user message on session switch / new message.
-	// If the session is streaming, follow with instant scroll to bottom.
-	let lastMsgId = "";
-	createEffect(() => {
-		const msgs = messages();
-		if (msgs.length === 0) return;
-		const latestId = msgs[msgs.length - 1].id ?? "";
-		if (latestId !== lastMsgId) {
-			lastMsgId = latestId;
-			const streaming = msgs[msgs.length - 1].streaming;
-			queueMicrotask(() => {
-				const userBubbles = document.querySelectorAll('[data-role="user"]');
-				const lastUser = userBubbles[userBubbles.length - 1];
-				lastUser?.scrollIntoView({ block: "start" });
-				if (streaming && scrollEl) {
-					scrollEl.scrollTop = scrollEl.scrollHeight;
-				}
-			});
-		}
-	});
-
-	// Smooth scroll to bottom while streaming — only when user is near bottom.
-	createEffect(() => {
-		const msgs = messages();
-		if (msgs.length === 0) return;
-		const last = msgs[msgs.length - 1];
-		void last.content.length;
-		if (!last.streaming || !isNearBottom()) return;
-		scrollToBottom("smooth");
-	});
+	const { setScrollEl, onScroll } = useAutoScroll(messages);
 
 	// ── Test data ──
 	const TEST_MESSAGES: ChatBubbleProps[] = [
@@ -259,9 +205,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 			</header>
 
 			<main
-				ref={(el) => {
-					scrollEl = el;
-				}}
+				ref={setScrollEl}
 				class={C.messages()}
 				style="scroll-behavior: auto; scroll-padding-top: 64px; scroll-padding-bottom: 96px"
 				onScroll={onScroll}
