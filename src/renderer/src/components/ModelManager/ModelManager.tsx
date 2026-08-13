@@ -5,6 +5,7 @@ import { useLocale } from "@/contexts/LocaleContext";
 
 import Dropdown from "@/components/Dropdown/Dropdown";
 import Modal from "@/components/Modal/Modal";
+import ProviderIcon from "@/components/ProviderIcon/ProviderIcon";
 
 import { setApiKey as persistApiKey } from "@/ipc/settings";
 import { cstyle } from "@/utils/cstyle";
@@ -49,12 +50,6 @@ const C = {
 		interaction: "rounded-lg border",
 		color: "border-base-300 bg-base-200/50",
 	}),
-	icon: cstyle({
-		display: "flex items-center justify-center",
-		sizing: "w-8 h-8 shrink-0",
-		text: "text-white text-[10px] font-bold",
-		interaction: "rounded-md",
-	}),
 	modelContent: cstyle({ display: "flex-1", sizing: "min-w-0" }),
 	modelName: cstyle({ text: "text-sm font-medium truncate" }),
 	modelProvider: cstyle({ text: "text-xs", color: "text-base-content/40" }),
@@ -87,28 +82,6 @@ const C = {
 	cancelBtn: cstyle({ display: "btn btn-ghost btn-sm" }),
 	saveBtn: cstyle({ display: "btn btn-primary btn-sm" }),
 };
-
-// ── Provider icon colors ──
-
-const PROVIDER_COLORS: Record<string, string> = {
-	openai: "bg-emerald-500",
-	anthropic: "bg-amber-500",
-	deepseek: "bg-blue-500",
-	groq: "bg-orange-500",
-	together: "bg-indigo-500",
-	fireworks: "bg-red-500",
-	openrouter: "bg-violet-500",
-	mistral: "bg-cyan-500",
-	xai: "bg-slate-400",
-	google: "bg-sky-500",
-	perplexity: "bg-pink-500",
-	cohere: "bg-teal-500",
-	custom: "bg-gray-500",
-};
-
-function providerInitials(name: string): string {
-	return name.slice(0, 2).toUpperCase();
-}
 
 // ── Component ──
 
@@ -155,13 +128,9 @@ const ModelManager: Component<ModelManagerProps> = (props) => {
 					<For each={props.models}>
 						{(model) => (
 							<div class={C.modelItem()}>
-								<div
-									class={`${C.icon()} ${
-										PROVIDER_COLORS[providers().find((p) => p.name === model.provider)?.id ?? "custom"] ?? "bg-gray-500"
-									}`}
-								>
-									{providerInitials(model.provider)}
-								</div>
+								<ProviderIcon
+									provider={providers().find((p) => p.name === model.provider)?.id ?? model.provider}
+								/>
 								<div class={C.modelContent()}>
 									<div class={C.modelName()}>{model.name}</div>
 									<div class={C.modelProvider()}>{model.provider}</div>
