@@ -83,9 +83,13 @@ export function isDarkTheme(id: string): boolean {
 }
 
 function getInitialTheme(): string {
-	const saved = localStorage.getItem(STORAGE_KEY) ?? "light";
+	const saved = localStorage.getItem(STORAGE_KEY);
 	// Ignore themes that no longer exist in THEMES.
-	return (THEMES as readonly string[]).includes(saved) ? saved : "light";
+	if (saved && (THEMES as readonly string[]).includes(saved)) return saved;
+	// No saved preference: follow the OS color scheme so the app isn't stuck
+	// on a light theme when the system is dark (and vice versa).
+	const prefersDark = typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+	return prefersDark ? "dark" : "light";
 }
 
 export const ThemeProvider: Component<{ children: JSX.Element }> = (props) => {

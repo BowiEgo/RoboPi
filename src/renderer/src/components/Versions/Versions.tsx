@@ -12,6 +12,9 @@ const C = {
 };
 
 const Versions: Component = () => {
+	// Browser build has no Electron runtime info — omit the list.
+	if (!window.electron) return null;
+
 	const [versions] = createSignal(window.electron.process.versions);
 
 	return (
