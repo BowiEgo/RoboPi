@@ -51,6 +51,9 @@ class AgentHostManager {
 			stdio: ["pipe", "pipe", "pipe", "ipc"],
 			env: {
 				...process.env,
+				// process.execPath is the Electron binary — run it as pure Node
+				// so the agent host doesn't spawn a second GUI/Dock icon.
+				ELECTRON_RUN_AS_NODE: "1",
 				PI_AGENT_MODEL: process.env.PI_AGENT_MODEL ?? "pi-agent/v1",
 			},
 		});
