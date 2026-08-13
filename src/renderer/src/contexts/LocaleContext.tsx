@@ -29,7 +29,7 @@ interface LocaleContextValue {
 
 const Ctx = createContext<LocaleContextValue>();
 
-/** 简单插值替换："{name}" → params.name */
+/** Simple interpolation: "{name}" → params.name */
 function interpolate(
 	template: string,
 	params?: Record<string, string>,

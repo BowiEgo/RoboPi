@@ -1,0 +1,57 @@
+/* ═══════════════════════════════════════════════════════════════
+   Markdown.css — Styles for rendered markdown content
+   
+   These styles target the HTML output of markdown-it + Shiki,
+   complementing the inline classes set by the custom renderer rules.
+   All colors use daisyUI semantic tokens — no hardcoded dark: overrides.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Shiki code block styling ── */
+.md-content .md-code-block .shiki {
+	tab-size: 2;
+}
+
+.md-content .md-code-block {
+	/* Use base-200 as the fallback background for shiki */
+	--shiki-bg: var(--color-base-200);
+}
+
+/* ── Shiki dark theme tweaks ── */
+.md-content .shiki,
+.md-content .shiki span {
+	/* Let shiki's inline color styles take precedence, but allow theme to set bg */
+	background-color: var(--shiki-bg, var(--color-base-200));
+}
+
+/* ── Inline links ── */
+.md-content a {
+	transition: opacity 0.15s ease;
+}
+
+/* ── Nested list spacing ── */
+.md-content ul ul,
+.md-content ol ol,
+.md-content ul ol,
+.md-content ol ul {
+	margin-top: 0;
+	margin-bottom: 0;
+}
+
+/* ── Code block scrollbar ── */
+.md-content .md-code-block pre::-webkit-scrollbar {
+	height: 4px;
+}
+
+.md-content .md-code-block pre::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.md-content .md-code-block pre::-webkit-scrollbar-thumb {
+	background: var(--color-base-300);
+	border-radius: 2px;
+}
+
+/* ── Table zebra stripes inherit from daisyUI ── */
+.md-content .table-zebra tbody tr:nth-child(even) {
+	background-color: var(--color-base-200);
+}

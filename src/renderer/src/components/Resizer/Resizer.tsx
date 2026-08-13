@@ -1,47 +1,58 @@
-import {
-	type Component,
-	createEffect,
-	createSignal,
-	onCleanup,
-} from "solid-js";
+import { GripHorizontal, GripVertical } from "lucide-solid";
+import { type Component, createEffect, createSignal, onCleanup } from "solid-js";
 
-import styles from "./Resizer.module.css";
+import { cstyle } from "@/utils/cstyle";
 
 interface ResizerProps {
-	/** 当前高度/宽度值 */
 	value: number;
-	/** 最小值 */
 	min: number;
-	/** 最大值 */
 	max: number;
-	/** 拖拽方向 */
-	orientation?: "horizontal" | "vertical";
-	/** 贴边位置 — horizontal 对应 top/bottom, vertical 对应 left/right */
-	position?: "top" | "bottom" | "left" | "right";
-	/** 是否显示拖拽手柄（bump），默认 true */
-	handle?: boolean;
-	/** 值变化回调 */
+	position: "top" | "bottom" | "left" | "right";
+	grip?: boolean;
 	onChange: (value: number) => void;
 }
+
+// ── Styles ──
+
+const C = {
+	handle: cstyle({
+		display: "resizer-handle absolute z-10 flex items-center justify-center",
+		variants: {
+			vertical: {
+				true: "resizer-handle-v cursor-col-resize w-4 flex-col",
+				false: "resizer-handle-h cursor-row-resize h-4",
+			},
+			resizing: { true: "resizer-active" },
+		},
+	}),
+	grip: cstyle({
+		display: "resizer-grip",
+		color: "bg-base-300",
+		variants: {
+			visible: { true: "opacity-100", false: "opacity-0" },
+		},
+	}),
+};
+
+const positionClass = (pos: ResizerProps["position"]) => {
+	switch (pos) {
+		case "top":
+			return "-top-2 left-0 right-0";
+		case "bottom":
+			return "-bottom-2 left-0 right-0";
+		case "left":
+			return "-left-2 top-0 bottom-0";
+		case "right":
+			return "-right-2 top-0 bottom-0";
+	}
+};
+
+// ── Component ──
 
 const Resizer: Component<ResizerProps> = (props) => {
 	const [isResizing, setIsResizing] = createSignal(false);
 
-	const orientation = () => props.orientation ?? "horizontal";
-	const orientationClass = () =>
-		orientation() === "vertical" ? styles.horizontal : styles.vertical;
-
-	const position = () =>
-		props.position ?? (orientation() === "vertical" ? "top" : "left");
-	const positionClass = () => {
-		const map: Record<string, string> = {
-			top: styles.positionTop,
-			bottom: styles.positionBottom,
-			left: styles.positionLeft,
-			right: styles.positionRight,
-		};
-		return map[position()] ?? "";
-	};
+	const isVertical = () => props.position === "left" || props.position === "right";
 
 	let startPos = 0;
 	let startVal = 0;
@@ -50,24 +61,20 @@ const Resizer: Component<ResizerProps> = (props) => {
 
 	const handleMouseDown = (e: MouseEvent) => {
 		e.preventDefault();
-		startPos = orientation() === "horizontal" ? e.clientX : e.clientY;
+		startPos = isVertical() ? e.clientX : e.clientY;
 		startVal = props.value;
 		setIsResizing(true);
 	};
 
 	const handleMouseMove = (e: MouseEvent) => {
 		if (!isResizing()) return;
-		const currentPos = orientation() === "horizontal" ? e.clientX : e.clientY;
+		const currentPos = isVertical() ? e.clientX : e.clientY;
 		const delta = currentPos - startPos;
-		const newVal = clamp(
-			orientation() === "horizontal" ? startVal + delta : startVal - delta,
-		);
-		props.onChange(newVal);
+		const invert = props.position === "left" || props.position === "top";
+		props.onChange(clamp(startVal + (invert ? -delta : delta)));
 	};
 
-	const handleMouseUp = () => {
-		setIsResizing(false);
-	};
+	const handleMouseUp = () => setIsResizing(false);
 
 	createEffect(() => {
 		if (isResizing()) {
@@ -80,18 +87,27 @@ const Resizer: Component<ResizerProps> = (props) => {
 		});
 	});
 
+	const v = isVertical();
+	const showGrip = () => props.grip !== false;
+
 	return (
 		<div
-			class={`${styles.handle} ${orientationClass()} ${positionClass()} ${isResizing() ? styles.active : ""}`}
-			role="slider"
+			class={`${C.handle({ vertical: v, resizing: isResizing() })} ${positionClass(props.position)}`}
+			role="separator"
 			tabIndex={0}
-			aria-orientation={orientation()}
+			aria-orientation={v ? "vertical" : "horizontal"}
 			aria-valuenow={props.value}
 			aria-valuemin={props.min}
 			aria-valuemax={props.max}
 			onMouseDown={handleMouseDown}
 		>
-			{props.handle !== false && <div class={styles.bump} />}
+			<div class={C.grip({ visible: showGrip() })}>
+				{v ? (
+					<GripVertical class="w-3 h-3 text-base-content/40" />
+				) : (
+					<GripHorizontal class="w-3 h-3 text-base-content/40" />
+				)}
+			</div>
 		</div>
 	);
 };

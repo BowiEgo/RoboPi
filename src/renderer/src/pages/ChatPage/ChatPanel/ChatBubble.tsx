@@ -1,10 +1,13 @@
-import { type Component, createMemo, createSignal, For, Show } from "solid-js";
+import { Bot, Copy, RefreshCw, User } from "lucide-solid";
+import { type Component, createSignal, For, Show } from "solid-js";
 
 import { useLocale } from "@/contexts/LocaleContext";
 
-import styles from "./ChatBubble.module.css";
+import Markdown from "@/components/Markdown/Markdown";
 
-// ── Types ──────────────────────────────────────────────
+import { cstyle } from "@/utils/cstyle";
+
+// ── Types ──
 
 export interface FileAttachment {
 	name: string;
@@ -21,11 +24,12 @@ export interface ChatBubbleProps {
 	thinking?: string;
 	timestamp?: string;
 	avatar?: string;
-	/** 是否正在流式输出中，显示打字光标 */
 	streaming?: boolean;
+	/** When set, shows a retry button on user bubbles */
+	onRetry?: () => void;
 }
 
-// ── Helpers ────────────────────────────────────────────
+// ── Helpers ──
 
 function formatFileSize(bytes: number): string {
 	if (bytes < 1024) return `${bytes} B`;
@@ -39,175 +43,214 @@ function fileIcon(type?: string): string {
 	if (type.startsWith("video/")) return "🎬";
 	if (type.startsWith("audio/")) return "🎵";
 	if (type.includes("pdf")) return "📑";
-	if (type.includes("zip") || type.includes("tar") || type.includes("gzip"))
-		return "📦";
+	if (type.includes("zip") || type.includes("tar") || type.includes("gzip")) return "📦";
 	if (type.includes("javascript") || type.includes("typescript")) return "📜";
 	if (type.includes("json")) return "📋";
 	if (type.includes("html") || type.includes("css")) return "🌐";
 	return "📄";
 }
 
-// ── Simple Markdown Renderer ───────────────────────────
+// ── Styles ──
 
-interface MdToken {
-	type:
-		| "h1"
-		| "h2"
-		| "h3"
-		| "h4"
-		| "p"
-		| "code_block"
-		| "li"
-		| "hr"
-		| "blockquote";
-	content?: string;
-	lang?: string;
-	items?: string[];
+const C = {
+	chat: cstyle({
+		display: "chat",
+		variants: { user: { true: "chat-end", false: "chat-start" } },
+	}),
+	bubbleRow: cstyle({
+		display: "flex items-center",
+		spacing: "gap-2",
+		variants: {
+			user: { true: "col-start-1 max-w-[45%]", false: "col-start-2 max-w-[75%]" },
+		},
+	}),
+	retryBtn: cstyle({
+		display: "btn btn-circle btn-sm",
+		sizing: "shrink-0",
+		interaction: "hover:brightness-90",
+		color: "text-warning-content bg-warning",
+	}),
+	bubbleWrapper: cstyle({ sizing: "w-full" }),
+	bubble: cstyle({
+		display: "chat-bubble max-w-full",
+		interaction: "[&::before]:hidden rounded-xl select-text",
+		variants: { user: { true: "chat-bubble-primary text-primary-content" } },
+	}),
+	contentArea: cstyle({ text: "text-base leading-relaxed" }),
+	userText: cstyle({
+		display: "whitespace-pre-wrap",
+		spacing: "m-0",
+		interaction: "select-text",
+	}),
+	streamingCursor: cstyle({
+		display: "inline-block",
+		sizing: "w-2 h-4",
+		spacing: "ml-0.5",
+		interaction: "rounded-[1px] animate-pulse align-text-bottom",
+	}),
+	avatarWrapper: cstyle({ display: "chat-image avatar" }),
+	avatarCircle: cstyle({ sizing: "w-10", interaction: "rounded-full" }),
+	avatarFallback: cstyle({
+		display: "flex items-center justify-center",
+		sizing: "w-10 h-10",
+		interaction: "rounded-full",
+		color: "bg-base-300 text-base-content/60",
+	}),
+	timeHeader: cstyle({ display: "chat-header" }),
+	timeText: cstyle({ text: "text-xs", interaction: "opacity-50" }),
+	fileList: cstyle({
+		display: "flex flex-col",
+		spacing: "gap-2 mb-2 pb-2",
+		interaction: "border-b",
+		color: "border-white/15",
+	}),
+	fileItem: cstyle({
+		display: "flex items-center",
+		spacing: "gap-2 px-2 py-1",
+		interaction: "rounded transition-colors",
+		color: "bg-white/10 hover:bg-white/20",
+	}),
+	fileIcon: cstyle({ text: "text-lg leading-none", sizing: "shrink-0" }),
+	fileContent: cstyle({ display: "flex flex-col", sizing: "min-w-0 flex-1" }),
+	fileName: cstyle({ text: "text-sm font-medium truncate" }),
+	fileSize: cstyle({ text: "text-[10px]", interaction: "opacity-70" }),
+	filePreview: cstyle({
+		sizing: "shrink-0 w-10 h-10",
+		interaction: "rounded-xs overflow-hidden border",
+		color: "border-white/20",
+	}),
+	filePreviewImg: cstyle({ sizing: "w-full h-full", interaction: "object-cover" }),
+	thinkingBlock: cstyle({
+		spacing: "mb-2",
+		interaction: "rounded-box overflow-hidden border",
+		color: "border-base-300",
+	}),
+	thinkingToggle: cstyle({
+		display: "btn btn-ghost btn-xs w-full justify-start",
+		spacing: "gap-1",
+		color: "text-base-content/60",
+	}),
+	thinkingArrow: cstyle({ text: "text-[10px] leading-none font-mono", sizing: "shrink-0" }),
+	thinkingLabel: cstyle({ text: "text-xs" }),
+	thinkingContent: cstyle({
+		text: "font-mono text-[10px] whitespace-pre-wrap leading-relaxed",
+		spacing: "p-2",
+		sizing: "max-h-50 overflow-y-auto",
+		interaction: "border-t",
+		color: "bg-base-200 text-base-content/50 border-base-300",
+	}),
+	footer: cstyle({
+		display: "chat-footer flex items-center",
+		spacing: "gap-2",
+		interaction: "opacity-50",
+	}),
+	copyBtn: cstyle({ display: "btn btn-ghost btn-xs", color: "text-base-content" }),
+};
+
+// ── Sub-components ──
+
+interface AvatarSlotProps {
+	avatar?: string;
+	isUser: boolean;
 }
 
-function parseMarkdown(raw: string): MdToken[] {
-	const lines = raw.split("\n");
-	const tokens: MdToken[] = [];
-	let i = 0;
+const AvatarSlot: Component<AvatarSlotProps> = (props) => (
+	<div class={C.avatarWrapper()}>
+		<div class={C.avatarCircle()}>
+			<Show
+				when={props.avatar}
+				fallback={
+					<div class={C.avatarFallback()}>{props.isUser ? <User class="w-5 h-5" /> : <Bot class="w-5 h-5" />}</div>
+				}
+			>
+				<img src={props.avatar} alt="" />
+			</Show>
+		</div>
+	</div>
+);
 
-	while (i < lines.length) {
-		const line = lines[i];
-
-		// Code block
-		if (line.trim().startsWith("```")) {
-			const lang = line.trim().slice(3).trim();
-			const codeLines: string[] = [];
-			i++;
-			while (i < lines.length && !lines[i].trim().startsWith("```")) {
-				codeLines.push(lines[i]);
-				i++;
-			}
-			tokens.push({
-				type: "code_block",
-				content: codeLines.join("\n"),
-				lang: lang || undefined,
-			});
-			i++; // skip closing ```
-			continue;
-		}
-
-		// HR
-		if (/^\s*[-*_]{3,}\s*$/.test(line)) {
-			tokens.push({ type: "hr" });
-			i++;
-			continue;
-		}
-
-		// Blockquote
-		if (line.trim().startsWith("> ")) {
-			const quoteLines: string[] = [];
-			while (i < lines.length && lines[i].trim().startsWith("> ")) {
-				quoteLines.push(lines[i].trim().slice(2));
-				i++;
-			}
-			tokens.push({ type: "blockquote", content: quoteLines.join("\n") });
-			continue;
-		}
-
-		// Heading
-		const hMatch = line.match(/^(#{1,4})\s+(.+)/);
-		if (hMatch) {
-			const level = hMatch[1].length;
-			tokens.push({
-				type: `h${level}` as MdToken["type"],
-				content: hMatch[2],
-			});
-			i++;
-			continue;
-		}
-
-		// Unordered list
-		if (/^\s*[-*+]\s+/.test(line)) {
-			const items: string[] = [];
-			while (i < lines.length && /^\s*[-*+]\s+/.test(lines[i])) {
-				items.push(lines[i].replace(/^\s*[-*+]\s+/, ""));
-				i++;
-			}
-			tokens.push({ type: "li", items });
-			continue;
-		}
-
-		// Ordered list
-		if (/^\s*\d+\.\s+/.test(line)) {
-			const items: string[] = [];
-			while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) {
-				items.push(lines[i].replace(/^\s*\d+\.\s+/, ""));
-				i++;
-			}
-			tokens.push({ type: "li", items });
-			continue;
-		}
-
-		// Paragraph (collect consecutive non-empty, non-special lines)
-		if (line.trim() !== "") {
-			const pLines: string[] = [];
-			while (
-				i < lines.length &&
-				lines[i].trim() !== "" &&
-				!lines[i].trim().startsWith("```") &&
-				!lines[i].trim().startsWith("> ") &&
-				!/^\s*[-*_]{3,}\s*$/.test(lines[i]) &&
-				!/^(#{1,4})\s+/.test(lines[i]) &&
-				!/^\s*[-*+]\s+/.test(lines[i]) &&
-				!/^\s*\d+\.\s+/.test(lines[i])
-			) {
-				pLines.push(lines[i]);
-				i++;
-			}
-			tokens.push({ type: "p", content: pLines.join("\n") });
-			continue;
-		}
-
-		i++;
-	}
-
-	return tokens;
+interface TimeHeaderProps {
+	timestamp?: string;
 }
 
-/** Strip markdown syntax to get plain text for screen readers */
-function stripMarkdown(text: string): string {
-	return text
-		.replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1")
-		.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-		.replace(/[*_`#>]/g, "")
-		.trim();
+const TimeHeader: Component<TimeHeaderProps> = (props) => (
+	<Show when={props.timestamp}>
+		<div class={C.timeHeader()}>
+			<time class={C.timeText()}>{props.timestamp}</time>
+		</div>
+	</Show>
+);
+
+interface FileSectionProps {
+	files?: FileAttachment[];
 }
 
-/** Render inline markdown: bold, italic, inline code, links, images */
-function renderInline(text: string): string {
-	const html = text
-		// Escape HTML
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		// Images
-		.replace(
-			/!\[([^\]]*)\]\(([^)]+)\)/g,
-			'<img src="$2" alt="$1" class="md-img" />',
-		)
-		// Links
-		.replace(
-			/\[([^\]]+)\]\(([^)]+)\)/g,
-			'<a href="$2" target="_blank" rel="noopener">$1</a>',
-		)
-		// Bold + italic
-		.replace(/\*\*\*(.+?)\*\*\*/g, "<strong><em>$1</em></strong>")
-		// Bold
-		.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-		// Italic
-		.replace(/\*(.+?)\*/g, "<em>$1</em>")
-		// Inline code
-		.replace(/`([^`]+)`/g, "<code>$1</code>");
+const FileSection: Component<FileSectionProps> = (props) => (
+	<Show when={props.files && props.files.length > 0}>
+		<div class={C.fileList()}>
+			<For each={props.files}>
+				{(file) => (
+					<div class={C.fileItem()}>
+						<span class={C.fileIcon()}>{fileIcon(file.type)}</span>
+						<div class={C.fileContent()}>
+							<span class={C.fileName()}>{file.name}</span>
+							<Show when={file.size !== undefined}>
+								<span class={C.fileSize()}>{formatFileSize(file.size ?? 0)}</span>
+							</Show>
+						</div>
+						<Show when={file.preview}>
+							<div class={C.filePreview()}>
+								<img src={file.preview} alt={file.name} class={C.filePreviewImg()} />
+							</div>
+						</Show>
+					</div>
+				)}
+			</For>
+		</div>
+	</Show>
+);
 
-	return html;
+interface ThinkingBlockProps {
+	thinking?: string;
+	open: boolean;
+	onToggle: () => void;
+	label: string;
 }
 
-// ── Component ──────────────────────────────────────────
+const ThinkingBlock: Component<ThinkingBlockProps> = (props) => (
+	<Show when={props.thinking && props.thinking.trim().length > 0}>
+		<div class={C.thinkingBlock()}>
+			<button type="button" class={C.thinkingToggle()} onClick={props.onToggle}>
+				<span class={C.thinkingArrow()}>{props.open ? "▾" : "▸"}</span>
+				<span class={C.thinkingLabel()}>{props.label}</span>
+			</button>
+			<Show when={props.open}>
+				<div class={C.thinkingContent()}>{props.thinking}</div>
+			</Show>
+		</div>
+	</Show>
+);
+
+interface BubbleFooterProps {
+	timestamp?: string;
+	isUser: boolean;
+	onCopy?: () => void;
+}
+
+const BubbleFooter: Component<BubbleFooterProps> = (props) => (
+	<Show when={props.timestamp}>
+		<div class={C.footer()}>
+			{props.isUser ? "Delivered" : ""}
+			<Show when={props.isUser && props.onCopy}>
+				<button type="button" class={C.copyBtn()} onClick={props.onCopy} aria-label="Copy message">
+					<Copy class="w-3 h-3" />
+				</button>
+			</Show>
+		</div>
+	</Show>
+);
+
+// ── Main component ──
 
 const ChatBubble: Component<ChatBubbleProps> = (props) => {
 	const { t } = useLocale();
@@ -215,199 +258,60 @@ const ChatBubble: Component<ChatBubbleProps> = (props) => {
 
 	const isUser = () => props.role === "user";
 
-	const parsedContent = createMemo(() => {
-		if (isUser()) return null;
-		return parseMarkdown(props.content);
-	});
-
-	const hasFiles = () => props.files && props.files.length > 0;
-	const hasThinking = () => props.thinking && props.thinking.trim().length > 0;
-
 	return (
-		<div
-			class={styles.bubbleRow}
-			classList={{
-				[styles.userRow]: isUser(),
-				[styles.agentRow]: !isUser(),
-			}}
-		>
-			{/* Avatar */}
-			<div class={styles.avatar}>
-				<Show
-					when={props.avatar}
-					fallback={
-						<span class={styles.avatarPlaceholder}>
-							{isUser() ? "👤" : "🤖"}
-						</span>
-					}
-				>
-					<img src={props.avatar!} alt="" class={styles.avatarImg} />
-				</Show>
-			</div>
+		<div class={C.chat({ user: isUser() })}>
+			<AvatarSlot avatar={props.avatar} isUser={isUser()} />
+			<TimeHeader timestamp={props.timestamp} />
 
-			{/* Bubble content */}
-			<div
-				class={styles.bubble}
-				classList={{
-					[styles.userBubble]: isUser(),
-					[styles.agentBubble]: !isUser(),
-					[styles.streamingBubble]: props.streaming,
-				}}
-			>
-				{/* ── File attachments (user only) ── */}
-				<Show when={isUser() && hasFiles()}>
-					<div class={styles.fileList}>
-						<For each={props.files}>
-							{(file) => (
-								<div class={styles.fileItem}>
-									<span class={styles.fileIcon}>{fileIcon(file.type)}</span>
-									<div class={styles.fileInfo}>
-										<span class={styles.fileName}>{file.name}</span>
-										<Show when={file.size !== undefined}>
-											<span class={styles.fileSize}>
-												{formatFileSize(file.size!)}
-											</span>
-										</Show>
-									</div>
-									<Show when={file.preview}>
-										<div class={styles.filePreview}>
-											<img
-												src={file.preview}
-												alt={file.name}
-												class={styles.filePreviewImg}
-											/>
-										</div>
-									</Show>
-								</div>
-							)}
-						</For>
-					</div>
+			{/* Bubble + retry */}
+			<div class={C.bubbleRow({ user: isUser() })}>
+				<Show when={props.onRetry && isUser()}>
+					<button type="button" class={C.retryBtn()} onClick={props.onRetry} aria-label="Retry">
+						<RefreshCw class="w-3.5 h-3.5" />
+					</button>
 				</Show>
-
-				{/* ── Thinking process (agent only) ── */}
-				<Show when={!isUser() && hasThinking()}>
-					<div class={styles.thinkingSection}>
-						<button
-							type="button"
-							class={styles.thinkingToggle}
-							onClick={() => setThinkingOpen((v) => !v)}
-						>
-							<span class={styles.thinkingChevron}>
-								{thinkingOpen() ? "▾" : "▸"}
-							</span>
-							<span class={styles.thinkingLabel}>{t("chat.thinking")}</span>
-						</button>
-						<Show when={thinkingOpen()}>
-							<div class={styles.thinkingContent}>{props.thinking}</div>
+				<div class={C.bubbleWrapper()}>
+					<div class={C.bubble({ user: isUser() })}>
+						<Show when={isUser()}>
+							<FileSection files={props.files} />
 						</Show>
-					</div>
-				</Show>
 
-				{/* ── Main content ── */}
-				<div class={styles.content}>
-					<Show
-						when={!isUser()}
-						fallback={
-							/* User content: plain text with line breaks */
-							<p class={styles.userText}>{props.content}</p>
-						}
-					>
-						{/* Agent content: rendered Markdown */}
-						<div class={styles.markdown}>
-							<For each={parsedContent()}>
-								{(token) => {
-									switch (token.type) {
-										case "h1":
-											return (
-												<h1
-													class={styles.mdH1}
-													aria-label={stripMarkdown(token.content!)}
-													innerHTML={renderInline(token.content!)}
-												/>
-											);
-										case "h2":
-											return (
-												<h2
-													class={styles.mdH2}
-													aria-label={stripMarkdown(token.content!)}
-													innerHTML={renderInline(token.content!)}
-												/>
-											);
-										case "h3":
-											return (
-												<h3
-													class={styles.mdH3}
-													aria-label={stripMarkdown(token.content!)}
-													innerHTML={renderInline(token.content!)}
-												/>
-											);
-										case "h4":
-											return (
-												<h4
-													class={styles.mdH4}
-													aria-label={stripMarkdown(token.content!)}
-													innerHTML={renderInline(token.content!)}
-												/>
-											);
-										case "p":
-											return (
-												<p
-													class={styles.mdP}
-													innerHTML={renderInline(token.content!)}
-												/>
-											);
-										case "code_block":
-											return (
-												<div class={styles.codeBlock}>
-													<Show when={token.lang}>
-														<div class={styles.codeLang}>{token.lang}</div>
-													</Show>
-													<pre class={styles.codePre}>
-														<code>{token.content}</code>
-													</pre>
-												</div>
-											);
-										case "li":
-											return (
-												<ul class={styles.mdUl}>
-													<For each={token.items}>
-														{(item) => (
-															<li
-																class={styles.mdLi}
-																innerHTML={renderInline(item)}
-															/>
-														)}
-													</For>
-												</ul>
-											);
-										case "hr":
-											return <hr class={styles.mdHr} />;
-										case "blockquote":
-											return (
-												<blockquote
-													class={styles.mdBlockquote}
-													innerHTML={renderInline(token.content!)}
-												/>
-											);
-										default:
-											return null;
-									}
-								}}
-							</For>
+						<Show when={!isUser()}>
+							<ThinkingBlock
+								thinking={props.thinking}
+								open={thinkingOpen()}
+								onToggle={() => setThinkingOpen((v) => !v)}
+								label={t("chat.thinking")}
+							/>
+						</Show>
+
+						<div class={C.contentArea()}>
+							<Show
+								when={!isUser()}
+								fallback={
+									<p class={C.userText()}>
+										{props.content}
+										<Show when={props.streaming}>
+											<span class={C.streamingCursor()} />
+										</Show>
+									</p>
+								}
+							>
+								<Markdown content={props.content} streaming={props.streaming} />
+								<Show when={props.streaming}>
+									<span class={C.streamingCursor()} />
+								</Show>
+							</Show>
 						</div>
-					</Show>
+					</div>
 				</div>
-
-				{/* ── Timestamp ── */}
-				<Show when={props.timestamp}>
-					<div class={styles.timestamp}>{props.timestamp}</div>
-				</Show>
-
-				{/* ── Streaming cursor ── */}
-				<Show when={props.streaming}>
-					<span class={styles.streamingCursor} />
-				</Show>
 			</div>
+
+			<BubbleFooter
+				timestamp={props.timestamp}
+				isUser={isUser()}
+				onCopy={isUser() ? () => navigator.clipboard.writeText(props.content) : undefined}
+			/>
 		</div>
 	);
 };

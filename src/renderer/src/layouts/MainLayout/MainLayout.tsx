@@ -1,14 +1,17 @@
-import { type Component, For, type JSX } from "solid-js";
+import { ChevronLeft, ChevronRight } from "lucide-solid";
+import { type Component, createSignal, type JSX } from "solid-js";
 
 import { useLocale } from "@/contexts/LocaleContext";
 
 import TitleBar from "@/components/TitleBar/TitleBar";
 
-import styles from "./MainLayout.module.css";
+import NavMenuList from "./NavMenuList";
+import { cstyle } from "@/utils/cstyle";
 
 export interface NavItem {
 	id: string;
 	icon: JSX.Element;
+	altIcon?: JSX.Element;
 	label: string;
 	isSwitch?: boolean;
 }
@@ -17,62 +20,61 @@ interface MainLayoutProps {
 	topNavItems: NavItem[];
 	bottomNavItems: NavItem[];
 	activeNav: string;
+	isDark?: boolean;
 	onNavSelect: (item: NavItem) => void;
 	navTop?: JSX.Element;
 	children: JSX.Element;
 }
 
+// ── Layout ──
+
+const root = cstyle({ base: "flex flex-col w-screen h-screen overflow-hidden pt-8" });
+const body = cstyle({ base: "flex flex-1 overflow-hidden" });
+const nav = cstyle({
+	base: "flex flex-col items-center select-none shrink-0 w-20 transition-[width] pt-6 py-3 px-1 gap-1",
+});
+const navTop = "flex items-center justify-center w-18 h-8 shrink-0 mb-4.5";
+const navBottom = "mt-auto flex flex-col items-center w-full";
+const toggle = "flex items-center justify-center w-full py-2 mt-2 rounded-box transition-colors";
+const main = cstyle({ base: "flex flex-col flex-1 overflow-hidden" });
+
 const MainLayout: Component<MainLayoutProps> = (props) => {
 	const { t } = useLocale();
+	const [expanded, setExpanded] = createSignal(false);
 
 	return (
-		<div class={styles.layout}>
+		<div class={`${root()} bg-app-raised`}>
 			<TitleBar />
-			<div class={styles.body}>
-				<nav class={styles.navBar} aria-label={t("nav.pageNav")}>
-					{props.navTop && <div class={styles.navTop}>{props.navTop}</div>}
-
-					<div class={styles.navSection} role="tablist">
-						<For each={props.topNavItems}>
-							{(item) => (
-								<button
-									type="button"
-									class={`${styles.navBtn} glass-btn ${props.activeNav === item.id ? `${styles.navBtnActive} glass-btn-active` : ""}`}
-									role="tab"
-									aria-selected={props.activeNav === item.id}
-									aria-label={item.label}
-									data-tooltip={item.label}
-									onClick={() => props.onNavSelect(item)}
-								>
-									<span class={styles.navIcon}>{item.icon}</span>
-								</button>
-							)}
-						</For>
-					</div>
-
+			<div class={body()}>
+				<nav class={`${nav()} ${expanded() ? "w-52" : ""} bg-app-raised`} aria-label={t("nav.pageNav")}>
+					{props.navTop && <div class={navTop}>{props.navTop}</div>}
+					<NavMenuList
+						items={props.topNavItems}
+						activeNav={props.activeNav}
+						expanded={expanded()}
+						isDark={props.isDark}
+						onSelect={props.onNavSelect}
+					/>
 					{props.bottomNavItems.length > 0 && (
-						<div class={styles.navSectionBottom}>
-							<div class={styles.navDivider} />
-							<For each={props.bottomNavItems}>
-								{(item) => (
-									<button
-										type="button"
-										class={`${styles.navBtn} glass-btn ${props.activeNav === item.id ? `${styles.navBtnActive} glass-btn-active` : ""}`}
-										role="tab"
-										aria-selected={props.activeNav === item.id}
-										aria-label={item.label}
-										data-tooltip={item.label}
-										onClick={() => props.onNavSelect(item)}
-									>
-										<span class={styles.navIcon}>{item.icon}</span>
-									</button>
-								)}
-							</For>
+						<div class={navBottom}>
+							<NavMenuList
+								items={props.bottomNavItems}
+								activeNav={props.activeNav}
+								expanded={expanded()}
+								onSelect={props.onNavSelect}
+							/>
 						</div>
 					)}
+					<button
+						type="button"
+						class={`${toggle} hover:bg-primary/20`}
+						aria-label={expanded() ? "Collapse sidebar" : "Expand sidebar"}
+						onClick={() => setExpanded((v) => !v)}
+					>
+						{expanded() ? <ChevronLeft class="w-4 h-4" /> : <ChevronRight class="w-4 h-4" />}
+					</button>
 				</nav>
-
-				<main class={styles.pageArea} aria-label={t("nav.pageContent")}>
+				<main class={`${main()} bg-app text-base-content`} aria-label={t("nav.pageContent")}>
 					{props.children}
 				</main>
 			</div>
