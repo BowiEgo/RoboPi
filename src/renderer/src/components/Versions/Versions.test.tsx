@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import Versions from "./Versions";
 
-// 模拟 electron 的 process.versions
+// Mock electron's process.versions
 beforeAll(() => {
 	(window as any).electron = {
 		process: {

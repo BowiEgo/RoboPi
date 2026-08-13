@@ -1,16 +1,16 @@
 /* ═══════════════════════════════════════════════════════════════
-   widgets.css — 可复用的 UI 部件样式
+   widgets.css — Reusable UI widget styles
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── Glass Button ──
-   毛玻璃按钮。添加 .glass-btn 开启玻璃质感。
-   active 状态添加 .glass-btn-active 使背景高亮。
-   注意：使用此部件的元素不能再用 ::before 做其他用途。
+   Frosted-glass button. Add .glass-btn to enable the glass look.
+   Add .glass-btn-active to highlight the background when active.
+   Note: elements using this widget must not repurpose ::before.
 
-   状态机：
-     .glass-btn                 默认玻璃态
-     .glass-btn:hover           高光提亮
-     .glass-btn-active::before  背景高亮填充（active 态）
+   State machine:
+     .glass-btn                 default glass state
+     .glass-btn:hover           brighten highlight
+     .glass-btn-active::before  filled highlight (active state)
    ────────────────────────────────────────────────────────────── */
 
 .glass-btn {
@@ -25,7 +25,7 @@
 		color 0.15s ease;
 }
 
-/* 玻璃视觉层 ── 半透明底色 + inset 高光反射 */
+/* Glass visual layer — translucent base + inset highlight reflection */
 .glass-btn::before {
 	content: '';
 	position: absolute;

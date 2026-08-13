@@ -1,17 +1,18 @@
 /**
- * useAgent — Agent 会话管理 hook（模块单例）
+ * useAgent — Agent session management hook (module singleton)
  *
- * 管理：
- *   - 会话列表、活跃会话、消息历史
- *   - 与 Agent Host 的 IPC 通信（create / switch / delete / rename / send）
- *   - 延迟创建：点击"新建"仅清空 UI，首条消息时才真正创建会话
+ * Manages:
+ *   - Session list, active session, message history
+ *   - IPC communication with the Agent Host (create / switch / delete / rename / send)
+ *   - Deferred creation: "New" only clears the UI; the session is created on the first message
  *
- * 所有异步方法返回 Promise，可通过 await 等待操作完成。
+ * All async methods return Promises and can be awaited.
  *
- * 任意组件 import { useAgent } 获取同一个实例，无需 props 传递。
+ * Any component can import { useAgent } to get the same instance — no prop drilling.
  *
- * ⚠️ IPC 监听器在模块顶层注册一次，不绑定任何组件生命周期。
- *    页面切换不会取消订阅，确保回来时 store 仍然能接收 agent 消息。
+ * ⚠️ The IPC listener is registered once at module top level, not tied to any
+ *    component lifecycle. Page switches never unsubscribe it, so the store keeps
+ *    receiving agent messages after navigating back.
  */
 
 import { AgentMessageType, type AgentReadyPayload, isValidMessageType } from "@shared/agent-types";
@@ -34,7 +35,7 @@ export interface SessionInfoPayload {
 	lastActiveAt: number;
 }
 
-// ── Promise 追踪 ──
+// ── Promise tracking ──
 
 class Deferred<T = void> {
 	resolve!: (value: T) => void;

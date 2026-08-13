@@ -162,7 +162,7 @@ const DropdownMenu: Component<DropdownMenuProps> = (props) => {
 								<a
 									class={item.active ? "active" : ""}
 									onClick={(_e) => {
-										item.onClick();
+										item.onClick?.();
 									}}
 								>
 									{item.label}

@@ -1,12 +1,12 @@
-import { join } from "node:path";
 import { readFile, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 
 import { electronApp, is, optimizer } from "@electron-toolkit/utils";
 import { app, BrowserWindow, ipcMain, Menu, shell } from "electron";
 
 import icon from "../../resources/icon.png?asset";
-import { setupAgentHost, agentHostManager } from "./agent-host-manager";
-import { getConfigDir, getSessionsDir, getAuthPath } from "../agent-host/config.ts";
+import { getAuthPath, getConfigDir, getSessionsDir } from "../backend/agent/config.ts";
+import { agentHostManager, setupAgentHost } from "./agent-host-manager";
 
 function createWindow(): void {
 	// Create the browser window.
@@ -15,9 +15,7 @@ function createWindow(): void {
 		height: 1080,
 		show: false,
 		autoHideMenuBar: true,
-		...(process.platform === "darwin"
-			? { titleBarStyle: "hidden" as const }
-			: { frame: false }),
+		...(process.platform === "darwin" ? { titleBarStyle: "hidden" as const } : { frame: false }),
 		...(process.platform === "linux" ? { icon } : {}),
 		webPreferences: {
 			preload: join(__dirname, "../preload/index.js"),

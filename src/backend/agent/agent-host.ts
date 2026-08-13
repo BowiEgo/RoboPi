@@ -9,7 +9,7 @@
 import { ModelRuntime, SettingsManager } from "@earendil-works/pi-coding-agent";
 
 import { getAuthPath, getModelsPath, getSettingsDir } from "./config.ts";
-import { SessionHost } from "./session.ts";
+import { SessionHost } from "./session/session-host.ts";
 
 // ============================================================================
 // AgentHost
@@ -48,20 +48,9 @@ export class AgentHost {
 		if (!this.modelRuntime) return;
 		const all = this.modelRuntime.getModels().map((m) => m.id);
 
-		// Filter to only providers with API keys in credentials.json
-		const fs = await import("node:fs/promises");
-		const configuredProviders = new Set<string>();
-		try {
-			const { getAuthPath } = await import("./config.ts");
-			const raw = await fs.readFile(getAuthPath(), "utf-8");
-			const creds = JSON.parse(raw);
-			for (const [provider, val] of Object.entries(creds)) {
-				const c = val as any;
-				if (c?.type === "api_key" && c?.key) configuredProviders.add(provider);
-			}
-		} catch {
-			/* no credentials file yet */
-		}
+		// Use the SDK's own credential store — no manual file parsing
+		const credentials = await this.modelRuntime.listCredentials();
+		const configuredProviders = new Set(credentials.filter((c) => c.type === "api_key").map((c) => c.providerId));
 
 		this.configuredModels = all.filter((id) => {
 			const provider = id.split("/")[0];
@@ -86,6 +75,14 @@ export class AgentHost {
 	async initialize(): Promise<void> {
 		console.log("[AgentHost] Initializing Pi Agent SDK...");
 
+		await this.initModelRuntime();
+		const settingsManager = this.initSettings();
+		await this.initSessions(settingsManager);
+
+		console.log("[AgentHost] Initialization complete");
+	}
+
+	private async initModelRuntime(): Promise<void> {
 		const modelRuntime = await ModelRuntime.create({
 			authPath: getAuthPath(),
 			modelsPath: getModelsPath(),
@@ -108,7 +105,7 @@ export class AgentHost {
 			console.log(`[AgentHost] Available models: ${available.map((m) => m.id).join(", ")}`);
 		}
 
-		// Build canonical provider list from ModelRuntime (deduplicated by provider ID)
+		// Build canonical provider list (deduplicated by provider ID)
 		const seenProviders = new Set<string>();
 		this.providerList = [];
 		for (const m of modelRuntime.getModels()) {
@@ -122,13 +119,12 @@ export class AgentHost {
 		const authenticated = available.map((m) => m.id);
 		this.availableModels = [...new Set([...authenticated, ...snapshotAll])];
 		await this.updateModelLists();
+	}
 
-		// Shared SettingsManager — created once, used by all sessions
-		const settingsManager = SettingsManager.create(process.cwd(), getSettingsDir(), {
-			projectTrusted: true,
-		});
+	private initSettings(): SettingsManager {
+		const settingsManager = SettingsManager.create(process.cwd(), getSettingsDir(), { projectTrusted: true });
 
-		// Restore persisted model & thinking level from settings.json
+		// Restore persisted model & thinking level
 		const savedModel = settingsManager.getDefaultModel();
 		const savedProvider = settingsManager.getDefaultProvider();
 		if (savedModel && savedProvider) {
@@ -139,14 +135,17 @@ export class AgentHost {
 		const savedThinking = settingsManager.getDefaultThinkingLevel();
 		if (savedThinking) this.thinkingLevelRef.value = savedThinking;
 
+		return settingsManager;
+	}
+
+	private async initSessions(settingsManager: SettingsManager): Promise<void> {
 		const sessionHost = new SessionHost({
-			modelRuntime,
+			modelRuntime: this.modelRuntime!,
 			agentModelRef: this.modelRef,
 			thinkingLevelRef: this.thinkingLevelRef,
 			settingsManager,
 		});
 		await sessionHost.init();
-
 		this.sessionHost = sessionHost;
 	}
 }

@@ -1,17 +1,17 @@
 /**
  * Agent Host Manager
  *
- * 在主进程中管理 Agent Host 子进程的生命周期：
- * - 使用 spawn() 启动 ESM 格式的 agent-host.mjs
- * - 桥接渲染进程 ↔ Agent Host 的消息
- * - 处理子进程异常
+ * Manages the Agent Host child-process lifecycle from the main process:
+ * - Spawns the ESM agent-host.mjs via spawn()
+ * - Bridges messages between the renderer and the Agent Host
+ * - Handles child-process errors
  */
 
 import { type ChildProcess, spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
-import { app } from "electron";
+import { app, BrowserWindow } from "electron";
 
 import {
 	type AgentMessage,
@@ -37,7 +37,7 @@ class AgentHostManager {
 		return this._providerList;
 	}
 
-	/** 启动 Agent Host 子进程 */
+	/** Start the Agent Host child process */
 	start(): void {
 		if (this.child) {
 			console.warn("[AgentHostManager] Agent host is already running");
@@ -70,7 +70,7 @@ class AgentHostManager {
 				this.flushQueue();
 			}
 
-			// 转发到所有已注册的 handler（通常是转发给渲染进程）
+			// Forward to all registered handlers (usually the renderer)
 			for (const handler of this.handlers) {
 				handler(msg);
 			}
@@ -102,10 +102,10 @@ class AgentHostManager {
 		}
 	}
 
-	/** 发送消息到 Agent Host */
+	/** Send a message to the Agent Host */
 	send(msg: AgentMessage): void {
 		if (!this.child || !this.isReady) {
-			// 排队，等就绪后发出
+			// Queue until ready, then flush
 			this.messageQueue.push(msg);
 			return;
 		}
@@ -114,13 +114,13 @@ class AgentHostManager {
 		this.child.send(msg);
 	}
 
-	/** 注册消息处理器（供 renderer→agent 方向桥接） */
+	/** Register a message handler (renderer→agent bridge) */
 	onMessage(handler: AgentMessageHandler): () => void {
 		this.handlers.add(handler);
 		return () => this.handlers.delete(handler);
 	}
 
-	/** 关闭 Agent Host */
+	/** Shut down the Agent Host */
 	async shutdown(): Promise<void> {
 		const child = this.child;
 		if (!child) return;
@@ -148,21 +148,21 @@ class AgentHostManager {
 		});
 	}
 
-	/** 是否就绪 */
+	/** Whether the Agent Host is ready */
 	get ready(): boolean {
 		return this.isReady;
 	}
 
 	/**
-	 * 解析 Agent Host 启动命令
+	 * Resolve the Agent Host launch command.
 	 *
-	 * 开发模式：使用 Node.js 原生 --experimental-strip-types 运行 TS 源码
-	 * 生产模式：运行预编译的 agent-host.mjs（ESM）
+	 * Dev: run TS source directly via Node's native --experimental-strip-types
+	 * Prod: run the pre-built agent-host.mjs (ESM)
 	 */
 	private resolveCommand(): { command: string; args: string[] } {
-		// 开发模式：使用 Node.js 原生 --experimental-strip-types 运行 TS 源码
-		// 走原生 ESM 路径，完美兼容 pi-coding-agent 这类 ESM-only 包
-		const tsSourcePath = join(__dirname, "../../src/agent-host/index.ts");
+		// Dev: run TS source directly via --experimental-strip-types
+		// Native ESM path, fully compatible with ESM-only packages like pi-coding-agent
+		const tsSourcePath = join(__dirname, "../../src/backend/agent/index.ts");
 		if (existsSync(tsSourcePath)) {
 			return {
 				command: process.execPath,
@@ -170,7 +170,7 @@ class AgentHostManager {
 			};
 		}
 
-		// 生产模式：运行编译后的 ESM 文件
+		// Prod: run the compiled ESM bundle
 		const mjsPath = join(__dirname, "agent-host.mjs");
 		if (existsSync(mjsPath)) {
 			return {
@@ -194,25 +194,24 @@ class AgentHostManager {
 	}
 }
 
-// 单例
+// Singleton
 export const agentHostManager = new AgentHostManager();
 
 /**
- * 初始化 Agent Host（在 app.whenReady 中调用）
- * 并注册 IPC handlers 用于渲染进程通信
+ * Initialize the Agent Host (called in app.whenReady)
+ * and register IPC handlers for renderer communication
  */
 export function setupAgentHost(ipcMain: Electron.IpcMain): void {
-	// 启动 agent 子进程
+	// Spawn the agent child process
 	agentHostManager.start();
 
-	// 桥接：渲染进程 → Agent Host
+	// Bridge: renderer → Agent Host
 	ipcMain.on("agent:send", (_event, msg: AgentMessage) => {
 		agentHostManager.send(msg);
 	});
 
-	// 桥接：Agent Host → 渲染进程
+	// Bridge: Agent Host → renderer
 	agentHostManager.onMessage((msg) => {
-		const { BrowserWindow } = require("electron");
 		for (const win of BrowserWindow.getAllWindows()) {
 			if (!win.isDestroyed()) {
 				win.webContents.send("agent:message", msg);
@@ -220,7 +219,7 @@ export function setupAgentHost(ipcMain: Electron.IpcMain): void {
 		}
 	});
 
-	// 应用退出时关闭 agent
+	// Shut down the agent on app quit
 	app.on("before-quit", async () => {
 		await agentHostManager.shutdown();
 	});

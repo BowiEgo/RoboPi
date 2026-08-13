@@ -4,13 +4,9 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AgentMessageType } from "../shared/agent-types.ts";
-import {
-	extractLastUserText,
-	loadMessagesFromSession,
-	postMessageToHost,
-	uid,
-} from "./session.ts";
+import { AgentMessageType } from "../../../shared/agent-types.ts";
+import { postMessageToHost, uid } from "../ipc.ts";
+import { extractLastUserText, loadMessagesFromSession } from "./message-loader.ts";
 
 // ============================================================================
 // uid()
@@ -144,12 +140,7 @@ describe("extractLastUserText", () => {
 // loadMessagesFromSession()
 // ============================================================================
 
-function createMockEntry(
-	id: string,
-	role: "user" | "assistant",
-	content: unknown,
-	timestamp = 1700000000000,
-) {
+function createMockEntry(id: string, role: "user" | "assistant", content: unknown, timestamp = 1700000000000) {
 	return {
 		id,
 		type: "message" as const,
@@ -242,11 +233,6 @@ describe("loadMessagesFromSession", () => {
 		const result = // biome-ignore lint/suspicious/noExplicitAny: test mock
 			loadMessagesFromSession(sm as any);
 		expect(result).toHaveLength(4);
-		expect(result.map((m) => m.role)).toEqual([
-			"user",
-			"agent",
-			"user",
-			"agent",
-		]);
+		expect(result.map((m) => m.role)).toEqual(["user", "agent", "user", "agent"]);
 	});
 });
