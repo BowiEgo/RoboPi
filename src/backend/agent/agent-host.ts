@@ -8,6 +8,7 @@
 
 import { ModelRuntime, SettingsManager } from "@earendil-works/pi-coding-agent";
 
+import type { ConfiguredModel } from "../../shared/agent-types.ts";
 import { createLogger } from "../../shared/logger/index.ts";
 import { getAuthPath, getModelsPath, getSettingsDir } from "./config.ts";
 import { SessionHost } from "./session/session-host.ts";
@@ -31,7 +32,7 @@ export class AgentHost {
 	sessionHost: SessionHost | null = null;
 
 	private availableModels: string[] = [];
-	private configuredModels: string[] = [];
+	private configuredModels: ConfiguredModel[] = [];
 	private providerList: { id: string; name: string }[] = [];
 	private modelRuntime: Awaited<ReturnType<typeof ModelRuntime.create>> | null = null;
 
@@ -39,7 +40,7 @@ export class AgentHost {
 		return this.availableModels;
 	}
 
-	getConfiguredModels(): string[] {
+	getConfiguredModels(): ConfiguredModel[] {
 		return this.configuredModels;
 	}
 
@@ -60,7 +61,7 @@ export class AgentHost {
 		const models = this.modelRuntime.getModels();
 		this.configuredModels = models
 			.filter((m) => configuredProviders.has(m.provider))
-			.map((m) => m.id);
+			.map((m) => ({ id: m.id, provider: m.provider }));
 	}
 
 	async refreshModels(force = false): Promise<void> {

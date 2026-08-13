@@ -18,6 +18,7 @@
 import {
 	AgentMessageType,
 	type AgentReadyPayload,
+	type ConfiguredModel,
 	isValidMessageType,
 	type SessionInfoPayload,
 } from "@shared/agent-types";
@@ -190,7 +191,7 @@ if (agent && !_storeReady) {
 			}
 
 			case AgentMessageType.ModelRefreshed: {
-				const p = msg.payload as { models: string[] };
+				const p = msg.payload as { models: ConfiguredModel[] };
 				if (p.models?.length) {
 					setAgentConfig((prev) => ({ ...prev, configuredModels: p.models }));
 				}

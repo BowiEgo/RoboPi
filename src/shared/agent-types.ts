@@ -177,6 +177,12 @@ export interface AgentStatusPayload {
 	sessionId?: string;
 }
 
+/** A model available for selection (its provider has a configured API key). */
+export interface ConfiguredModel {
+	id: string;
+	provider: string;
+}
+
 /** Agent ready signal. */
 export interface AgentReadyPayload {
 	pid: number;
@@ -185,7 +191,7 @@ export interface AgentReadyPayload {
 	thinkingLevel?: string;
 	availableThinkingLevels?: string[];
 	availableModels?: string[];
-	configuredModels?: string[];
+	configuredModels?: ConfiguredModel[];
 	providerList?: { id: string; name: string }[];
 }
 
@@ -196,6 +202,8 @@ export interface AgentConfigPayload {
 	availableThinkingLevels?: string[];
 	/** Available model list. */
 	availableModels?: string[];
+	configuredModels?: ConfiguredModel[];
+	providerList?: { id: string; name: string }[];
 	status?: "idle" | "thinking" | "responding" | "error";
 }
 
@@ -216,7 +224,7 @@ export interface ModelRefreshPayload {
 
 /** Updated model list after refresh. */
 export interface ModelRefreshedPayload {
-	models: string[];
+	models: ConfiguredModel[];
 }
 
 export interface ModelSetApiKeyPayload {

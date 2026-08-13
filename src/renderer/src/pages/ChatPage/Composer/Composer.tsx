@@ -1,9 +1,12 @@
 import { Send } from "lucide-solid";
 import { type Component, createSignal, For, onCleanup, onMount, Show } from "solid-js";
 
+import type { ConfiguredModel } from "@shared/agent-types";
+
 import { useAgent } from "@/agent/useAgent";
 import { useLocale } from "@/contexts/LocaleContext";
 
+import Dropdown, { type DropdownOption } from "@/components/Dropdown/Dropdown";
 import Resizer from "@/components/Resizer/Resizer";
 
 import { cstyle } from "@/utils/cstyle";
@@ -12,7 +15,7 @@ export interface AgentConfig {
 	model?: string;
 	thinkingLevel?: string;
 	availableThinkingLevels?: string[];
-	configuredModels?: string[];
+	configuredModels?: ConfiguredModel[];
 	status?: string;
 }
 
@@ -58,6 +61,7 @@ function statusLabel(status: string | undefined, t: (key: string) => string): st
 const C = {
 	dropdownBtn: cstyle({
 		display: "btn btn-ghost btn-xs",
+		spacing: "gap-1.5",
 		interaction: "rounded-lg mr-3 transition-none border-1",
 		color: "bg-app-raised text-base-content border-base-content/15",
 	}),
@@ -196,11 +200,11 @@ const Toolbar: Component<ToolbarProps> = (props) => {
 		{ label: props.t("composer.mode.idle") },
 		{ label: props.t("composer.mode.responding") },
 	];
-	const modelItems = (): DropdownItem[] =>
+	const modelOptions = (): DropdownOption[] =>
 		(props.cfg?.configuredModels ?? []).map((m) => ({
-			label: shortenModel(m),
-			active: m === props.cfg?.model,
-			onClick: () => selectModel(m),
+			id: m.id,
+			name: shortenModel(m.id),
+			group: m.provider,
 		}));
 	const promptItems = (): DropdownItem[] => [
 		{ label: `${props.t("composer.prompt")} 1` },
@@ -219,7 +223,15 @@ const Toolbar: Component<ToolbarProps> = (props) => {
 	return (
 		<div class={C.toolbar()}>
 			<DropdownMenu label={statusLabel(props.cfg?.status, props.t)} width="18rem" items={statusItems()} />
-			<DropdownMenu label={shortenModel(props.cfg?.model)} width="22rem" items={modelItems()} />
+			<Dropdown
+				value={props.cfg?.model ?? ""}
+				options={modelOptions()}
+				placeholder={props.t("composer.model")}
+				width="22rem"
+				direction="up"
+				triggerClass={C.dropdownBtn()}
+				onChange={selectModel}
+			/>
 			<DropdownMenu label={props.t("composer.prompt")} width="20rem" items={promptItems()} />
 			<DropdownMenu label={thinkingLabel(props.cfg?.thinkingLevel, props.t)} width="18rem" items={thinkingItems()} />
 		</div>

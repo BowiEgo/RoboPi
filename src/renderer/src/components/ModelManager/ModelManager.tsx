@@ -92,7 +92,13 @@ const ModelManager: Component<ModelManagerProps> = (props) => {
 	const [apiKey, setApiKey] = createSignal("");
 	const [showKey, setShowKey] = createSignal(false);
 
-	const providers = createMemo(() => [...props.providerList, { id: "custom", name: t("settings.customProvider") }]);
+	const providers = createMemo(() => [
+		...props.providerList.map((p) => ({
+			...p,
+			group: p.name.charAt(0).toUpperCase(),
+		})),
+		{ id: "custom", name: t("settings.customProvider") },
+	]);
 
 	function handleSave() {
 		const p = provider();
