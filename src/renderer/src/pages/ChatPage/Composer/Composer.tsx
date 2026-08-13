@@ -91,11 +91,15 @@ const C = {
 		sizing: "w-[70%]",
 		spacing: "bottom-[3%]",
 		interaction: "rounded-3xl shadow-xl border-1",
-		color: "input-field border-base-300",
+		color: "input-field border-base-200",
 	}),
 	wrapperFocused: cstyle({ interaction: "border-accent" }),
-	aura: cstyle({ display: "flex flex-col", sizing: "h-full", interaction: "rounded-3xl" }),
-	card: cstyle({ display: "card", sizing: "h-full", interaction: "rounded-3xl", color: "bg-base-100" }),
+	aura: cstyle({
+		display: "flex flex-col",
+		sizing: "h-full",
+		interaction: "rounded-3xl aura aura-xs aura-pulse aura-rainbow-full duration-6000",
+	}),
+	card: cstyle({ display: "card opacity-100", sizing: "h-full", interaction: "rounded-3xl", color: "bg-base-100" }),
 	footer: cstyle({ display: "flex items-center justify-between", sizing: "shrink-0", spacing: "px-4 py-2" }),
 };
 
@@ -159,11 +163,7 @@ const DropdownMenu: Component<DropdownMenuProps> = (props) => {
 				{props.label}
 			</button>
 			<Show when={open()}>
-				<ul
-					ref={menuRef}
-					class={C.dropdownMenu()}
-					style={{ width: props.width ?? "18rem" }}
-				>
+				<ul ref={menuRef} class={C.dropdownMenu()} style={{ width: props.width ?? "18rem" }}>
 					<For each={props.items}>
 						{(item) => (
 							<li>
@@ -208,8 +208,7 @@ const Toolbar: Component<ToolbarProps> = (props) => {
 	];
 	const thinkingItems = (): DropdownItem[] => {
 		const available = props.cfg?.availableThinkingLevels;
-		const levels =
-			available && available.length > 0 ? available : Object.keys(THINKING_LABELS);
+		const levels = available && available.length > 0 ? available : Object.keys(THINKING_LABELS);
 		return levels.map((k) => ({
 			label: props.t(THINKING_LABELS[k] ?? k),
 			active: k === props.cfg?.thinkingLevel,
@@ -291,7 +290,7 @@ const Composer: Component<ComposerProps> = (props) => {
 		>
 			<Resizer value={height()} min={minH} max={maxH} position="top" grip={false} onChange={(v) => setHeight(v)} />
 			<Toolbar cfg={cfg()} t={t} />
-			<div class={`${C.aura()} ${"aura aura-xs aura-rainbow duration-6000"}`}>
+			<div class={C.aura()}>
 				<div class={C.card()}>
 					<InputArea
 						inputText={inputText()}
