@@ -89,7 +89,7 @@ async function startTransport(): Promise<void> {
 
 /** Register the session service once the Agent Host has initialized. */
 function registerSessionService(): void {
-	registerCorePlugin({ id: "core:session", provide: ["session"], inject: ["model"], core: true }, (ctx) => {
+	registerCorePlugin({ id: "core:session", provide: ["session"], inject: ["model"] }, (ctx) => {
 		const model = ctx.require("model");
 		const session = model.sessionHost;
 		if (!session) throw new PluginError("SessionHost not initialized");
@@ -172,7 +172,7 @@ function sendPluginList(): void {
 		id: handle.id,
 		name: handle.manifest.name ?? handle.id,
 		enabled: true,
-		core: handle.manifest.core,
+		core: handle.id.startsWith("core:"),
 		ui: handle.manifest.ui,
 		settingsSchema: handle.manifest.Config?.describe(),
 		settingsValue: handle.config,
@@ -183,7 +183,7 @@ function sendPluginList(): void {
 				id,
 				name: def.manifest.name ?? id,
 				enabled: false,
-				core: def.manifest.core,
+				core: def.manifest.id.startsWith("core:"),
 				ui: def.manifest.ui,
 				settingsSchema: def.manifest.Config?.describe(),
 				settingsValue: def.defaultConfig,
@@ -275,7 +275,6 @@ function registerMessageHandlers(): void {
 		{
 			id: "core:model",
 			provide: ["model"],
-			core: true,
 			Config: object({ autoRefresh: boolean() }),
 			ui: { slots: ["settings:section"], view: "plugin-list" },
 		},
@@ -286,7 +285,7 @@ function registerMessageHandlers(): void {
 	);
 
 	// Route inbound protocol messages to typed `ipc:<type>` events.
-	registerCorePlugin({ id: "core:ipc-router", core: true }, (ctx) => {
+	registerCorePlugin({ id: "core:ipc-router" }, (ctx) => {
 		ctx.on("transport:message", (raw) => {
 			const msg = raw as AgentMessage;
 			if (!msg?.type || !isValidMessageType(msg.type)) {
@@ -299,7 +298,7 @@ function registerMessageHandlers(): void {
 	});
 
 	// One listener per protocol message type.
-	registerCorePlugin({ id: "core:ipc-handlers", core: true }, (ctx) => {
+	registerCorePlugin({ id: "core:ipc-handlers" }, (ctx) => {
 		ctx.on(`ipc:${AgentMessageType.ChatSend}`, handleChatSend);
 		ctx.on(`ipc:${AgentMessageType.ChatCancel}`, () => handleChatCancel());
 		ctx.on(`ipc:${AgentMessageType.AgentStatus}`, (msg) => handleAgentStatus(msg.id));
