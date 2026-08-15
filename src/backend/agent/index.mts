@@ -74,6 +74,21 @@ function registerSessionService(): void {
 	);
 }
 
+/** Print the assembled plugin tree (diagnostics, ROBOPI_DUMP_PLUGINS=1). */
+function dumpPlugins(): void {
+	const handles = registry.list();
+	logger.info(`Loaded ${handles.length} plugins:`);
+	for (const handle of handles) {
+		const inject = handle.manifest.inject?.length ? ` inject=[${handle.manifest.inject.join(", ")}]` : "";
+		const provide = handle.manifest.provide?.length ? ` provide=[${handle.manifest.provide.join(", ")}]` : "";
+		logger.info(`  - ${handle.id} (${handle.state})${inject}${provide}`);
+	}
+	const pending = registry.pendingPlugins();
+	if (pending.length) {
+		logger.info(`Pending: ${pending.join(", ")}`);
+	}
+}
+
 async function startup(): Promise<void> {
 	try {
 		await agentHost.initialize();
@@ -111,6 +126,7 @@ async function startup(): Promise<void> {
 		}
 
 		logger.info(`Started (PID: ${process.pid})`);
+		if (process.env.ROBOPI_DUMP_PLUGINS === "1") dumpPlugins();
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
 		logger.error("Failed to initialize", message);
