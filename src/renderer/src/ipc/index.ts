@@ -19,9 +19,10 @@ let cached: AgentIpc | null | undefined;
 /** Default Agent Host WebSocket port (mirrors ROBOPI_PORT in the backend). */
 const WS_PORT = 9241;
 
-/** Browser transport — a WebSocket client with automatic reconnect. */
+/** Browser transport — a WebSocket client with auto-reconnect and a pending queue. */
 function createWsIpc(): AgentIpc {
 	const listeners = new Set<(msg: unknown) => void>();
+	const pending: unknown[] = [];
 	let ws: WebSocket | null = null;
 	let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -30,6 +31,13 @@ function createWsIpc(): AgentIpc {
 	function connect() {
 		if (ws) return;
 		ws = new WebSocket(url);
+		ws.onopen = () => {
+			// Flush messages queued before the socket opened.
+			while (pending.length > 0) {
+				const msg = pending.shift();
+				if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+			}
+		};
 		ws.onmessage = (ev) => {
 			try {
 				const msg = JSON.parse(ev.data as string) as unknown;
@@ -51,8 +59,9 @@ function createWsIpc(): AgentIpc {
 		send(msg) {
 			if (ws?.readyState === WebSocket.OPEN) {
 				ws.send(JSON.stringify(msg));
+			} else {
+				pending.push(msg);
 			}
-			// Not connected yet: drop — the Agent Host replays state on connect.
 		},
 		onMessage(cb) {
 			listeners.add(cb);
