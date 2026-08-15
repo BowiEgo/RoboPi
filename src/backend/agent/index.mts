@@ -114,6 +114,17 @@ function sendUIManifest(): void {
 	});
 }
 
+/** Reload a plugin with new config, then re-ship the UI manifest. */
+async function handlePluginConfig(msg: AgentMessage): Promise<void> {
+	const payload = msg.payload as { pluginId: string; config: unknown };
+	try {
+		await registry.reload(payload.pluginId, payload.config);
+		sendUIManifest();
+	} catch (err) {
+		logger.error("plugin config reload failed", err);
+	}
+}
+
 async function startup(): Promise<void> {
 	try {
 		await agentHost.initialize();
@@ -228,6 +239,7 @@ function registerMessageHandlers(): void {
 		ctx.on(`ipc:${AgentMessageType.AgentShutdown}`, () => handleShutdown());
 		ctx.on(`ipc:${AgentMessageType.ModelRefresh}`, (msg) => void handleModelRefresh(msg));
 		ctx.on(`ipc:${AgentMessageType.ModelSetApiKey}`, (msg) => void handleModelSetApiKey(msg));
+		ctx.on(`ipc:${AgentMessageType.PluginConfig}`, (msg) => void handlePluginConfig(msg));
 	});
 }
 

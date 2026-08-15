@@ -8,6 +8,7 @@
 
 import { type Component, For, Show } from "solid-js";
 
+import { useAgent } from "@/agent/useAgent";
 import { uiExtensions } from "@/ui-extensions";
 import SchemaForm from "@/components/SchemaForm/SchemaForm";
 import { cstyle } from "@/utils/cstyle";
@@ -15,6 +16,8 @@ import ThemeSwitcher from "@/views/ThemeSwitcher";
 
 /** Built-in view: lists the UI extensions and renders their config forms. */
 const PluginListView: Component = () => {
+	const { updatePluginConfig } = useAgent();
+
 	return (
 		<ul class={C.list()}>
 			<For each={uiExtensions()}>
@@ -28,7 +31,7 @@ const PluginListView: Component = () => {
 							<SchemaForm
 								schema={ext.settingsSchema!}
 								value={ext.settingsValue}
-								onChange={(v) => console.log("[config]", ext.pluginId, v)}
+								onChange={(v) => updatePluginConfig(ext.pluginId, v)}
 							/>
 						</Show>
 					</li>

@@ -65,6 +65,7 @@ export const AgentMessageType = {
 	SessionError: "session:error",
 	// UI plugins
 	UIManifest: "ui:manifest",
+	PluginConfig: "plugin:config",
 } as const;
 
 export type AgentMessageType =
@@ -105,6 +106,7 @@ export type AgentPayload =
 	| SessionStatsPayload
 	| SessionErrorPayload
 	| UIManifestPayload
+	| PluginConfigPayload
 	| Record<string, never>;
 
 /** Send a chat message. */
@@ -340,6 +342,12 @@ export interface SessionErrorPayload {
 /** UI plugin manifest sent to the renderer. */
 export interface UIManifestPayload {
 	extensions: UIExtensionDescriptor[];
+}
+
+/** Update a plugin's config (renderer → Agent Host). */
+export interface PluginConfigPayload {
+	pluginId: string;
+	config: unknown;
 }
 
 // ============================================================================

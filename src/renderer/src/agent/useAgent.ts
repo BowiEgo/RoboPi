@@ -354,6 +354,15 @@ function selectThinkingLevel(level: string) {
 	});
 }
 
+function updatePluginConfig(pluginId: string, config: unknown) {
+	if (!agent) return;
+	agent.send({
+		id: `plugin-config-${pluginId}-${Date.now()}`,
+		type: AgentMessageType.PluginConfig,
+		payload: { pluginId, config },
+	});
+}
+
 // ════════════════════════════════════════════════════════════════
 //  Module-level functions
 // ════════════════════════════════════════════════════════════════
@@ -489,6 +498,7 @@ export function useAgent() {
 		createSession,
 		selectModel,
 		selectThinkingLevel,
+		updatePluginConfig,
 		switchSession,
 		deleteSession,
 		renameSession,
