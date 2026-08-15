@@ -8,7 +8,7 @@
 
 import { type AgentMessage, AgentMessageType, isValidMessageType } from "../../shared/agent-types.ts";
 import { createLogger } from "../../shared/logger/index.ts";
-import { PluginRegistry, type PluginEntry, type PluginManifest } from "../../shared/plugin/registry.ts";
+import { type PluginEntry, type PluginManifest, PluginRegistry } from "../../shared/plugin/registry.ts";
 import { boolean, object } from "../../shared/plugin/schema.ts";
 import { PluginError } from "../../shared/plugin/types.ts";
 import { AgentHost } from "./agent-host.ts";
@@ -122,6 +122,7 @@ function sendUIManifest(): void {
 			slots: handle.manifest.ui!.slots,
 			view: handle.manifest.ui!.view,
 			viewConfig: handle.manifest.ui!.viewConfig,
+			title: handle.manifest.ui!.title,
 			settingsSchema: handle.manifest.Config?.describe(),
 			settingsValue: handle.config,
 		}));
@@ -276,7 +277,7 @@ function registerMessageHandlers(): void {
 			id: "core:model",
 			provide: ["model"],
 			Config: object({ autoRefresh: boolean() }),
-			ui: { slots: ["settings:section"], view: "plugin-list", title: "Plugins" },
+			ui: { slots: ["settings:plugins"], view: "plugin-list", title: "Plugins" },
 		},
 		(ctx) => {
 			ctx.provide("model", agentHost);

@@ -1,4 +1,4 @@
-import { type Component, createContext, createSignal, type JSX, useContext } from "solid-js";
+import { type Component, createContext, createEffect, createSignal, type JSX, useContext } from "solid-js";
 
 // ============================================================================
 // Available themes (must match @plugin daisyUI themes in tailwind.css)
@@ -47,17 +47,23 @@ export const THEMES = [
 // Context
 // ============================================================================
 
+/** Light/dark appearance mode. */
+export type ThemeMode = "light" | "dark" | "system";
+
 interface ThemeContextValue {
 	theme: () => string;
 	setTheme: (id: string) => void;
 	isDark: () => boolean;
 	toggleDark: () => void;
 	setDark: (dark: boolean) => void;
+	mode: () => ThemeMode;
+	setMode: (mode: ThemeMode) => void;
 }
 
 const ThemeCtx = createContext<ThemeContextValue>();
 
 const STORAGE_KEY = "robo-pi-theme";
+const MODE_KEY = "robo-pi-theme-mode";
 
 // Dark theme list — light's own dark variant + daisyUI built-in dark themes.
 const DARK_THEMES = [
@@ -92,9 +98,15 @@ function getInitialTheme(): string {
 	return prefersDark ? "dark" : "light";
 }
 
+function getInitialMode(): ThemeMode {
+	const saved = localStorage.getItem(MODE_KEY);
+	return saved === "light" || saved === "dark" || saved === "system" ? saved : "system";
+}
+
 export const ThemeProvider: Component<{ children: JSX.Element }> = (props) => {
 	const [theme, setThemeSignal] = createSignal(getInitialTheme());
 	const [isDark, setIsDark] = createSignal(DARK_THEMES.includes(getInitialTheme()));
+	const [mode, setModeSignal] = createSignal<ThemeMode>(getInitialMode());
 
 	const setTheme = (id: string) => {
 		setThemeSignal(id);
@@ -104,18 +116,40 @@ export const ThemeProvider: Component<{ children: JSX.Element }> = (props) => {
 	};
 
 	const toggleDark = () => {
-		setTheme(isDark() ? "light" : "dark");
+		setMode(isDark() ? "light" : "dark");
 	};
 
 	const setDark = (dark: boolean) => {
-		setTheme(dark ? "dark" : "light");
+		setMode(dark ? "dark" : "light");
 	};
+
+	const setMode = (m: ThemeMode) => {
+		setModeSignal(m);
+		localStorage.setItem(MODE_KEY, m);
+		if (m === "system") {
+			const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+			setTheme(dark ? "dark" : "light");
+		} else {
+			setTheme(m === "dark" ? "dark" : "light");
+		}
+	};
+
+	// In system mode, follow OS light/dark changes.
+	createEffect(() => {
+		if (mode() !== "system") return;
+		const mq = window.matchMedia("(prefers-color-scheme: dark)");
+		const handler = () => setTheme(mq.matches ? "dark" : "light");
+		mq.addEventListener("change", handler);
+		return () => mq.removeEventListener("change", handler);
+	});
 
 	// Apply theme on mount
 	document.documentElement.setAttribute("data-theme", getInitialTheme());
 
 	return (
-		<ThemeCtx.Provider value={{ theme, setTheme, isDark, toggleDark, setDark }}>{props.children}</ThemeCtx.Provider>
+		<ThemeCtx.Provider value={{ theme, setTheme, isDark, toggleDark, setDark, mode, setMode }}>
+			{props.children}
+		</ThemeCtx.Provider>
 	);
 };
 

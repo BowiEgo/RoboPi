@@ -1,13 +1,13 @@
+import { Boxes, Puzzle, Settings } from "lucide-solid";
 import { type Component, createSignal, For, onMount, Show } from "solid-js";
 
 import { type LocaleId, useLocale } from "@/contexts/LocaleContext";
 
 import ModelManager, { type SavedModel } from "@/components/ModelManager/ModelManager";
+import SlotRenderer from "@/components/SlotRenderer/SlotRenderer";
 import Versions from "@/components/Versions/Versions";
 
 import { getSettings, type SettingsInfo } from "@/ipc/settings";
-import { uiExtensions } from "@/ui-extensions";
-import { resolveView } from "@/ui-views";
 import { cstyle } from "@/utils/cstyle";
 
 const LOCALES: { id: LocaleId; labelKey: string }[] = [
@@ -18,7 +18,7 @@ const LOCALES: { id: LocaleId; labelKey: string }[] = [
 // ── Styles ──
 
 const C = {
-	layout: cstyle({ display: "flex", sizing: "gap-0 h-full" }),
+	layout: cstyle({ display: "flex", sizing: "h-full" }),
 	nav: cstyle({
 		display: "flex flex-col",
 		sizing: "w-44 shrink-0",
@@ -28,6 +28,7 @@ const C = {
 	}),
 	navItem: cstyle({
 		display: "btn btn-ghost btn-sm justify-start",
+		spacing: "gap-2",
 		text: "font-normal",
 		interaction: "rounded-lg",
 		variants: {
@@ -37,8 +38,9 @@ const C = {
 	content: cstyle({
 		display: "flex flex-col",
 		sizing: "flex-1 min-w-0",
-		spacing: "gap-4 pl-6",
+		spacing: "gap-8 pl-6",
 	}),
+	section: cstyle({ display: "flex flex-col", spacing: "gap-4" }),
 	sectionTitle: cstyle({
 		text: "font-mono text-[14px] font-medium uppercase tracking-wider",
 		color: "text-base-content/80",
@@ -85,7 +87,13 @@ const SettingPanel: Component = () => {
 	const { t, locale, setLocale } = useLocale();
 	const [info, setInfo] = createSignal<SettingsInfo | null>(null);
 	const [savedModels, setSavedModels] = createSignal<SavedModel[]>([]);
-	const [active, setActive] = createSignal("storage");
+	const [active, setActive] = createSignal("general");
+
+	const navGroups = () => [
+		{ id: "general", title: t("settings.general"), icon: <Settings class="w-4 h-4" /> },
+		{ id: "models", title: t("settings.models"), icon: <Boxes class="w-4 h-4" /> },
+		{ id: "plugins", title: t("settings.plugins"), icon: <Puzzle class="w-4 h-4" /> },
+	];
 
 	function addModel(model: SavedModel) {
 		setSavedModels((prev) => [...prev, model]);
@@ -107,23 +115,14 @@ const SettingPanel: Component = () => {
 		);
 	});
 
-	// Static sections + plugin-provided sections, for the left nav.
-	const sections = () => [
-		{ id: "storage", title: t("settings.storage") },
-		{ id: "providers", title: t("settings.providers") },
-		{ id: "language", title: t("settings.locale") },
-		...uiExtensions()
-			.filter((e) => e.slots.includes("settings:section"))
-			.map((e) => ({ id: `${e.pluginId}:${e.view}`, title: e.title ?? e.view })),
-	];
-
 	return (
 		<div class={C.layout()}>
 			<nav class={C.nav()}>
-				<For each={sections()}>
-					{(s) => (
-						<button type="button" class={C.navItem({ active: active() === s.id })} onClick={() => setActive(s.id)}>
-							{s.title}
+				<For each={navGroups()}>
+					{(g) => (
+						<button type="button" class={C.navItem({ active: active() === g.id })} onClick={() => setActive(g.id)}>
+							{g.icon}
+							{g.title}
 						</button>
 					)}
 				</For>
@@ -133,8 +132,8 @@ const SettingPanel: Component = () => {
 			</nav>
 
 			<div class={C.content()}>
-				<Show when={active() === "storage"}>
-					<section class="flex flex-col gap-4">
+				<Show when={active() === "general"}>
+					<section class={C.section()}>
 						<h2 class={C.sectionTitle()}>{t("settings.storage")}</h2>
 						<div class={C.storageList()}>
 							<div class={C.storageRow()}>
@@ -148,10 +147,23 @@ const SettingPanel: Component = () => {
 							<p class={C.hint()}>{t("settings.configDirHint", { env: "ROBOPI_HOME" })}</p>
 						</div>
 					</section>
+
+					<section class={C.section()}>
+						<h2 class={C.sectionTitle()}>{t("settings.locale")}</h2>
+						<div class={C.localeRow()}>
+							{LOCALES.map((l) => (
+								<button type="button" class={C.localeBtn({ active: locale() === l.id })} onClick={() => setLocale(l.id)}>
+									{t(l.labelKey)}
+								</button>
+							))}
+						</div>
+					</section>
+
+					<SlotRenderer slot="settings:general" />
 				</Show>
 
-				<Show when={active() === "providers"}>
-					<section class="flex flex-col gap-4">
+				<Show when={active() === "models"}>
+					<section class={C.section()}>
 						<h2 class={C.sectionTitle()}>{t("settings.providers")}</h2>
 						<ModelManager
 							models={savedModels()}
@@ -162,32 +174,13 @@ const SettingPanel: Component = () => {
 							onDelete={deleteModel}
 						/>
 					</section>
+
+					<SlotRenderer slot="settings:models" />
 				</Show>
 
-				<Show when={active() === "language"}>
-					<section class="flex flex-col gap-4">
-						<h2 class={C.sectionTitle()}>{t("settings.locale")}</h2>
-						<div class={C.localeRow()}>
-							{LOCALES.map((l) => (
-								<button type="button" class={C.localeBtn({ active: locale() === l.id })} onClick={() => setLocale(l.id)}>
-									{t(l.labelKey)}
-								</button>
-							))}
-						</div>
-					</section>
+				<Show when={active() === "plugins"}>
+					<SlotRenderer slot="settings:plugins" />
 				</Show>
-
-				<For each={uiExtensions().filter((e) => e.slots.includes("settings:section"))}>
-					{(ext) => {
-						const id = `${ext.pluginId}:${ext.view}`;
-						const View = resolveView(ext.view);
-						return View ? (
-							<Show when={active() === id}>
-								<View />
-							</Show>
-						) : null;
-					}}
-				</For>
 			</div>
 		</div>
 	);

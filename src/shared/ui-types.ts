@@ -16,7 +16,9 @@ export type UISlot =
 	| "chat:composer" //  Composer 工具栏
 	| "chat:message-menu" // 消息操作菜单
 	| "chat:status" //    底部状态栏
-	| "settings:section"; // 设置面板 section
+	| "settings:general" // 设置 → 通用
+	| "settings:models" // 设置 → 模型
+	| "settings:plugins"; // 设置 → 插件
 
 /** A plugin's declarative UI contribution. */
 export interface UIExtension {

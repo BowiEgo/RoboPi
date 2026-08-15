@@ -21,7 +21,7 @@ const LOCAL_PLUGINS: LocalPlugin[] = [
 	{
 		id: "builtin:theme",
 		name: "Theme",
-		ui: { pluginId: "builtin:theme", slots: ["settings:section"], view: "theme-switcher", title: "Theme" },
+		ui: { pluginId: "builtin:theme", slots: ["settings:general"], view: "theme-switcher", title: "Theme" },
 	},
 ];
 

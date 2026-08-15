@@ -7,7 +7,7 @@
  * any other settings section.
  */
 
-import { Moon, Sun } from "lucide-solid";
+import { Monitor, Moon, Sun } from "lucide-solid";
 import { type Component } from "solid-js";
 
 import { useLocale } from "@/contexts/LocaleContext";
@@ -56,7 +56,7 @@ function ThemeSwatch(props: { themeId: string }) {
 
 const ThemeSwitcher: Component = () => {
 	const { t } = useLocale();
-	const { theme, setTheme, isDark, setDark } = useTheme();
+	const { theme, setTheme, mode, setMode } = useTheme();
 
 	const themeOptions = (): DropdownOption[] => {
 		// Sort light themes first so consecutive items group cleanly.
@@ -89,13 +89,17 @@ const ThemeSwitcher: Component = () => {
 			<section class={C.section()}>
 				<h2 class={C.sectionTitle()}>{t("theme.mode")}</h2>
 				<div class={C.modeRow()}>
-					<button type="button" class={C.modeBtn({ active: isDark() })} onClick={() => setDark(true)}>
+					<button type="button" class={C.modeBtn({ active: mode() === "light" })} onClick={() => setMode("light")}>
+						<Sun class="w-4 h-4" />
+						<span>{t("theme.modeLight")}</span>
+					</button>
+					<button type="button" class={C.modeBtn({ active: mode() === "dark" })} onClick={() => setMode("dark")}>
 						<Moon class="w-4 h-4" />
 						<span>{t("theme.modeDark")}</span>
 					</button>
-					<button type="button" class={C.modeBtn({ active: !isDark() })} onClick={() => setDark(false)}>
-						<Sun class="w-4 h-4" />
-						<span>{t("theme.modeLight")}</span>
+					<button type="button" class={C.modeBtn({ active: mode() === "system" })} onClick={() => setMode("system")}>
+						<Monitor class="w-4 h-4" />
+						<span>{t("theme.modeSystem")}</span>
 					</button>
 				</div>
 			</section>
