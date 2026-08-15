@@ -1,6 +1,7 @@
 import { Moon, Sun } from "lucide-solid";
-import { type Component, createSignal, onMount } from "solid-js";
+import { type Component, createSignal, For, onMount } from "solid-js";
 
+import { useAgent } from "@/agent/useAgent";
 import { type LocaleId, useLocale } from "@/contexts/LocaleContext";
 import { isDarkTheme, THEMES, useTheme } from "@/contexts/ThemeContext";
 
@@ -9,6 +10,7 @@ import ModelManager, { type SavedModel } from "@/components/ModelManager/ModelMa
 import Versions from "@/components/Versions/Versions";
 
 import { getSettings, type SettingsInfo } from "@/ipc/settings";
+import { resolveView } from "@/ui-views";
 import { cstyle } from "@/utils/cstyle";
 
 const LOCALES: { id: LocaleId; labelKey: string }[] = [
@@ -98,8 +100,11 @@ function ThemeSwatch(props: { themeId: string }) {
 const SettingPanel: Component = () => {
 	const { t, locale, setLocale } = useLocale();
 	const { theme, setTheme, isDark, setDark } = useTheme();
+	const { uiExtensions } = useAgent();
 	const [info, setInfo] = createSignal<SettingsInfo | null>(null);
 	const [savedModels, setSavedModels] = createSignal<SavedModel[]>([]);
+
+	const sectionExtensions = () => uiExtensions().filter((e) => e.slots.includes("settings:section"));
 
 	function addModel(model: SavedModel) {
 		setSavedModels((prev) => [...prev, model]);
@@ -219,6 +224,18 @@ const SettingPanel: Component = () => {
 					onChange={setTheme}
 				/>
 			</section>
+
+			{/* ── Plugin-provided settings sections ── */}
+			<For each={sectionExtensions()}>
+				{(ext) => {
+					const View = resolveView(ext.view);
+					return View ? (
+						<section class={C.section()}>
+							<View />
+						</section>
+					) : null;
+				}}
+			</For>
 
 			<Versions />
 		</div>

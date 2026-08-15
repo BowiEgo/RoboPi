@@ -184,9 +184,16 @@ function registerMessageHandlers(): void {
 	});
 
 	// Model service — the AgentHost instance is available immediately.
-	registry.load({ id: "core:model", provide: ["model"] }, (ctx) => {
-		ctx.provide("model", agentHost);
-	});
+	registry.load(
+		{
+			id: "core:model",
+			provide: ["model"],
+			ui: { slots: ["settings:section"], view: "plugin-list" },
+		},
+		(ctx) => {
+			ctx.provide("model", agentHost);
+		},
+	);
 
 	// Route inbound protocol messages to typed `ipc:<type>` events.
 	registry.load({ id: "core:ipc-router" }, (ctx) => {
