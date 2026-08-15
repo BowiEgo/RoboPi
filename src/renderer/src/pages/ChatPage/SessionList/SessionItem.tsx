@@ -26,7 +26,7 @@ export interface SessionItemProps {
 const C = {
 	row: cstyle({
 		display: "flex items-center",
-		spacing: "gap-2 px-3 py-2 mb-2",
+		spacing: "gap-2 px-3 py-2",
 		interaction: "cursor-pointer rounded-md transition-colors",
 		variants: {
 			active: {
