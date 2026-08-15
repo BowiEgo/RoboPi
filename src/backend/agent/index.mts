@@ -20,7 +20,7 @@ import {
 	isSessionRenamePayload,
 	isThinkingLevel,
 } from "./guards.ts";
-import { postMessageToHost, uid } from "./ipc.ts";
+import { onHostMessage, postMessageToHost, uid } from "./ipc.ts";
 import { respondError, respondNotReady } from "./respond.ts";
 
 // ============================================================================
@@ -98,7 +98,7 @@ async function shutdown(): Promise<void> {
 // Message routing
 // ============================================================================
 
-process.on("message", (raw: unknown) => {
+onHostMessage((raw: unknown) => {
 	const msg = raw as AgentMessage;
 	if (!msg?.type || !isValidMessageType(msg.type)) {
 		logger.warn("Received invalid message", raw);
