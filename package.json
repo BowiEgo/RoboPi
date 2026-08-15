@@ -44,7 +44,8 @@
 		"markdown-it": "^15.0.0",
 		"shiki": "^4.4.2",
 		"simple-icons": "^16.28.0",
-		"tailwind-merge": "^3.6.0"
+		"tailwind-merge": "^3.6.0",
+		"ws": "^8.21.3"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.5",
@@ -52,6 +53,7 @@
 		"@solidjs/testing-library": "^0.8.10",
 		"@tailwindcss/vite": "^4.3.3",
 		"@types/node": "^22.19.1",
+		"@types/ws": "^8.18.1",
 		"daisyui": "^5.7.14",
 		"electron": "^39.2.6",
 		"electron-builder": "^26.15.3",

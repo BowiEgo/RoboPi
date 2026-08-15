@@ -20,7 +20,9 @@ import {
 	isSessionRenamePayload,
 	isThinkingLevel,
 } from "./guards.ts";
-import { onHostMessage, postMessageToHost, uid } from "./ipc.ts";
+import { onHostMessage, postMessageToHost, setTransport, uid } from "./ipc.ts";
+import { ChildProcessTransport } from "./transport/child-process.ts";
+import { WebSocketTransport } from "./transport/websocket.ts";
 import { respondError, respondNotReady } from "./respond.ts";
 
 // ============================================================================
@@ -33,6 +35,20 @@ const logger = createLogger("AgentHost");
 /** Accessor — returns null until initialize() completes. Handlers must check. */
 function sh() {
 	return agentHost.sessionHost;
+}
+
+/** Select and start the host transport based on `ROBOPI_TRANSPORT`. */
+async function startTransport(): Promise<void> {
+	const mode = process.env.ROBOPI_TRANSPORT ?? "ipc";
+	if (mode === "ws") {
+		const port = Number(process.env.ROBOPI_PORT ?? 9241);
+		const transport = new WebSocketTransport(port);
+		setTransport(transport);
+		await transport.start();
+		logger.info(`WebSocket transport listening on ws://127.0.0.1:${port}`);
+	} else {
+		setTransport(new ChildProcessTransport());
+	}
 }
 
 async function startup(): Promise<void> {
@@ -98,57 +114,59 @@ async function shutdown(): Promise<void> {
 // Message routing
 // ============================================================================
 
-onHostMessage((raw: unknown) => {
-	const msg = raw as AgentMessage;
-	if (!msg?.type || !isValidMessageType(msg.type)) {
-		logger.warn("Received invalid message", raw);
-		return;
-	}
+function registerMessageHandlers(): void {
+	onHostMessage((raw: unknown) => {
+		const msg = raw as AgentMessage;
+		if (!msg?.type || !isValidMessageType(msg.type)) {
+			logger.warn("Received invalid message", raw);
+			return;
+		}
 
-	logger.debug(`← ${msg.type} (${msg.id})`);
+		logger.debug(`← ${msg.type} (${msg.id})`);
 
-	switch (msg.type) {
-		case AgentMessageType.ChatSend:
-			handleChatSend(msg);
-			break;
-		case AgentMessageType.ChatCancel:
-			handleChatCancel();
-			break;
-		case AgentMessageType.AgentStatus:
-			handleAgentStatus(msg.id);
-			break;
-		case AgentMessageType.AgentConfig:
-			handleAgentConfig(msg);
-			break;
-		case AgentMessageType.SessionCreate:
-			handleSessionCreate(msg);
-			break;
-		case AgentMessageType.SessionList:
-			handleSessionList(msg.id);
-			break;
-		case AgentMessageType.SessionSwitch:
-			handleSessionSwitch(msg);
-			break;
-		case AgentMessageType.SessionDelete:
-			handleSessionDelete(msg);
-			break;
-		case AgentMessageType.SessionRename:
-			handleSessionRename(msg);
-			break;
-		case AgentMessageType.SessionHistory:
-			handleSessionHistory(msg);
-			break;
-		case AgentMessageType.AgentShutdown:
-			handleShutdown();
-			break;
-		case AgentMessageType.ModelRefresh:
-			handleModelRefresh(msg);
-			break;
-		case AgentMessageType.ModelSetApiKey:
-			handleModelSetApiKey(msg);
-			break;
-	}
-});
+		switch (msg.type) {
+			case AgentMessageType.ChatSend:
+				handleChatSend(msg);
+				break;
+			case AgentMessageType.ChatCancel:
+				handleChatCancel();
+				break;
+			case AgentMessageType.AgentStatus:
+				handleAgentStatus(msg.id);
+				break;
+			case AgentMessageType.AgentConfig:
+				handleAgentConfig(msg);
+				break;
+			case AgentMessageType.SessionCreate:
+				handleSessionCreate(msg);
+				break;
+			case AgentMessageType.SessionList:
+				handleSessionList(msg.id);
+				break;
+			case AgentMessageType.SessionSwitch:
+				handleSessionSwitch(msg);
+				break;
+			case AgentMessageType.SessionDelete:
+				handleSessionDelete(msg);
+				break;
+			case AgentMessageType.SessionRename:
+				handleSessionRename(msg);
+				break;
+			case AgentMessageType.SessionHistory:
+				handleSessionHistory(msg);
+				break;
+			case AgentMessageType.AgentShutdown:
+				handleShutdown();
+				break;
+			case AgentMessageType.ModelRefresh:
+				handleModelRefresh(msg);
+				break;
+			case AgentMessageType.ModelSetApiKey:
+				handleModelSetApiKey(msg);
+				break;
+		}
+	});
+}
 
 // ============================================================================
 // Handler functions
@@ -368,4 +386,7 @@ function handleShutdown(): void {
 process.on("SIGTERM", () => void shutdown());
 process.on("SIGINT", () => void shutdown());
 
-void startup();
+void startTransport().then(() => {
+	registerMessageHandlers();
+	return startup();
+});
