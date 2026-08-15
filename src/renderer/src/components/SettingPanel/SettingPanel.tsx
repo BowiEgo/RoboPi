@@ -1,4 +1,4 @@
-import { type Component, createSignal, For, onMount } from "solid-js";
+import { type Component, createSignal, onMount } from "solid-js";
 
 import { type LocaleId, useLocale } from "@/contexts/LocaleContext";
 
@@ -6,8 +6,7 @@ import ModelManager, { type SavedModel } from "@/components/ModelManager/ModelMa
 import Versions from "@/components/Versions/Versions";
 
 import { getSettings, type SettingsInfo } from "@/ipc/settings";
-import { uiExtensions } from "@/ui-extensions";
-import { resolveView } from "@/ui-views";
+import SlotRenderer from "@/components/SlotRenderer/SlotRenderer";
 import { cstyle } from "@/utils/cstyle";
 
 const LOCALES: { id: LocaleId; labelKey: string }[] = [
@@ -66,8 +65,6 @@ const SettingPanel: Component = () => {
 	const { t, locale, setLocale } = useLocale();
 	const [info, setInfo] = createSignal<SettingsInfo | null>(null);
 	const [savedModels, setSavedModels] = createSignal<SavedModel[]>([]);
-
-	const sectionExtensions = () => uiExtensions().filter((e) => e.slots.includes("settings:section"));
 
 	function addModel(model: SavedModel) {
 		setSavedModels((prev) => [...prev, model]);
@@ -134,12 +131,7 @@ const SettingPanel: Component = () => {
 			</section>
 
 			{/* ── Plugin-provided settings sections ── */}
-			<For each={sectionExtensions()}>
-				{(ext) => {
-					const View = resolveView(ext.view);
-					return View ? <View /> : null;
-				}}
-			</For>
+			<SlotRenderer slot="settings:section" />
 
 			<Versions />
 		</div>

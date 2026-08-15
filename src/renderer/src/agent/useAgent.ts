@@ -363,6 +363,15 @@ function updatePluginConfig(pluginId: string, config: unknown) {
 	});
 }
 
+function unloadPlugin(pluginId: string) {
+	if (!agent) return;
+	agent.send({
+		id: `plugin-unload-${pluginId}-${Date.now()}`,
+		type: AgentMessageType.PluginUnload,
+		payload: { pluginId },
+	});
+}
+
 // ════════════════════════════════════════════════════════════════
 //  Module-level functions
 // ════════════════════════════════════════════════════════════════
@@ -499,6 +508,7 @@ export function useAgent() {
 		selectModel,
 		selectThinkingLevel,
 		updatePluginConfig,
+		unloadPlugin,
 		switchSession,
 		deleteSession,
 		renameSession,
