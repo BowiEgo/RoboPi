@@ -210,6 +210,9 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 	// Jumping to a not-yet-rendered (or not-yet-loaded) message first loads
 	// history until the target is present, then scrolls to it once mounted.
 	const [revealRequest, setRevealRequest] = createSignal<{ id: string } | null>(null);
+	// While a reveal is in flight (and briefly after), suppress the scroll-triggered
+	// auto-load so it can't fight the jump with more history pages.
+	let suppressAutoLoadUntil = 0;
 
 	function revealMessage(domId: string) {
 		setRevealRequest({ id: domId });
@@ -241,6 +244,8 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 		const el = document.getElementById(req.id);
 		if (el) {
 			setRevealRequest(null);
+			// Keep auto-load quiet for a beat after landing on the target.
+			suppressAutoLoadUntil = Date.now() + 600;
 			const SCROLL_OFFSET = 80;
 			const elTop = el.getBoundingClientRect().top;
 			const containerTop = scrollEl.getBoundingClientRect().top;
@@ -256,6 +261,9 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 	function handleScroll(e: Event) {
 		autoScroll.onScroll();
 		const el = e.currentTarget as HTMLElement;
+		// Don't auto-load more history while an outline jump is in flight (or
+		// right after landing), otherwise the two fight over scroll position.
+		if (revealRequest() || Date.now() < suppressAutoLoadUntil) return;
 		if (el.scrollTop < 160) loadMore();
 	}
 

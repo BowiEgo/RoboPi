@@ -58,6 +58,7 @@ const sessionMsgCache = new Map<string, ChatBubbleProps[]>();
 
 let pendingMessage: string | null = null;
 let _storeReady = false;
+let historyLoading = false;
 
 // ── IPC listener (registered once at module level) ──
 
@@ -502,11 +503,13 @@ async function switchSession(id: string): Promise<{ sessionId: string; name: str
 
 async function loadMoreHistory(): Promise<void> {
 	if (!agent) throw new Error("Agent not ready");
+	if (historyLoading) return;
 	const msgs = messages();
 	if (msgs.length === 0) return;
 	const beforeId = msgs[0].id;
 	if (!beforeId) return;
 
+	historyLoading = true;
 	const msgId = `history-${Date.now()}`;
 	const promise = track<void>(msgId);
 	agent.send({
@@ -514,7 +517,11 @@ async function loadMoreHistory(): Promise<void> {
 		type: AgentMessageType.SessionHistory,
 		payload: { sessionId: activeId()!, beforeId },
 	});
-	return promise;
+	try {
+		return await promise;
+	} finally {
+		historyLoading = false;
+	}
 }
 
 async function deleteSession(id: string): Promise<void> {
