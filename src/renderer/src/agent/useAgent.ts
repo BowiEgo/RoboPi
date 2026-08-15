@@ -478,6 +478,12 @@ async function switchSession(id: string): Promise<{ sessionId: string; name: str
 	const curId = activeId();
 	if (curId) sessionMsgCache.set(curId, messages());
 
+	// Optimistic switch: flip the active highlight immediately so the UI
+	// responds on click, then load the session's messages asynchronously.
+	const target = sessions().find((s) => s.id === id);
+	setActiveId(id);
+	if (target) setActiveName(target.name);
+
 	setLoading(true);
 	setStats(null);
 	const msgId = `switch-${Date.now()}`;
