@@ -153,7 +153,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 	// Only the most recent PAGE_SIZE messages are mounted; scrolling to the
 	// top reveals earlier ones. Markdown rendering is the main source of
 	// switch latency on long sessions, so we keep the mounted set small.
-	const PAGE_SIZE = 40;
+	const PAGE_SIZE = 10;
 	const [visibleCount, setVisibleCount] = createSignal(PAGE_SIZE);
 	let scrollEl: HTMLElement | undefined;
 
