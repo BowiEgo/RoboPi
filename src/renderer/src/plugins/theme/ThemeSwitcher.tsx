@@ -31,7 +31,13 @@ const C = {
 			active: { true: "btn-primary btn-active" },
 		},
 	}),
-	grid: cstyle({ display: "flex flex-wrap", spacing: "gap-2 p-1", sizing: "h-72 overflow-y-auto content-start" }),
+	grid: cstyle({
+		display: "flex flex-wrap",
+		spacing: "gap-2 p-2",
+		sizing: "h-72 overflow-y-auto content-start",
+		interaction: "rounded-lg",
+		color: "bg-base-200",
+	}),
 	card: cstyle({
 		display: "flex items-center",
 		spacing: "gap-2 px-3 py-2",

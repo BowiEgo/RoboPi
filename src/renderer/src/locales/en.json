@@ -62,7 +62,7 @@
 
 	"theme.title": "Theme",
 	"theme.desc": "Current theme: {name} — {desc}",
-	"theme.switch": "Switch Theme",
+	"theme.switch": "Theme",
 	"theme.colors": "Colors",
 	"theme.gradient": "Brand Gradient",
 	"theme.typography": "Typography",

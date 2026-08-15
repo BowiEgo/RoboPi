@@ -62,7 +62,7 @@
 
 	"theme.title": "主题",
 	"theme.desc": "当前主题：{name} — {desc}",
-	"theme.switch": "切换主题",
+	"theme.switch": "主题",
 	"theme.colors": "颜色",
 	"theme.gradient": "品牌渐变",
 	"theme.typography": "字体",
