@@ -1,13 +1,12 @@
 /**
- * Built-in view: appearance mode + theme cards.
+ * Built-in view: theme cards (theme picking).
  *
  * Declared by the builtin:theme plugin via ui { settings:general, theme-switcher }.
- * A renderer-local feature — theme state lives in ThemeContext, no Agent Host
- * round-trip — exposed as a plugin view so it can be disabled/replaced like
- * any other settings section.
+ * The brightness mode (light/dark/system) is NOT here — it lives in the
+ * built-in AppearanceMode section, so disabling this plugin only removes
+ * theme picking, not the light/dark switch.
  */
 
-import { Monitor, Moon, Sun } from "lucide-solid";
 import { type Component, For } from "solid-js";
 
 import { useLocale } from "@/contexts/LocaleContext";
@@ -22,14 +21,6 @@ const C = {
 	sectionTitle: cstyle({
 		text: "font-mono text-[14px] font-medium uppercase tracking-wider",
 		color: "text-base-content/80",
-	}),
-	modeRow: cstyle({ display: "flex", spacing: "gap-2" }),
-	modeBtn: cstyle({
-		display: "btn btn-soft btn-sm",
-		spacing: "gap-2",
-		variants: {
-			active: { true: "btn-primary btn-active" },
-		},
 	}),
 	currentRow: cstyle({ display: "flex items-center", spacing: "gap-3" }),
 	currentLabel: cstyle({ text: "text-xs", color: "text-base-content/50" }),
@@ -86,69 +77,49 @@ function ThemeSwatch(props: { themeId: string }) {
 
 const ThemeSwitcher: Component = () => {
 	const { t } = useLocale();
-	const { theme, setTheme, mode, setMode } = useTheme();
+	const { theme, setTheme } = useTheme();
 
 	const lightThemes = () => [...THEMES].filter((id) => !isDarkTheme(id));
 	const darkThemes = () => [...THEMES].filter((id) => isDarkTheme(id));
 
 	return (
-		<>
-			<section class={C.section()}>
-				<h2 class={C.sectionTitle()}>{t("theme.mode")}</h2>
-				<div class={C.modeRow()}>
-					<button type="button" class={C.modeBtn({ active: mode() === "light" })} onClick={() => setMode("light")}>
-						<Sun class="w-4 h-4" />
-						<span>{t("theme.modeLight")}</span>
-					</button>
-					<button type="button" class={C.modeBtn({ active: mode() === "dark" })} onClick={() => setMode("dark")}>
-						<Moon class="w-4 h-4" />
-						<span>{t("theme.modeDark")}</span>
-					</button>
-					<button type="button" class={C.modeBtn({ active: mode() === "system" })} onClick={() => setMode("system")}>
-						<Monitor class="w-4 h-4" />
-						<span>{t("theme.modeSystem")}</span>
-					</button>
+		<section class={C.section()}>
+			<h2 class={C.sectionTitle()}>{t("theme.switch")}</h2>
+
+			<div class={C.currentRow()}>
+				<span class={C.currentLabel()}>{t("theme.current")}</span>
+				<div class={C.currentCard()}>
+					<ThemeSwatch themeId={theme()} />
+					<span>{theme()}</span>
 				</div>
-			</section>
+			</div>
 
-			<section class={C.section()}>
-				<h2 class={C.sectionTitle()}>{t("theme.switch")}</h2>
-
-				<div class={C.currentRow()}>
-					<span class={C.currentLabel()}>{t("theme.current")}</span>
-					<div class={C.currentCard()}>
-						<ThemeSwatch themeId={theme()} />
-						<span>{theme()}</span>
-					</div>
+			<div class={C.scroll()}>
+				<div class={C.groupLabel()}>{t("theme.modeLight")}</div>
+				<div class={C.grid()}>
+					<For each={lightThemes()}>
+						{(id) => (
+							<button type="button" class={C.card({ active: theme() === id })} onClick={() => setTheme(id)} data-theme={id}>
+								<ThemeSwatch themeId={id} />
+								<span class="truncate">{id}</span>
+							</button>
+						)}
+					</For>
 				</div>
 
-				<div class={C.scroll()}>
-					<div class={C.groupLabel()}>{t("theme.modeLight")}</div>
-					<div class={C.grid()}>
-						<For each={lightThemes()}>
-							{(id) => (
-								<button type="button" class={C.card({ active: theme() === id })} onClick={() => setTheme(id)} data-theme={id}>
-									<ThemeSwatch themeId={id} />
-									<span class="truncate">{id}</span>
-								</button>
-							)}
-						</For>
-					</div>
-
-					<div class={C.groupLabel()}>{t("theme.modeDark")}</div>
-					<div class={C.grid()}>
-						<For each={darkThemes()}>
-							{(id) => (
-								<button type="button" class={C.card({ active: theme() === id })} onClick={() => setTheme(id)} data-theme={id}>
-									<ThemeSwatch themeId={id} />
-									<span class="truncate">{id}</span>
-								</button>
-							)}
-						</For>
-					</div>
+				<div class={C.groupLabel()}>{t("theme.modeDark")}</div>
+				<div class={C.grid()}>
+					<For each={darkThemes()}>
+						{(id) => (
+							<button type="button" class={C.card({ active: theme() === id })} onClick={() => setTheme(id)} data-theme={id}>
+								<ThemeSwatch themeId={id} />
+								<span class="truncate">{id}</span>
+							</button>
+						)}
+					</For>
 				</div>
-			</section>
-		</>
+			</div>
+		</section>
 	);
 };
 

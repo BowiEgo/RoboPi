@@ -4,6 +4,7 @@ import { type Component, createSignal, For, onMount, Show } from "solid-js";
 import { type LocaleId, useLocale } from "@/contexts/LocaleContext";
 
 import ModelManager, { type SavedModel } from "@/components/ModelManager/ModelManager";
+import AppearanceMode from "@/components/AppearanceMode/AppearanceMode";
 import SlotRenderer from "@/components/SlotRenderer/SlotRenderer";
 import Versions from "@/components/Versions/Versions";
 
@@ -38,7 +39,8 @@ const C = {
 	content: cstyle({
 		display: "flex flex-col",
 		sizing: "flex-1 min-w-0",
-		spacing: "gap-8 pl-6",
+		spacing: "gap-8 pl-6 pb-6",
+		interaction: "overflow-y-scroll",
 	}),
 	section: cstyle({ display: "flex flex-col", spacing: "gap-4" }),
 	sectionTitle: cstyle({
@@ -162,6 +164,8 @@ const SettingPanel: Component = () => {
 							))}
 						</div>
 					</section>
+
+					<AppearanceMode />
 
 					<SlotRenderer slot="settings:general" />
 				</Show>
