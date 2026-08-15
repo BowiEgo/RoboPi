@@ -21,8 +21,10 @@ import {
 	isThinkingLevel,
 } from "./guards.ts";
 import { onHostMessage, postMessageToHost, setTransport, uid } from "./ipc.ts";
+import type { CoreEvents, CoreServices } from "./plugin-types.ts";
 import { ChildProcessTransport } from "./transport/child-process.ts";
 import { WebSocketTransport } from "./transport/websocket.ts";
+import { PluginRegistry } from "../../shared/plugin/registry.ts";
 import { respondError, respondNotReady } from "./respond.ts";
 
 // ============================================================================
@@ -31,6 +33,7 @@ import { respondError, respondNotReady } from "./respond.ts";
 
 const agentHost = new AgentHost();
 const logger = createLogger("AgentHost");
+const registry = new PluginRegistry<CoreEvents, CoreServices>();
 
 /** Accessor — returns null until initialize() completes. Handlers must check. */
 function sh() {
@@ -115,56 +118,39 @@ async function shutdown(): Promise<void> {
 // ============================================================================
 
 function registerMessageHandlers(): void {
-	onHostMessage((raw: unknown) => {
-		const msg = raw as AgentMessage;
-		if (!msg?.type || !isValidMessageType(msg.type)) {
-			logger.warn("Received invalid message", raw);
-			return;
-		}
+	// Bridge: inbound transport messages → the plugin event bus.
+	onHostMessage((raw) => {
+		registry.root.emit("transport:message", raw as AgentMessage);
+	});
 
-		logger.debug(`← ${msg.type} (${msg.id})`);
+	// Route inbound protocol messages to typed `ipc:<type>` events.
+	registry.load({ id: "core:ipc-router" }, (ctx) => {
+		ctx.on("transport:message", (raw) => {
+			const msg = raw as AgentMessage;
+			if (!msg?.type || !isValidMessageType(msg.type)) {
+				logger.warn("Received invalid message", raw);
+				return;
+			}
+			logger.debug(`← ${msg.type} (${msg.id})`);
+			ctx.emit(`ipc:${msg.type}` as `ipc:${string}`, msg);
+		});
+	});
 
-		switch (msg.type) {
-			case AgentMessageType.ChatSend:
-				handleChatSend(msg);
-				break;
-			case AgentMessageType.ChatCancel:
-				handleChatCancel();
-				break;
-			case AgentMessageType.AgentStatus:
-				handleAgentStatus(msg.id);
-				break;
-			case AgentMessageType.AgentConfig:
-				handleAgentConfig(msg);
-				break;
-			case AgentMessageType.SessionCreate:
-				handleSessionCreate(msg);
-				break;
-			case AgentMessageType.SessionList:
-				handleSessionList(msg.id);
-				break;
-			case AgentMessageType.SessionSwitch:
-				handleSessionSwitch(msg);
-				break;
-			case AgentMessageType.SessionDelete:
-				handleSessionDelete(msg);
-				break;
-			case AgentMessageType.SessionRename:
-				handleSessionRename(msg);
-				break;
-			case AgentMessageType.SessionHistory:
-				handleSessionHistory(msg);
-				break;
-			case AgentMessageType.AgentShutdown:
-				handleShutdown();
-				break;
-			case AgentMessageType.ModelRefresh:
-				handleModelRefresh(msg);
-				break;
-			case AgentMessageType.ModelSetApiKey:
-				handleModelSetApiKey(msg);
-				break;
-		}
+	// One listener per protocol message type.
+	registry.load({ id: "core:ipc-handlers" }, (ctx) => {
+		ctx.on(`ipc:${AgentMessageType.ChatSend}`, handleChatSend);
+		ctx.on(`ipc:${AgentMessageType.ChatCancel}`, () => handleChatCancel());
+		ctx.on(`ipc:${AgentMessageType.AgentStatus}`, (msg) => handleAgentStatus(msg.id));
+		ctx.on(`ipc:${AgentMessageType.AgentConfig}`, (msg) => void handleAgentConfig(msg));
+		ctx.on(`ipc:${AgentMessageType.SessionCreate}`, handleSessionCreate);
+		ctx.on(`ipc:${AgentMessageType.SessionList}`, (msg) => handleSessionList(msg.id));
+		ctx.on(`ipc:${AgentMessageType.SessionSwitch}`, handleSessionSwitch);
+		ctx.on(`ipc:${AgentMessageType.SessionDelete}`, handleSessionDelete);
+		ctx.on(`ipc:${AgentMessageType.SessionRename}`, handleSessionRename);
+		ctx.on(`ipc:${AgentMessageType.SessionHistory}`, handleSessionHistory);
+		ctx.on(`ipc:${AgentMessageType.AgentShutdown}`, () => handleShutdown());
+		ctx.on(`ipc:${AgentMessageType.ModelRefresh}`, (msg) => void handleModelRefresh(msg));
+		ctx.on(`ipc:${AgentMessageType.ModelSetApiKey}`, (msg) => void handleModelSetApiKey(msg));
 	});
 }
 
