@@ -10,6 +10,8 @@
 import type { PluginDescriptor, UIExtensionDescriptor } from "@shared/agent-types";
 import { createMemo, createSignal } from "solid-js";
 
+import { resetThemeToDefaults } from "@/contexts/ThemeContext";
+
 interface LocalPlugin {
 	id: string;
 	name: string;
@@ -85,10 +87,15 @@ export function setRemotePluginsList(plugins: PluginDescriptor[]): void {
 
 /** Toggle a renderer-local plugin on/off. */
 export function toggleLocalPlugin(id: string): void {
+	const wasEnabled = !disabledLocal().has(id);
 	setDisabledLocal((prev) => {
 		const next = new Set(prev);
 		if (next.has(id)) next.delete(id);
 		else next.add(id);
 		return next;
 	});
+	// Disabling the theme plugin resets to the default light/dark themes.
+	if (id === "builtin:theme" && wasEnabled) {
+		resetThemeToDefaults();
+	}
 }

@@ -115,6 +115,19 @@ function getInitialDark(): string {
 	return saved && (THEMES as readonly string[]).includes(saved) ? saved : "dark";
 }
 
+// ── Module-level bridge ──
+// Lets non-React code (ui-extensions) reset theme memory when the theme
+// plugin is disabled, without importing the React tree.
+let themeResetHandler: (() => void) | null = null;
+
+export function registerThemeResetHandler(fn: () => void): void {
+	themeResetHandler = fn;
+}
+
+export function resetThemeToDefaults(): void {
+	themeResetHandler?.();
+}
+
 export const ThemeProvider: Component<{ children: JSX.Element }> = (props) => {
 	const [theme, setThemeSignal] = createSignal(getInitialTheme());
 	const [isDark, setIsDark] = createSignal(DARK_THEMES.includes(getInitialTheme()));
@@ -174,6 +187,23 @@ export const ThemeProvider: Component<{ children: JSX.Element }> = (props) => {
 		const handler = () => applyTheme(mq.matches ? darkTheme() : lightTheme());
 		mq.addEventListener("change", handler);
 		return () => mq.removeEventListener("change", handler);
+	});
+
+	// When the theme plugin is disabled, fall back to the default light/dark
+	// themes (dropping any custom per-brightness picks).
+	registerThemeResetHandler(() => {
+		setLightTheme("light");
+		setDarkTheme("dark");
+		localStorage.setItem(LIGHT_KEY, "light");
+		localStorage.setItem(DARK_KEY, "dark");
+		if (mode() === "dark") {
+			applyTheme("dark");
+		} else if (mode() === "system") {
+			const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+			applyTheme(dark ? "dark" : "light");
+		} else {
+			applyTheme("light");
+		}
 	});
 
 	// Apply theme on mount
