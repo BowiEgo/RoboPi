@@ -33,7 +33,28 @@ const LOCAL_PLUGINS: LocalPlugin[] = [
 ];
 
 /** Ids of locally-disabled plugins. */
-const [disabledLocal, setDisabledLocal] = createSignal<Set<string>>(new Set());
+const DISABLED_LOCAL_KEY = "robo-pi-disabled-local-plugins";
+
+function loadDisabledLocal(): Set<string> {
+	try {
+		const saved = localStorage.getItem(DISABLED_LOCAL_KEY);
+		if (!saved) return new Set();
+		const parsed: unknown = JSON.parse(saved);
+		return new Set(Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : []);
+	} catch {
+		return new Set();
+	}
+}
+
+function persistDisabledLocal(next: Set<string>): void {
+	try {
+		localStorage.setItem(DISABLED_LOCAL_KEY, JSON.stringify([...next]));
+	} catch {
+		// Ignore storage failures (private mode, quota) — non-fatal.
+	}
+}
+
+const [disabledLocal, setDisabledLocal] = createSignal<Set<string>>(loadDisabledLocal());
 
 /** Backend plugins' inventory, set from plugin:list. */
 const [remotePlugins, setRemotePlugins] = createSignal<PluginDescriptor[]>([]);
@@ -97,6 +118,7 @@ export function toggleLocalPlugin(id: string): void {
 		const next = new Set(prev);
 		if (next.has(id)) next.delete(id);
 		else next.add(id);
+		persistDisabledLocal(next);
 		return next;
 	});
 	// Disabling the theme plugin resets to the default light/dark themes.

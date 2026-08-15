@@ -36,3 +36,7 @@ export function getAuthPath(): string {
 export function getModelsPath(): string {
 	return join(getConfigDir(), "models.json");
 }
+
+export function getDisabledPluginsPath(): string {
+	return join(getConfigDir(), "disabled-plugins.json");
+}

@@ -6,11 +6,14 @@
  *
  */
 
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+
 import { type AgentMessage, AgentMessageType, isValidMessageType } from "../../shared/agent-types.ts";
 import { createLogger } from "../../shared/logger/index.ts";
 import { type PluginEntry, type PluginManifest, PluginRegistry } from "../../shared/plugin/registry.ts";
 import { PluginError } from "../../shared/plugin/types.ts";
 import { AgentHost } from "./agent-host.ts";
+import { getDisabledPluginsPath } from "./config.ts";
 import { AGENT_READY_ID, AGENT_VERSION, DEFAULT_SESSION_NAME, ErrorCode } from "./constants.ts";
 import {
 	isChatSendPayload,
@@ -38,6 +41,31 @@ const agentHost = new AgentHost();
 const logger = createLogger("AgentHost");
 const registry = new PluginRegistry<CoreEvents, CoreServices>();
 
+// ── Disabled plugins persistence ──
+// Unloaded plugins are remembered across restarts so their off state survives.
+// Core plugins (core:*) are always loaded — they are infrastructure and cannot
+// be disabled from the UI.
+function loadDisabledPlugins(): Set<string> {
+	try {
+		const path = getDisabledPluginsPath();
+		if (!existsSync(path)) return new Set();
+		const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
+		return new Set(Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : []);
+	} catch {
+		return new Set();
+	}
+}
+
+function persistDisabledPlugins(set: Set<string>): void {
+	try {
+		writeFileSync(getDisabledPluginsPath(), JSON.stringify([...set], null, 2));
+	} catch (err) {
+		logger.error("Failed to persist disabled plugins", err);
+	}
+}
+
+const disabledPlugins = loadDisabledPlugins();
+
 interface PluginDef {
 	manifest: PluginManifest<CoreServices>;
 	entry: PluginEntry<CoreEvents, CoreServices>;
@@ -53,6 +81,8 @@ function registerCorePlugin(
 	config?: unknown,
 ) {
 	pluginDefs.set(manifest.id, { manifest, entry, defaultConfig: config });
+	// Skip plugins the user disabled in a previous session (core plugins always load).
+	if (!manifest.id.startsWith("core:") && disabledPlugins.has(manifest.id)) return;
 	return registry.load(manifest, entry, config);
 }
 
@@ -149,6 +179,8 @@ async function handlePluginUnload(msg: AgentMessage): Promise<void> {
 	const payload = msg.payload as { pluginId: string };
 	try {
 		await registry.unload(payload.pluginId);
+		disabledPlugins.add(payload.pluginId);
+		persistDisabledPlugins(disabledPlugins);
 		sendPluginList();
 		sendUIManifest();
 	} catch (err) {
@@ -162,6 +194,8 @@ function handlePluginLoad(msg: AgentMessage): void {
 	const def = pluginDefs.get(payload.pluginId);
 	if (!def) return;
 	registry.load(def.manifest, def.entry, def.defaultConfig);
+	disabledPlugins.delete(payload.pluginId);
+	persistDisabledPlugins(disabledPlugins);
 	sendPluginList();
 	sendUIManifest();
 }
