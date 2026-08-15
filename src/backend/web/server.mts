@@ -1,25 +1,24 @@
 /**
  * RoboPi Web server (minimal, Electron-free).
  *
- * Serves the built renderer (`out/renderer`) and bridges the browser to the
- * Agent Host child process:
- *   - UI → Agent:  POST /agent/send  (forwarded to the child via IPC)
- *   - Agent → UI:  GET  /agent/stream (Server-Sent Events, one frame per message)
- *   - Settings:    GET/POST /api/settings*
- *
- * This replaces the Electron main-process bridge (agent-host-manager) with a
- * plain Node http server, so the exact same renderer + Agent Host run without
- * Electron. The Agent Host source is unchanged.
+ * Serves the built renderer and the settings API. Agent traffic no longer
+ * passes through here: the browser connects straight to the Agent Host's
+ * WebSocket transport (default port 9241). This process only:
+ *   - spawns the Agent Host in WS mode,
+ *   - keeps a lightweight WS client to cache settings data and relay the
+ *     model API-key / refresh operations,
+ *   - serves /api/settings* and the static renderer.
  */
 
-import { type ChildProcess, spawn } from "node:child_process";
+import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { dirname, extname, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { WebSocket } from "ws";
 
-import { type AgentMessage, AgentMessageType, isValidMessageType } from "../../shared/agent-types.ts";
+import { type AgentMessage, AgentMessageType } from "../../shared/agent-types.ts";
 import { getAuthPath, getConfigDir, getSessionsDir } from "../agent/config.ts";
 
 // ── Paths ──
@@ -32,92 +31,73 @@ const agentTsEntry = resolve(root, "src/backend/agent/index.mts");
 const agentBundleEntry = resolve(root, "out/main/agent-host.mjs");
 
 const PORT = Number(process.env.PORT ?? 3000);
-// When disabled, this process only serves /agent + /api (API-only mode). The
-// dev:web script sets this to "0" so the UI lives solely on the Vite port.
+const AGENT_PORT = Number(process.env.ROBOPI_PORT ?? 9241);
+// When disabled, this process serves no static files (dev:web owns the UI).
 const serveStatic = (process.env.ROBOPI_SERVE_STATIC ?? "1") !== "0";
 
-// ── Agent Host child process ──
+// ── Agent Host child process (WS transport) ──
 
 const agentEntry = existsSync(agentTsEntry) ? agentTsEntry : agentBundleEntry;
 
-const child: ChildProcess = spawn(process.execPath, ["--no-warnings", agentEntry], {
-	stdio: ["pipe", "pipe", "pipe", "ipc"],
+const child = spawn(process.execPath, ["--no-warnings", "--experimental-strip-types", agentEntry], {
+	stdio: ["pipe", "pipe", "pipe", "ignore"],
 	env: {
 		...process.env,
+		ROBOPI_TRANSPORT: "ws",
+		ROBOPI_PORT: String(AGENT_PORT),
 		PI_AGENT_MODEL: process.env.PI_AGENT_MODEL ?? "pi-agent/v1",
 	},
 });
 
-let isReady = false;
-const pending: AgentMessage[] = [];
-const clients = new Set<ServerResponse>();
-
-// Cached state for re-hydrating late-connecting browsers.
-let lastAgentReady: AgentMessage | null = null;
-let lastSessionSwitched: AgentMessage | null = null;
-let lastSessionListResult: AgentMessage | null = null;
-let lastAgentConfig: AgentMessage | null = null;
-let lastAvailableModels: string[] = [];
-let lastProviderList: { id: string; name: string }[] = [];
-
 child.stdout?.on("data", (d: Buffer) => process.stdout.write(`[agent] ${d.toString()}`));
 child.stderr?.on("data", (d: Buffer) => process.stderr.write(`[agent] ${d.toString()}`));
 
-child.on("message", (raw: unknown) => {
-	const msg = raw as AgentMessage;
-	if (!msg?.type || !isValidMessageType(msg.type)) return;
+// ── Lightweight WS client — settings data + model API-key/refresh ops ──
 
-	if (msg.type === AgentMessageType.AgentReady) {
-		isReady = true;
-		lastAgentReady = msg;
-		const p = msg.payload as { availableModels?: string[]; providerList?: { id: string; name: string }[] };
-		lastAvailableModels = p.availableModels ?? [];
-		lastProviderList = p.providerList ?? [];
-		flushPending();
-	} else if (msg.type === AgentMessageType.SessionSwitched) {
-		lastSessionSwitched = msg;
-	} else if (msg.type === AgentMessageType.SessionListResult) {
-		lastSessionListResult = msg;
-	} else if (msg.type === AgentMessageType.AgentConfig) {
-		lastAgentConfig = msg;
-	}
+let lastAvailableModels: string[] = [];
+let lastProviderList: { id: string; name: string }[] = [];
+let agentWs: WebSocket | null = null;
+const modelRefreshWaiters = new Map<string, (models: string[]) => void>();
 
-	broadcast(msg);
-});
+function connectAgentWs(): void {
+	const ws = new WebSocket(`ws://127.0.0.1:${AGENT_PORT}`);
+	agentWs = ws;
 
-child.on("error", (err) => {
-	process.stderr.write(`[agent] spawn error: ${err.message}\n`);
-	isReady = false;
-});
+	ws.on("message", (raw) => {
+		let msg: AgentMessage;
+		try {
+			msg = JSON.parse(raw.toString()) as AgentMessage;
+		} catch {
+			return;
+		}
+		if (msg.type === AgentMessageType.AgentReady) {
+			const p = msg.payload as { availableModels?: string[]; providerList?: { id: string; name: string }[] };
+			lastAvailableModels = p.availableModels ?? [];
+			lastProviderList = p.providerList ?? [];
+		} else if (msg.type === AgentMessageType.ModelRefreshed) {
+			const waiter = modelRefreshWaiters.get(msg.id);
+			if (waiter) {
+				modelRefreshWaiters.delete(msg.id);
+				waiter((msg.payload as { models?: string[] }).models ?? []);
+			}
+		}
+	});
 
-child.on("exit", (code, signal) => {
-	process.stderr.write(`[agent] exited (code: ${code}, signal: ${signal})\n`);
-	isReady = false;
-});
+	ws.on("close", () => {
+		if (agentWs === ws) agentWs = null;
+		setTimeout(connectAgentWs, 1000);
+	});
+
+	ws.on("error", () => {
+		// close will fire and schedule a reconnect.
+	});
+}
+
+connectAgentWs();
 
 function sendToAgent(msg: AgentMessage): void {
-	if (child && isReady) child.send(msg);
-	else pending.push(msg);
-}
-
-function flushPending(): void {
-	while (child && pending.length > 0) {
-		const msg = pending.shift();
-		if (msg) child.send(msg);
-	}
-}
-
-function broadcast(msg: AgentMessage): void {
-	const frame = `data: ${JSON.stringify(msg)}\n\n`;
-	for (const res of clients) res.write(frame);
-}
-
-function replay(res: ServerResponse): void {
-	for (const msg of [lastAgentReady, lastSessionSwitched, lastSessionListResult, lastAgentConfig]) {
-		if (!msg) continue;
-		res.write(
-			`data: ${JSON.stringify({ ...msg, id: `replay-${Date.now()}-${Math.random().toString(36).slice(2, 7)}` })}\n\n`,
-		);
+	if (agentWs?.readyState === WebSocket.OPEN) {
+		agentWs.send(JSON.stringify(msg));
 	}
 }
 
@@ -179,34 +159,7 @@ const MIME: Record<string, string> = {
 	".woff2": "font/woff2",
 };
 
-// ── Handlers ──
-
-function handleStream(req: IncomingMessage, res: ServerResponse): void {
-	res.writeHead(200, {
-		"Content-Type": "text/event-stream; charset=utf-8",
-		"Cache-Control": "no-cache, no-transform",
-		Connection: "keep-alive",
-	});
-	res.write(": connected\n\n");
-	clients.add(res);
-	replay(res);
-	req.on("close", () => clients.delete(res));
-	// Re-request a fresh session list so this client gets one even if its own
-	// init request raced the SSE connection (its response broadcast before the
-	// client was added to `clients`).
-	sendToAgent({
-		id: `refresh-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-		type: AgentMessageType.SessionList,
-		payload: {},
-	} as AgentMessage);
-}
-
-function handleAgentSend(req: IncomingMessage, res: ServerResponse): void {
-	void readJsonBody(req).then((body) => {
-		sendToAgent(body as unknown as AgentMessage);
-		sendJson(res, 200, { ok: true });
-	});
-}
+// ── Settings handlers ──
 
 async function handleGetSettings(_req: IncomingMessage, res: ServerResponse): Promise<void> {
 	const creds = await readCredentials();
@@ -243,23 +196,19 @@ function handleRefreshModels(_req: IncomingMessage, res: ServerResponse): void {
 	const id = `refresh-${Date.now()}`;
 	const result = new Promise<string[]>((resolveResult) => {
 		const timeout = setTimeout(() => {
-			child.off("message", onMessage);
+			modelRefreshWaiters.delete(id);
 			resolveResult([]);
 		}, 10000);
-		const onMessage = (raw: unknown): void => {
-			const msg = raw as AgentMessage;
-			if (msg?.id === id && msg.type === AgentMessageType.ModelRefreshed) {
-				clearTimeout(timeout);
-				child.off("message", onMessage);
-				const p = msg.payload as { models?: string[] };
-				resolveResult(p.models ?? []);
-			}
-		};
-		child.on("message", onMessage);
+		modelRefreshWaiters.set(id, (models) => {
+			clearTimeout(timeout);
+			resolveResult(models);
+		});
 		sendToAgent({ id, type: AgentMessageType.ModelRefresh, payload: { force: false } } as AgentMessage);
 	});
 	void result.then((models) => sendJson(res, 200, models));
 }
+
+// ── Static files ──
 
 async function handleStatic(_req: IncomingMessage, res: ServerResponse, pathname: string): Promise<void> {
 	const rel = pathname === "/" ? "index.html" : pathname.replace(/^\/+/, "");
@@ -287,14 +236,11 @@ const server = createServer((req, res) => {
 	const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
 	const pathname = url.pathname;
 
-	if (req.method === "GET" && pathname === "/agent/stream") return handleStream(req, res);
-	if (req.method === "POST" && pathname === "/agent/send") return handleAgentSend(req, res);
 	if (req.method === "GET" && pathname === "/api/settings") return void handleGetSettings(req, res);
 	if (req.method === "POST" && pathname === "/api/settings/api-key") return void handleSetApiKey(req, res);
 	if (req.method === "POST" && pathname === "/api/settings/refresh-models") return handleRefreshModels(req, res);
 	if (serveStatic) return void handleStatic(req, res, pathname);
 
-	// API-only mode: no static files. Point the browser at the Vite dev URL.
 	res.writeHead(404, { "Content-Type": "application/json" });
 	res.end(JSON.stringify({ error: "API-only mode — open the dev server URL (e.g. http://localhost:5173) instead" }));
 });
@@ -302,7 +248,7 @@ const server = createServer((req, res) => {
 server.listen(PORT, () => {
 	process.stdout.write(`RoboPi web server: http://localhost:${PORT}\n`);
 	process.stdout.write(`  renderer: ${rendererDir}\n`);
-	process.stdout.write(`  agent:    ${agentEntry}\n`);
+	process.stdout.write(`  agent:    ${agentEntry} (ws://127.0.0.1:${AGENT_PORT})\n`);
 });
 
 function shutdown(): void {

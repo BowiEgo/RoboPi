@@ -2,8 +2,9 @@
  * Agent IPC bridge.
  *
  * Electron: wraps window.agent (the IPC bridge exposed by preload).
- * Web: connects to the RoboPi web server via Server-Sent Events
- *       (agent → UI) + HTTP POST (UI → agent).
+ * Web: a WebSocket client to the Agent Host's WS transport (default port
+ *       9241, matching ROBOPI_PORT). The web server only serves static files
+ *       and settings; agent messages flow straight to the Agent Host.
  *
  * Any component that needs to talk to the Agent Host can import it.
  */
@@ -15,15 +16,21 @@ export interface AgentIpc {
 
 let cached: AgentIpc | null | undefined;
 
-/** Browser transport — mirrors window.agent using SSE + fetch (same origin). */
-function createWebIpc(): AgentIpc {
-	const listeners = new Set<(msg: unknown) => void>();
-	let es: EventSource | null = null;
+/** Default Agent Host WebSocket port (mirrors ROBOPI_PORT in the backend). */
+const WS_PORT = 9241;
 
-	function ensureStream() {
-		if (es) return;
-		es = new EventSource("/agent/stream");
-		es.onmessage = (ev) => {
+/** Browser transport — a WebSocket client with automatic reconnect. */
+function createWsIpc(): AgentIpc {
+	const listeners = new Set<(msg: unknown) => void>();
+	let ws: WebSocket | null = null;
+	let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+	const url = `ws://${location.hostname || "localhost"}:${WS_PORT}`;
+
+	function connect() {
+		if (ws) return;
+		ws = new WebSocket(url);
+		ws.onmessage = (ev) => {
 			try {
 				const msg = JSON.parse(ev.data as string) as unknown;
 				for (const listener of listeners) listener(msg);
@@ -31,27 +38,31 @@ function createWebIpc(): AgentIpc {
 				// Ignore malformed frames.
 			}
 		};
-		// EventSource reconnects automatically; keep `es` until closed explicitly.
+		ws.onclose = () => {
+			ws = null;
+			reconnectTimer = setTimeout(() => {
+				reconnectTimer = null;
+				if (listeners.size > 0) connect();
+			}, 1000);
+		};
 	}
 
 	return {
 		send(msg) {
-			fetch("/agent/send", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(msg),
-			}).catch(() => {
-				// Server not reachable yet — SSE will reconnect once it is.
-			});
+			if (ws?.readyState === WebSocket.OPEN) {
+				ws.send(JSON.stringify(msg));
+			}
+			// Not connected yet: drop — the Agent Host replays state on connect.
 		},
 		onMessage(cb) {
 			listeners.add(cb);
-			ensureStream();
+			connect();
 			return () => {
 				listeners.delete(cb);
 				if (listeners.size === 0) {
-					es?.close();
-					es = null;
+					if (reconnectTimer) clearTimeout(reconnectTimer);
+					ws?.close();
+					ws = null;
 				}
 			};
 		},
@@ -62,7 +73,7 @@ export function getAgentIpc(): AgentIpc | null {
 	if (cached !== undefined) return cached;
 
 	try {
-		cached = window.agent ?? createWebIpc();
+		cached = window.agent ?? createWsIpc();
 	} catch {
 		cached = null;
 	}
