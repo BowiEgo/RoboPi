@@ -8,6 +8,9 @@ export const AGENT_READY_ID = "agent-ready";
 
 export const DEFAULT_SESSION_NAME = "Untitled";
 
+/** Messages returned per session-switch / history page (keeps long sessions cheap to switch). */
+export const HISTORY_PAGE_SIZE = 50;
+
 // ── Error codes ──
 
 export const ErrorCode = {

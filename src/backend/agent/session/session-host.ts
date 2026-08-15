@@ -20,9 +20,9 @@ import {
 import { AgentMessageType, type SessionInfoPayload, type SessionMessagePayload } from "../../../shared/agent-types.ts";
 import { createLogger } from "../../../shared/logger/index.ts";
 import { getSessionsDir } from "../config.ts";
-import { DEFAULT_SESSION_NAME, ErrorCode, type ThinkingLevel } from "../constants.ts";
+import { DEFAULT_SESSION_NAME, ErrorCode, HISTORY_PAGE_SIZE, type ThinkingLevel } from "../constants.ts";
 import { postMessageToHost, uid } from "../ipc.ts";
-import { extractLastUserText, loadMessagesFromSession } from "./message-loader.ts";
+import { extractLastUserText, loadMessagesFromSession, type LoadedMessages } from "./message-loader.ts";
 import { TitleGenerator } from "./title-generator.ts";
 
 // ============================================================================
@@ -130,7 +130,7 @@ export class SessionHost {
 	// ---- Public queries ----
 
 	getInitialMessages(): SessionMessagePayload[] {
-		return this.currentSessionManager ? loadMessagesFromSession(this.currentSessionManager) : [];
+		return this.currentSessionManager ? loadMessagesFromSession(this.currentSessionManager).messages : [];
 	}
 
 	getCurrentModel(): string | undefined {
@@ -241,8 +241,10 @@ export class SessionHost {
 			const targetId = payload.sessionId;
 
 			if (this.currentSessionId === targetId && this.session) {
-				const messages = this.currentSessionManager ? loadMessagesFromSession(this.currentSessionManager) : [];
-				this.respondSwitched(msgId, targetId, this.currentSessionName ?? DEFAULT_SESSION_NAME, messages);
+				const loaded = this.currentSessionManager
+					? loadMessagesFromSession(this.currentSessionManager, { limit: HISTORY_PAGE_SIZE })
+					: { messages: [], hasMore: false };
+				this.respondSwitched(msgId, targetId, this.currentSessionName ?? DEFAULT_SESSION_NAME, loaded);
 				return;
 			}
 
@@ -262,14 +264,16 @@ export class SessionHost {
 				if (this.agentModelRef) this.agentModelRef.value = this.session.model?.id;
 				if (this.thinkingLevelRef) this.thinkingLevelRef.value = this.session.thinkingLevel;
 
-				this.respondSwitched(msgId, targetId, bg.name, loadMessagesFromSession(bg.manager));
+				this.respondSwitched(msgId, targetId, bg.name, loadMessagesFromSession(bg.manager, { limit: HISTORY_PAGE_SIZE }));
 				logger.info(`Brought to foreground: ${targetId} (${bg.name})`);
 				return;
 			}
 
 			// Load from disk
+			const t0 = performance.now();
 			const dir = await this.getSessionsDir();
 			const all = await SessionManager.listAll(dir);
+			const t1 = performance.now();
 			const target = all.find((s) => s.id === targetId);
 			if (!target) {
 				postMessageToHost({
@@ -281,6 +285,7 @@ export class SessionHost {
 			}
 
 			const sm = SessionManager.open(target.path);
+			const t2 = performance.now();
 			const sessionEntry = sm.getEntries().find((e) => (e as { type: string }).type === "session_info") as
 				| { name?: string }
 				| undefined;
@@ -289,10 +294,15 @@ export class SessionHost {
 			this.currentSessionId = sm.getSessionId();
 			this.currentSessionName = sessionEntry?.name ?? DEFAULT_SESSION_NAME;
 			this.session = await this.createAgentSessionFor(sm);
+			const t3 = performance.now();
 			this.subscribeToSession(this.session, this.currentSessionId);
 
-			this.respondSwitched(msgId, this.currentSessionId, this.currentSessionName, loadMessagesFromSession(sm));
-			logger.info(`Session switched: ${this.currentSessionId} (${this.currentSessionName})`);
+			const loaded = loadMessagesFromSession(sm, { limit: HISTORY_PAGE_SIZE });
+			const t4 = performance.now();
+			this.respondSwitched(msgId, this.currentSessionId, this.currentSessionName, loaded);
+			logger.info(
+				`Session switched: ${this.currentSessionId} (${this.currentSessionName}) — list=${(t1 - t0).toFixed(0)}ms open=${(t2 - t1).toFixed(0)}ms agent=${(t3 - t2).toFixed(0)}ms load=${(t4 - t3).toFixed(0)}ms msgs=${loaded.messages.length}`,
+			);
 		} catch (err) {
 			this.respondCrudError(msgId, ErrorCode.SWITCH_ERROR, err);
 		}
@@ -327,7 +337,9 @@ export class SessionHost {
 
 			if (isActive) {
 				await this.createDefaultSession();
-				const messages = this.currentSessionManager ? loadMessagesFromSession(this.currentSessionManager) : [];
+				const loaded = this.currentSessionManager
+					? loadMessagesFromSession(this.currentSessionManager, { limit: HISTORY_PAGE_SIZE })
+					: { messages: [], hasMore: false };
 				postMessageToHost({
 					id: uid(),
 					type: AgentMessageType.SessionCreated,
@@ -343,7 +355,8 @@ export class SessionHost {
 					payload: {
 						sessionId: this.currentSessionId ?? "",
 						name: this.currentSessionName ?? DEFAULT_SESSION_NAME,
-						messages,
+						messages: loaded.messages,
+						hasMore: loaded.hasMore,
 						model: this.getCurrentModel(),
 					},
 				});
@@ -393,15 +406,18 @@ export class SessionHost {
 		}
 	}
 
-	async history(msgId: string, payload: { sessionId: string }): Promise<void> {
+	async history(msgId: string, payload: { sessionId: string; beforeId?: string }): Promise<void> {
 		try {
+			const opts = { limit: HISTORY_PAGE_SIZE, beforeId: payload.beforeId };
 			if (this.currentSessionId === payload.sessionId && this.currentSessionManager) {
+				const loaded = loadMessagesFromSession(this.currentSessionManager, opts);
 				postMessageToHost({
 					id: msgId,
 					type: AgentMessageType.SessionHistoryResult,
 					payload: {
 						sessionId: payload.sessionId,
-						messages: loadMessagesFromSession(this.currentSessionManager),
+						messages: loaded.messages,
+						hasMore: loaded.hasMore,
 					},
 				});
 				return;
@@ -419,10 +435,11 @@ export class SessionHost {
 				return;
 			}
 
+			const loaded = loadMessagesFromSession(SessionManager.open(target.path), opts);
 			postMessageToHost({
 				id: msgId,
 				type: AgentMessageType.SessionHistoryResult,
-				payload: { sessionId: payload.sessionId, messages: loadMessagesFromSession(SessionManager.open(target.path)) },
+				payload: { sessionId: payload.sessionId, messages: loaded.messages, hasMore: loaded.hasMore },
 			});
 		} catch (err) {
 			this.respondCrudError(msgId, ErrorCode.HISTORY_ERROR, err);
@@ -431,14 +448,20 @@ export class SessionHost {
 
 	// ---- Private helpers ----
 
-	private respondSwitched(msgId: string, sessionId: string, name: string, messages: SessionMessagePayload[]): void {
+	private respondSwitched(
+		msgId: string,
+		sessionId: string,
+		name: string,
+		loaded: LoadedMessages,
+	): void {
 		postMessageToHost({
 			id: msgId,
 			type: AgentMessageType.SessionSwitched,
 			payload: {
 				sessionId,
 				name,
-				messages,
+				messages: loaded.messages,
+				hasMore: loaded.hasMore,
 				model: this.getCurrentModel(),
 				thinkingLevel: this.session?.thinkingLevel ?? this.thinkingLevelRef.value,
 				availableThinkingLevels: this.getAvailableThinkingLevels(),

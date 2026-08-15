@@ -281,6 +281,8 @@ export interface SessionRenamePayload {
 /** Load session message history. */
 export interface SessionHistoryPayload {
 	sessionId: string;
+	/** Load messages strictly before this message id (older history). */
+	beforeId?: string;
 }
 
 /** Session created successfully. */
@@ -301,6 +303,8 @@ export interface SessionSwitchedPayload {
 	sessionId: string;
 	name: string;
 	messages: SessionMessagePayload[];
+	/** True when there are messages older than the returned window. */
+	hasMore?: boolean;
 	model?: string;
 	thinkingLevel?: string;
 	availableThinkingLevels?: string[];
@@ -321,6 +325,8 @@ export interface SessionRenamedPayload {
 export interface SessionHistoryResultPayload {
 	sessionId: string;
 	messages: SessionMessagePayload[];
+	/** True when there are messages older than the returned window. */
+	hasMore?: boolean;
 }
 
 /** Session usage statistics (cumulative tokens, cache, cost, context usage). */

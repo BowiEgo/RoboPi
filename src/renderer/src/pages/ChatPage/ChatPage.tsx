@@ -49,7 +49,7 @@ function formatPercent(p: number | null | undefined): string {
 
 const ChatPage: Component<ChatPageProps> = (props) => {
 	const { t } = useLocale();
-	const { activeId, activeName, messages, resetKey, loading, agentConfig, stats, createSession, handleSend } =
+	const { activeId, activeName, messages, hasMoreHistory, resetKey, loading, agentConfig, stats, createSession, handleSend, loadMoreHistory } =
 		useAgent();
 
 	const minW = () => props.minWidth ?? 180;
@@ -105,8 +105,10 @@ const ChatPage: Component<ChatPageProps> = (props) => {
 					sessionId={activeId() ?? undefined}
 					agentConfig={agentConfig()}
 					initialMessages={messages()}
+					hasMoreHistory={hasMoreHistory()}
 					resetKey={resetKey()}
 					onSend={handleSend}
+					onLoadMoreHistory={() => loadMoreHistory()}
 				>
 					{props.children}
 				</ChatPanel>

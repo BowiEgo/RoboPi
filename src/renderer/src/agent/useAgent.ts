@@ -45,6 +45,7 @@ const [sessions, setSessions] = createSignal<SessionInfoPayload[]>([]);
 const [activeId, setActiveId] = createSignal<string | null>(null);
 const [activeName, setActiveName] = createSignal<string>("");
 const [messages, setMessages] = createSignal<ChatBubbleProps[]>([]);
+const [hasMoreHistory, setHasMoreHistory] = createSignal(false);
 const [resetKey, setResetKey] = createSignal("");
 const [loading, setLoading] = createSignal(false);
 const [agentConfig, setAgentConfig] = createSignal<AgentConfig>({});
@@ -114,6 +115,7 @@ if (agent && !_storeReady) {
 					sessionId: string;
 					name: string;
 					messages: ChatBubbleProps[];
+					hasMore?: boolean;
 					model?: string;
 					thinkingLevel?: string;
 					availableThinkingLevels?: string[];
@@ -131,11 +133,27 @@ if (agent && !_storeReady) {
 				const cached = sessionMsgCache.get(p.sessionId);
 				if (cached && cached.length >= (p.messages?.length ?? 0)) {
 					setMessages(cached);
+					setHasMoreHistory(false);
 				} else {
 					setMessages(p.messages ?? []);
+					setHasMoreHistory(p.hasMore ?? false);
 				}
 				setResetKey(`${p.sessionId}-${Date.now()}`);
 				setLoading(false);
+				settle(msg.id, p);
+				break;
+			}
+
+			case AgentMessageType.SessionHistoryResult: {
+				const p = msg.payload as {
+					sessionId: string;
+					messages: ChatBubbleProps[];
+					hasMore?: boolean;
+				};
+				if (p.sessionId === activeId()) {
+					setMessages((prev) => [...(p.messages ?? []), ...prev]);
+					setHasMoreHistory(p.hasMore ?? false);
+				}
 				settle(msg.id, p);
 				break;
 			}
@@ -472,6 +490,23 @@ async function switchSession(id: string): Promise<{ sessionId: string; name: str
 	return promise;
 }
 
+async function loadMoreHistory(): Promise<void> {
+	if (!agent) throw new Error("Agent not ready");
+	const msgs = messages();
+	if (msgs.length === 0) return;
+	const beforeId = msgs[0].id;
+	if (!beforeId) return;
+
+	const msgId = `history-${Date.now()}`;
+	const promise = track<void>(msgId);
+	agent.send({
+		id: msgId,
+		type: AgentMessageType.SessionHistory,
+		payload: { sessionId: activeId()!, beforeId },
+	});
+	return promise;
+}
+
 async function deleteSession(id: string): Promise<void> {
 	if (!agent) throw new Error("Agent not ready");
 
@@ -510,6 +545,7 @@ export function useAgent() {
 		activeId,
 		activeName,
 		messages,
+		hasMoreHistory,
 		resetKey,
 		loading,
 		agentConfig,
@@ -523,6 +559,7 @@ export function useAgent() {
 		switchSession,
 		deleteSession,
 		renameSession,
+		loadMoreHistory,
 		handleSend,
 	};
 }

@@ -155,7 +155,7 @@ describe("loadMessagesFromSession", () => {
 		};
 		expect(
 			// biome-ignore lint/suspicious/noExplicitAny: test mock
-			loadMessagesFromSession(sm as any),
+			loadMessagesFromSession(sm as any).messages,
 		).toEqual([]);
 	});
 
@@ -164,7 +164,7 @@ describe("loadMessagesFromSession", () => {
 			getBranch: () => [createMockEntry("1", "user", "hello")],
 		};
 		const result = // biome-ignore lint/suspicious/noExplicitAny: test mock
-			loadMessagesFromSession(sm as any);
+			loadMessagesFromSession(sm as any).messages;
 		expect(result).toHaveLength(1);
 		expect(result[0]).toMatchObject({
 			id: "1",
@@ -184,7 +184,7 @@ describe("loadMessagesFromSession", () => {
 			],
 		};
 		const result = // biome-ignore lint/suspicious/noExplicitAny: test mock
-			loadMessagesFromSession(sm as any);
+			loadMessagesFromSession(sm as any).messages;
 		expect(result).toHaveLength(1);
 		expect(result[0]).toMatchObject({
 			id: "2",
@@ -203,7 +203,7 @@ describe("loadMessagesFromSession", () => {
 			],
 		};
 		const result = // biome-ignore lint/suspicious/noExplicitAny: test mock
-			loadMessagesFromSession(sm as any);
+			loadMessagesFromSession(sm as any).messages;
 		expect(result).toHaveLength(1);
 	});
 
@@ -217,7 +217,7 @@ describe("loadMessagesFromSession", () => {
 			],
 		};
 		const result = // biome-ignore lint/suspicious/noExplicitAny: test mock
-			loadMessagesFromSession(sm as any);
+			loadMessagesFromSession(sm as any).messages;
 		expect(result[0].content).toBe("part1part2");
 	});
 
@@ -231,7 +231,7 @@ describe("loadMessagesFromSession", () => {
 			],
 		};
 		const result = // biome-ignore lint/suspicious/noExplicitAny: test mock
-			loadMessagesFromSession(sm as any);
+			loadMessagesFromSession(sm as any).messages;
 		expect(result).toHaveLength(4);
 		expect(result.map((m) => m.role)).toEqual(["user", "agent", "user", "agent"]);
 	});

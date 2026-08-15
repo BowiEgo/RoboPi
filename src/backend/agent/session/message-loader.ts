@@ -16,41 +16,89 @@ function fmtTimestamp(ms: number): string {
 	});
 }
 
-export function loadMessagesFromSession(sm: ReturnType<typeof SessionManager.open>): SessionMessagePayload[] {
+export interface LoadMessagesOptions {
+	/** Only load the most recent N messages (from the end). */
+	limit?: number;
+	/** Load messages strictly before this entry id (older history). */
+	beforeId?: string;
+}
+
+export interface LoadedMessages {
+	messages: SessionMessagePayload[];
+	/** True when there are messages older than the returned window. */
+	hasMore: boolean;
+}
+
+export function loadMessagesFromSession(
+	sm: ReturnType<typeof SessionManager.open>,
+	options: LoadMessagesOptions = {},
+): LoadedMessages {
 	const entries = sm.getBranch();
+	const { limit, beforeId } = options;
 	const messages: SessionMessagePayload[] = [];
 
-	for (const entry of entries) {
-		if (entry.type !== "message") continue;
-		const msg = (
-			entry as {
-				message: {
-					role: string;
-					content: unknown;
-					timestamp: number;
-				};
+	// Determine the starting index: the entry before `beforeId`, or the tail.
+	let startIdx = entries.length - 1;
+	if (beforeId) {
+		let found = -1;
+		for (let i = entries.length - 1; i >= 0; i--) {
+			if ((entries[i] as { id: string }).id === beforeId) {
+				found = i;
+				break;
 			}
-		).message;
+		}
+		if (found < 0) return { messages: [], hasMore: false };
+		startIdx = found - 1;
+	}
+
+	// Walk backwards so we can stop early once `limit` messages are collected.
+	let stopIdx = -1;
+	for (let i = startIdx; i >= 0; i--) {
+		const entry = entries[i] as {
+			type: string;
+			id?: string;
+			message?: {
+				role: string;
+				content: unknown;
+				timestamp: number;
+			};
+		};
+		if (entry.type !== "message") continue;
+		const msg = entry.message;
+		if (!msg) continue;
 
 		if (msg.role === "user") {
-			messages.push({
-				id: (entry as { id: string }).id,
+			messages.unshift({
+				id: entry.id ?? "",
 				role: "user",
 				content: extractText(msg.content),
 				timestamp: fmtTimestamp(msg.timestamp),
 			});
 		} else if (msg.role === "assistant") {
-			messages.push({
-				id: (entry as { id: string }).id,
+			messages.unshift({
+				id: entry.id ?? "",
 				role: "agent",
 				content: extractText(msg.content),
 				thinking: extractThinking(msg.content) || undefined,
 				timestamp: fmtTimestamp(msg.timestamp),
 			});
 		}
+		if (limit && messages.length >= limit) {
+			stopIdx = i;
+			break;
+		}
 	}
 
-	return messages;
+	// hasMore: any message entry strictly before the window we stopped at.
+	let hasMore = false;
+	for (let i = stopIdx - 1; i >= 0; i--) {
+		if ((entries[i] as { type: string }).type === "message") {
+			hasMore = true;
+			break;
+		}
+	}
+
+	return { messages, hasMore };
 }
 
 /** Extract concatenated text blocks from a message content. */

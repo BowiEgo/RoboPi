@@ -21,9 +21,11 @@ interface ChatPanelProps {
 	children?: JSX.Element;
 	sessionId?: string;
 	initialMessages?: ChatBubbleProps[];
+	hasMoreHistory?: boolean;
 	resetKey?: string;
 	agentConfig?: AgentConfig;
 	onSend?: (text: string) => Promise<unknown> | undefined;
+	onLoadMoreHistory?: () => void;
 }
 
 // ── Styles ──
@@ -164,21 +166,43 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 	});
 
 	const hasMore = createMemo(() => visibleMessages().length < displayMessages().length);
+	void hasMore;
 
 	// Reset the window when switching sessions.
+	let prevLoadedLen = 0;
 	createEffect(() => {
 		props.resetKey;
 		setVisibleCount(PAGE_SIZE);
+		prevLoadedLen = displayMessages().length;
 	});
 
 	let pendingScrollAnchor = 0;
 	function loadMore() {
-		if (!scrollEl || !hasMore()) return;
-		// Anchor the viewport to the content bottom so earlier messages appear
-		// above without shifting what the user is currently reading.
-		pendingScrollAnchor = scrollEl.scrollHeight - scrollEl.scrollTop;
-		setVisibleCount((c) => Math.min(c + PAGE_SIZE, displayMessages().length));
+		if (!scrollEl) return;
+		// More already-loaded messages to reveal.
+		if (visibleMessages().length < displayMessages().length) {
+			// Anchor the viewport to the content bottom so earlier messages appear
+			// above without shifting what the user is currently reading.
+			pendingScrollAnchor = scrollEl.scrollHeight - scrollEl.scrollTop;
+			setVisibleCount((c) => Math.min(c + PAGE_SIZE, displayMessages().length));
+			return;
+		}
+		// Everything loaded is rendered — ask the agent for older history.
+		if (props.hasMoreHistory) {
+			pendingScrollAnchor = scrollEl.scrollHeight - scrollEl.scrollTop;
+			props.onLoadMoreHistory?.();
+		}
 	}
+
+	// When older history is prepended, widen the render window by the same
+	// amount so the newly loaded messages stay visible.
+	createEffect(() => {
+		const len = displayMessages().length;
+		if (prevLoadedLen !== 0 && len > prevLoadedLen && pendingScrollAnchor) {
+			setVisibleCount((c) => c + (len - prevLoadedLen));
+		}
+		prevLoadedLen = len;
+	});
 
 	// Restore the anchor after the longer list has rendered.
 	createEffect(() => {
