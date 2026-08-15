@@ -8,14 +8,12 @@
 
 import { type Component, For } from "solid-js";
 
-import { useAgent } from "@/agent/useAgent";
+import { uiExtensions } from "@/ui-extensions";
 import ThemeSwitcher from "@/views/ThemeSwitcher";
 import { cstyle } from "@/utils/cstyle";
 
 /** Built-in view: lists the UI extensions currently registered. */
 const PluginListView: Component = () => {
-	const { uiExtensions } = useAgent();
-
 	return (
 		<ul class={C.list()}>
 			<For each={uiExtensions()}>

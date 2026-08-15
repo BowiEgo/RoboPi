@@ -30,6 +30,7 @@ import type { ChatBubbleProps } from "@/pages/ChatPage/ChatPanel/ChatBubble";
 import type { AgentConfig } from "@/pages/ChatPage/Composer/Composer";
 
 import { getAgentIpc } from "@/ipc/index";
+import { setRemoteExtensions } from "@/ui-extensions";
 import { fail, settle, track } from "@/utils/promise-tracker";
 import { sessionToItem } from "@/utils/session-mapper";
 
@@ -48,7 +49,6 @@ const [resetKey, setResetKey] = createSignal("");
 const [loading, setLoading] = createSignal(false);
 const [agentConfig, setAgentConfig] = createSignal<AgentConfig>({});
 const [stats, setStats] = createSignal<SessionStatsPayload | null>(null);
-const [uiExtensions, setUIExtensions] = createSignal<UIExtensionDescriptor[]>([]);
 
 // Per-session message cache — preserves streaming content across session switches
 const sessionMsgCache = new Map<string, ChatBubbleProps[]>();
@@ -90,7 +90,7 @@ if (agent && !_storeReady) {
 
 			case AgentMessageType.UIManifest: {
 				const p = msg.payload as { extensions: UIExtensionDescriptor[] };
-				setUIExtensions(p.extensions ?? []);
+				setRemoteExtensions(p.extensions ?? []);
 				break;
 			}
 
@@ -486,7 +486,6 @@ export function useAgent() {
 		loading,
 		agentConfig,
 		stats,
-		uiExtensions,
 		createSession,
 		selectModel,
 		selectThinkingLevel,

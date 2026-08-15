@@ -1,12 +1,12 @@
 import { type Component, createSignal, For, onMount } from "solid-js";
 
-import { useAgent } from "@/agent/useAgent";
 import { type LocaleId, useLocale } from "@/contexts/LocaleContext";
 
 import ModelManager, { type SavedModel } from "@/components/ModelManager/ModelManager";
 import Versions from "@/components/Versions/Versions";
 
 import { getSettings, type SettingsInfo } from "@/ipc/settings";
+import { uiExtensions } from "@/ui-extensions";
 import { resolveView } from "@/ui-views";
 import { cstyle } from "@/utils/cstyle";
 
@@ -64,7 +64,6 @@ const C = {
 
 const SettingPanel: Component = () => {
 	const { t, locale, setLocale } = useLocale();
-	const { uiExtensions } = useAgent();
 	const [info, setInfo] = createSignal<SettingsInfo | null>(null);
 	const [savedModels, setSavedModels] = createSignal<SavedModel[]>([]);
 
