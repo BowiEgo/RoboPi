@@ -8,8 +8,9 @@
 
 import { type AgentMessage, AgentMessageType, isValidMessageType } from "../../shared/agent-types.ts";
 import { createLogger } from "../../shared/logger/index.ts";
+import { PluginRegistry } from "../../shared/plugin/registry.ts";
+import { PluginError } from "../../shared/plugin/types.ts";
 import { AgentHost } from "./agent-host.ts";
-import type { SessionHost } from "./session/session-host.ts";
 import { AGENT_READY_ID, AGENT_VERSION, DEFAULT_SESSION_NAME, ErrorCode } from "./constants.ts";
 import {
 	isChatSendPayload,
@@ -23,11 +24,11 @@ import {
 } from "./guards.ts";
 import { onHostMessage, postMessageToHost, setTransport, uid } from "./ipc.ts";
 import type { CoreEvents, CoreServices } from "./plugin-types.ts";
-import { ChildProcessTransport } from "./transport/child-process.ts";
-import { WebSocketTransport } from "./transport/websocket.ts";
-import { PluginRegistry } from "../../shared/plugin/registry.ts";
-import { PluginError } from "../../shared/plugin/types.ts";
 import { respondError, respondNotReady } from "./respond.ts";
+import type { SessionHost } from "./session/session-host.ts";
+import { ChildProcessTransport } from "./transport/child-process.ts";
+import { StdioTransport } from "./transport/stdio.ts";
+import { WebSocketTransport } from "./transport/websocket.ts";
 
 // ============================================================================
 // Lifecycle
@@ -56,6 +57,10 @@ async function startTransport(): Promise<void> {
 		setTransport(transport);
 		await transport.start();
 		logger.info(`WebSocket transport listening on ws://127.0.0.1:${port}`);
+	} else if (mode === "stdio") {
+		const transport = new StdioTransport();
+		setTransport(transport);
+		await transport.start();
 	} else {
 		setTransport(new ChildProcessTransport());
 	}
@@ -63,15 +68,12 @@ async function startTransport(): Promise<void> {
 
 /** Register the session service once the Agent Host has initialized. */
 function registerSessionService(): void {
-	registry.load(
-		{ id: "core:session", provide: ["session"], inject: ["model"] },
-		(ctx) => {
-			const model = ctx.require("model");
-			const session = model.sessionHost;
-			if (!session) throw new PluginError("SessionHost not initialized");
-			ctx.provide("session", session);
-		},
-	);
+	registry.load({ id: "core:session", provide: ["session"], inject: ["model"] }, (ctx) => {
+		const model = ctx.require("model");
+		const session = model.sessionHost;
+		if (!session) throw new PluginError("SessionHost not initialized");
+		ctx.provide("session", session);
+	});
 }
 
 /** Print the assembled plugin tree (diagnostics, ROBOPI_DUMP_PLUGINS=1). */

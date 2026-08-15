@@ -130,6 +130,10 @@ const LEVEL_COLORS: Record<Level, string> = {
 
 const MODULE_COLOR = "\x1b[35m"; // magenta
 
+// When true, all console output goes to stderr, leaving stdout clean for
+// protocol frames (used by the stdio transport).
+const logToStderr = process.env.PI_LOG_TO_STDERR === "1";
+
 export interface Logger {
 	debug: (msg: string, meta?: unknown) => void;
 	info: (msg: string, meta?: unknown) => void;
@@ -155,7 +159,9 @@ export function createLogger(module: string): Logger {
 		if (LEVEL_ORDER[level] >= consoleThreshold) {
 			const color = LEVEL_COLORS[level];
 			const colored = `${DIM}[${ts}]${RESET} ${color}${BOLD}[${level.toUpperCase()}]${RESET} ${MODULE_COLOR}[${module}]${RESET} ${color}${message}${RESET}`;
-			if (level === "error") console.error(colored);
+			// stdio transport: keep stdout clean for protocol frames, log to stderr.
+			if (logToStderr) console.error(colored);
+			else if (level === "error") console.error(colored);
 			else if (level === "warn") console.warn(colored);
 			else console.log(colored);
 		}
