@@ -25,6 +25,7 @@
 
 import { EventBus, PluginContext } from "./context.ts";
 import { type Schema, ValidationError } from "./schema.ts";
+import type { UIExtension } from "../ui-types.ts";
 import {
 	type Disposer,
 	PluginError,
@@ -48,6 +49,8 @@ export interface PluginManifest<S extends object = PluginServices, C = unknown> 
 	provide?: (keyof S & string)[];
 	/** Config validator applied before the entry runs. */
 	Config?: Schema<C>;
+	/** Declarative UI contribution (see shared/ui-types.ts). */
+	ui?: UIExtension;
 }
 
 /**

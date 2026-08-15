@@ -23,6 +23,7 @@ const REPLAYABLE_TYPES = new Set<string>([
 	AgentMessageType.SessionSwitched,
 	AgentMessageType.SessionListResult,
 	AgentMessageType.AgentConfig,
+	AgentMessageType.UIManifest,
 ]);
 
 /** Latest state per replayable type, in first-seen order. */

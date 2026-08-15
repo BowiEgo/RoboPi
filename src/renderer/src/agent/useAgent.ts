@@ -22,6 +22,7 @@ import {
 	isValidMessageType,
 	type SessionInfoPayload,
 	type SessionStatsPayload,
+	type UIExtensionDescriptor,
 } from "@shared/agent-types";
 import { createMemo, createSignal } from "solid-js";
 
@@ -47,6 +48,7 @@ const [resetKey, setResetKey] = createSignal("");
 const [loading, setLoading] = createSignal(false);
 const [agentConfig, setAgentConfig] = createSignal<AgentConfig>({});
 const [stats, setStats] = createSignal<SessionStatsPayload | null>(null);
+const [uiExtensions, setUIExtensions] = createSignal<UIExtensionDescriptor[]>([]);
 
 // Per-session message cache — preserves streaming content across session switches
 const sessionMsgCache = new Map<string, ChatBubbleProps[]>();
@@ -83,6 +85,12 @@ if (agent && !_storeReady) {
 			case AgentMessageType.AgentConfig: {
 				const p = msg.payload as AgentConfig;
 				setAgentConfig((prev) => ({ ...prev, ...p }));
+				break;
+			}
+
+			case AgentMessageType.UIManifest: {
+				const p = msg.payload as { extensions: UIExtensionDescriptor[] };
+				setUIExtensions(p.extensions ?? []);
 				break;
 			}
 
@@ -478,6 +486,7 @@ export function useAgent() {
 		loading,
 		agentConfig,
 		stats,
+		uiExtensions,
 		createSession,
 		selectModel,
 		selectThinkingLevel,

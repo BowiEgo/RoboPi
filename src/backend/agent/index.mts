@@ -93,6 +93,24 @@ function dumpPlugins(): void {
 	}
 }
 
+/** Send the UI plugin manifest to the renderer. */
+function sendUIManifest(): void {
+	const extensions = registry
+		.list()
+		.filter((handle) => handle.manifest.ui)
+		.map((handle) => ({
+			pluginId: handle.id,
+			slots: handle.manifest.ui!.slots,
+			view: handle.manifest.ui!.view,
+			viewConfig: handle.manifest.ui!.viewConfig,
+		}));
+	postMessageToHost({
+		id: uid(),
+		type: AgentMessageType.UIManifest,
+		payload: { extensions },
+	});
+}
+
 async function startup(): Promise<void> {
 	try {
 		await agentHost.initialize();
@@ -131,6 +149,7 @@ async function startup(): Promise<void> {
 
 		logger.info(`Started (PID: ${process.pid})`);
 		if (process.env.ROBOPI_DUMP_PLUGINS === "1") dumpPlugins();
+		sendUIManifest();
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
 		logger.error("Failed to initialize", message);

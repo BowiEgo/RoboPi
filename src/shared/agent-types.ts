@@ -8,6 +8,9 @@
 // Message envelope
 // ============================================================================
 
+import type { UIExtensionDescriptor } from "./ui-types.ts";
+export type { UIExtensionDescriptor } from "./ui-types.ts";
+
 export interface AgentMessage {
 	/** Unique message ID for request/response correlation. */
 	id: string;
@@ -60,6 +63,8 @@ export const AgentMessageType = {
 	SessionHistoryResult: "session:history_result",
 	SessionStats: "session:stats",
 	SessionError: "session:error",
+	// UI plugins
+	UIManifest: "ui:manifest",
 } as const;
 
 export type AgentMessageType =
@@ -99,6 +104,7 @@ export type AgentPayload =
 	| SessionHistoryResultPayload
 	| SessionStatsPayload
 	| SessionErrorPayload
+	| UIManifestPayload
 	| Record<string, never>;
 
 /** Send a chat message. */
@@ -329,6 +335,11 @@ export interface SessionStatsPayload {
 export interface SessionErrorPayload {
 	code: string;
 	message: string;
+}
+
+/** UI plugin manifest sent to the renderer. */
+export interface UIManifestPayload {
+	extensions: UIExtensionDescriptor[];
 }
 
 // ============================================================================
