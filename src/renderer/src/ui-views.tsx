@@ -12,7 +12,7 @@ import { useAgent } from "@/agent/useAgent";
 import { uiExtensions } from "@/ui-extensions";
 import SchemaForm from "@/components/SchemaForm/SchemaForm";
 import { cstyle } from "@/utils/cstyle";
-import ThemeSwitcher from "@/views/ThemeSwitcher";
+import ThemeSwitcher from "@/plugins/theme/ThemeSwitcher";
 
 /** Built-in view: lists the UI extensions and renders their config forms. */
 const PluginListView: Component = () => {
