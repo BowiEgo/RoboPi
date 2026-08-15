@@ -20,9 +20,9 @@ import {
 	type AgentReadyPayload,
 	type ConfiguredModel,
 	isValidMessageType,
+	type PluginDescriptor,
 	type SessionInfoPayload,
 	type SessionStatsPayload,
-	type UIExtensionDescriptor,
 } from "@shared/agent-types";
 import { createMemo, createSignal } from "solid-js";
 
@@ -30,7 +30,7 @@ import type { ChatBubbleProps } from "@/pages/ChatPage/ChatPanel/ChatBubble";
 import type { AgentConfig } from "@/pages/ChatPage/Composer/Composer";
 
 import { getAgentIpc } from "@/ipc/index";
-import { setRemoteExtensions } from "@/ui-extensions";
+import { setRemotePluginsList } from "@/ui-extensions";
 import { fail, settle, track } from "@/utils/promise-tracker";
 import { sessionToItem } from "@/utils/session-mapper";
 
@@ -88,9 +88,9 @@ if (agent && !_storeReady) {
 				break;
 			}
 
-			case AgentMessageType.UIManifest: {
-				const p = msg.payload as { extensions: UIExtensionDescriptor[] };
-				setRemoteExtensions(p.extensions ?? []);
+			case AgentMessageType.PluginList: {
+				const p = msg.payload as { plugins: PluginDescriptor[] };
+				setRemotePluginsList(p.plugins ?? []);
 				break;
 			}
 
@@ -372,6 +372,15 @@ function unloadPlugin(pluginId: string) {
 	});
 }
 
+function loadPlugin(pluginId: string) {
+	if (!agent) return;
+	agent.send({
+		id: `plugin-load-${pluginId}-${Date.now()}`,
+		type: AgentMessageType.PluginLoad,
+		payload: { pluginId },
+	});
+}
+
 // ════════════════════════════════════════════════════════════════
 //  Module-level functions
 // ════════════════════════════════════════════════════════════════
@@ -509,6 +518,7 @@ export function useAgent() {
 		selectThinkingLevel,
 		updatePluginConfig,
 		unloadPlugin,
+		loadPlugin,
 		switchSession,
 		deleteSession,
 		renameSession,

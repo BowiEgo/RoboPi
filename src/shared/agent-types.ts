@@ -8,8 +8,10 @@
 // Message envelope
 // ============================================================================
 
-import type { UIExtensionDescriptor } from "./ui-types.ts";
+import type { UIExtension, UIExtensionDescriptor } from "./ui-types.ts";
 export type { UIExtensionDescriptor } from "./ui-types.ts";
+import type { SerializableSchema } from "./plugin/schema.ts";
+export type { SerializableSchema } from "./plugin/schema.ts";
 
 export interface AgentMessage {
 	/** Unique message ID for request/response correlation. */
@@ -67,6 +69,8 @@ export const AgentMessageType = {
 	UIManifest: "ui:manifest",
 	PluginConfig: "plugin:config",
 	PluginUnload: "plugin:unload",
+	PluginLoad: "plugin:load",
+	PluginList: "plugin:list",
 } as const;
 
 export type AgentMessageType =
@@ -109,6 +113,8 @@ export type AgentPayload =
 	| UIManifestPayload
 	| PluginConfigPayload
 	| PluginUnloadPayload
+	| PluginLoadPayload
+	| PluginListPayload
 	| Record<string, never>;
 
 /** Send a chat message. */
@@ -355,6 +361,26 @@ export interface PluginConfigPayload {
 /** Unload a plugin (renderer → Agent Host). */
 export interface PluginUnloadPayload {
 	pluginId: string;
+}
+
+/** Load (re-enable) a previously unloaded plugin. */
+export interface PluginLoadPayload {
+	pluginId: string;
+}
+
+/** A plugin's full descriptor, for the management UI. */
+export interface PluginDescriptor {
+	id: string;
+	name: string;
+	enabled: boolean;
+	ui?: UIExtension;
+	settingsSchema?: SerializableSchema;
+	settingsValue?: unknown;
+}
+
+/** Full plugin inventory sent to the renderer. */
+export interface PluginListPayload {
+	plugins: PluginDescriptor[];
 }
 
 // ============================================================================

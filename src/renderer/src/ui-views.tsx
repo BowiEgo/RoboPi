@@ -9,29 +9,41 @@
 import { type Component, For, Show } from "solid-js";
 
 import { useAgent } from "@/agent/useAgent";
-import { uiExtensions } from "@/ui-extensions";
+import { pluginInventory, toggleLocalPlugin, type InventoryItem } from "@/ui-extensions";
 import SchemaForm from "@/components/SchemaForm/SchemaForm";
 import { cstyle } from "@/utils/cstyle";
 import ThemeSwitcher from "@/plugins/theme/ThemeSwitcher";
 
-/** Built-in view: lists the UI extensions and renders their config forms. */
+/** Built-in view: the plugin management list with enable/disable toggles. */
 const PluginListView: Component = () => {
-	const { updatePluginConfig } = useAgent();
+	const { updatePluginConfig, unloadPlugin, loadPlugin } = useAgent();
+
+	function onToggle(item: InventoryItem) {
+		if (item.local) toggleLocalPlugin(item.id);
+		else if (item.enabled) unloadPlugin(item.id);
+		else loadPlugin(item.id);
+	}
 
 	return (
 		<ul class={C.list()}>
-			<For each={uiExtensions()}>
-				{(ext) => (
+			<For each={pluginInventory()}>
+				{(item) => (
 					<li class={C.item()}>
-						<div class={C.header()}>
-							<span class={C.name()}>{ext.view}</span>
-							<span class={C.meta()}>by {ext.pluginId}</span>
+						<div class={C.row()}>
+							<span class={C.name()}>{item.name}</span>
+							<span class={C.meta()}>{item.id}</span>
+							<input
+								type="checkbox"
+								class={C.toggle()}
+								checked={item.enabled}
+								onChange={() => onToggle(item)}
+							/>
 						</div>
-						<Show when={ext.settingsSchema}>
+						<Show when={item.enabled && item.settingsSchema}>
 							<SchemaForm
-								schema={ext.settingsSchema!}
-								value={ext.settingsValue}
-								onChange={(v) => updatePluginConfig(ext.pluginId, v)}
+								schema={item.settingsSchema!}
+								value={item.settingsValue}
+								onChange={(v) => updatePluginConfig(item.id, v)}
 							/>
 						</Show>
 					</li>
@@ -48,9 +60,10 @@ const C = {
 		text: "text-sm",
 	}),
 	item: cstyle({ display: "flex flex-col", spacing: "gap-2" }),
-	header: cstyle({ display: "flex items-center", spacing: "gap-2" }),
+	row: cstyle({ display: "flex items-center", spacing: "gap-2" }),
 	name: cstyle({ color: "text-base-content" }),
 	meta: cstyle({ text: "text-xs", color: "text-base-content/40" }),
+	toggle: cstyle({ display: "toggle toggle-sm" }),
 };
 
 /** Built-in views, keyed by the string plugins declare in `ui.view`. */

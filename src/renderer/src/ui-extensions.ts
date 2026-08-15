@@ -2,27 +2,90 @@
  * UI plugin framework — renderer-local extension store.
  *
  * Two sources, merged in order:
- *   1. LOCAL — renderer built-in UI plugins (theme, pure-UI features). These
- *      live entirely in the renderer and have no backend counterpart.
- *   2. remote — backend plugins contributing UI, shipped via ui:manifest.
+ *   1. LOCAL — renderer built-in UI plugins (theme, pure-UI features),
+ *      toggleable via toggleLocalPlugin.
+ *   2. remote — backend plugins' inventory, shipped via plugin:list.
  */
 
 import { createMemo, createSignal } from "solid-js";
 
-import type { UIExtensionDescriptor } from "@shared/agent-types";
+import type { PluginDescriptor, UIExtensionDescriptor } from "@shared/agent-types";
+
+interface LocalPlugin {
+	id: string;
+	name: string;
+	ui: UIExtensionDescriptor;
+}
 
 /** Renderer built-in UI plugins. Add a local plugin by appending here. */
-const LOCAL_EXTENSIONS: UIExtensionDescriptor[] = [
-	{ pluginId: "core:theme", slots: ["settings:section"], view: "theme-switcher" },
+const LOCAL_PLUGINS: LocalPlugin[] = [
+	{
+		id: "core:theme",
+		name: "Theme",
+		ui: { pluginId: "core:theme", slots: ["settings:section"], view: "theme-switcher" },
+	},
 ];
 
-/** Backend plugins' UI contributions, set from ui:manifest. */
-const [remoteExtensions, setRemote] = createSignal<UIExtensionDescriptor[]>([]);
+/** Ids of locally-disabled plugins. */
+const [disabledLocal, setDisabledLocal] = createSignal<Set<string>>(new Set());
 
-/** All UI extensions, local first then remote. */
-export const uiExtensions = createMemo(() => [...LOCAL_EXTENSIONS, ...remoteExtensions()]);
+/** Backend plugins' inventory, set from plugin:list. */
+const [remotePlugins, setRemotePlugins] = createSignal<PluginDescriptor[]>([]);
 
-/** Update the remote (backend) extensions from a ui:manifest payload. */
-export function setRemoteExtensions(extensions: UIExtensionDescriptor[]): void {
-	setRemote(extensions);
+/** All UI extensions (enabled local + enabled remote), for slot rendering. */
+export const uiExtensions = createMemo<UIExtensionDescriptor[]>(() => [
+	...LOCAL_PLUGINS.filter((p) => !disabledLocal().has(p.id)).map((p) => p.ui),
+	...remotePlugins()
+		.filter((p) => p.enabled && p.ui)
+		.map((p) => ({
+			pluginId: p.id,
+			slots: p.ui!.slots,
+			view: p.ui!.view,
+			viewConfig: p.ui!.viewConfig,
+			settingsSchema: p.settingsSchema,
+			settingsValue: p.settingsValue,
+		})),
+]);
+
+/** A plugin plus where it lives, for the management UI. */
+export interface InventoryItem {
+	id: string;
+	name: string;
+	enabled: boolean;
+	local: boolean;
+	settingsSchema?: import("@shared/plugin/schema").SerializableSchema;
+	settingsValue?: unknown;
+}
+
+/** Full plugin inventory (local + backend), for the management UI. */
+export const pluginInventory = createMemo<InventoryItem[]>(() => [
+	...LOCAL_PLUGINS.map((p) => ({
+		id: p.id,
+		name: p.name,
+		enabled: !disabledLocal().has(p.id),
+		local: true,
+	})),
+	...remotePlugins().map((p) => ({
+		id: p.id,
+		name: p.name,
+		enabled: p.enabled,
+		local: false,
+		settingsSchema: p.settingsSchema,
+		settingsValue: p.settingsValue,
+	})),
+]);
+
+/** Update the remote (backend) plugin inventory from a plugin:list payload. */
+export function setRemotePluginsList(plugins: PluginDescriptor[]): void {
+	setRemotePlugins(plugins);
+}
+
+/** Toggle a renderer-local plugin on/off. */
+export function toggleLocalPlugin(id: string): void {
+	setDisabledLocal((prev) => {
+		const next = new Set(prev);
+		if (next.has(id)) next.delete(id);
+		else next.add(id);
+		return next;
+	});
 }

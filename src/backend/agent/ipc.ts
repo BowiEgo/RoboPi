@@ -24,6 +24,7 @@ const REPLAYABLE_TYPES = new Set<string>([
 	AgentMessageType.SessionListResult,
 	AgentMessageType.AgentConfig,
 	AgentMessageType.UIManifest,
+	AgentMessageType.PluginList,
 ]);
 
 /** Latest state per replayable type, in first-seen order. */

@@ -8,7 +8,7 @@
 
 import { type AgentMessage, AgentMessageType, isValidMessageType } from "../../shared/agent-types.ts";
 import { createLogger } from "../../shared/logger/index.ts";
-import { PluginRegistry } from "../../shared/plugin/registry.ts";
+import { PluginRegistry, type PluginEntry, type PluginManifest } from "../../shared/plugin/registry.ts";
 import { boolean, object } from "../../shared/plugin/schema.ts";
 import { PluginError } from "../../shared/plugin/types.ts";
 import { AgentHost } from "./agent-host.ts";
@@ -38,6 +38,24 @@ import { WebSocketTransport } from "./transport/websocket.ts";
 const agentHost = new AgentHost();
 const logger = createLogger("AgentHost");
 const registry = new PluginRegistry<CoreEvents, CoreServices>();
+
+interface PluginDef {
+	manifest: PluginManifest<CoreServices>;
+	entry: PluginEntry<CoreEvents, CoreServices>;
+	defaultConfig?: unknown;
+}
+
+/** Core plugin definitions, kept so an unloaded plugin can be re-enabled. */
+const pluginDefs = new Map<string, PluginDef>();
+
+function registerCorePlugin(
+	manifest: PluginManifest<CoreServices>,
+	entry: PluginEntry<CoreEvents, CoreServices>,
+	config?: unknown,
+) {
+	pluginDefs.set(manifest.id, { manifest, entry, defaultConfig: config });
+	return registry.load(manifest, entry, config);
+}
 
 /** Accessor — the session service from the plugin registry. */
 function sh(): SessionHost | null {
@@ -71,7 +89,7 @@ async function startTransport(): Promise<void> {
 
 /** Register the session service once the Agent Host has initialized. */
 function registerSessionService(): void {
-	registry.load({ id: "core:session", provide: ["session"], inject: ["model"] }, (ctx) => {
+	registerCorePlugin({ id: "core:session", provide: ["session"], inject: ["model"] }, (ctx) => {
 		const model = ctx.require("model");
 		const session = model.sessionHost;
 		if (!session) throw new PluginError("SessionHost not initialized");
@@ -119,6 +137,7 @@ async function handlePluginConfig(msg: AgentMessage): Promise<void> {
 	const payload = msg.payload as { pluginId: string; config: unknown };
 	try {
 		await registry.reload(payload.pluginId, payload.config);
+		sendPluginList();
 		sendUIManifest();
 	} catch (err) {
 		logger.error("plugin config reload failed", err);
@@ -130,10 +149,50 @@ async function handlePluginUnload(msg: AgentMessage): Promise<void> {
 	const payload = msg.payload as { pluginId: string };
 	try {
 		await registry.unload(payload.pluginId);
+		sendPluginList();
 		sendUIManifest();
 	} catch (err) {
 		logger.error("plugin unload failed", err);
 	}
+}
+
+/** Re-enable a previously unloaded plugin from its saved definition. */
+function handlePluginLoad(msg: AgentMessage): void {
+	const payload = msg.payload as { pluginId: string };
+	const def = pluginDefs.get(payload.pluginId);
+	if (!def) return;
+	registry.load(def.manifest, def.entry, def.defaultConfig);
+	sendPluginList();
+	sendUIManifest();
+}
+
+/** Send the full plugin inventory (enabled + disabled) to the renderer. */
+function sendPluginList(): void {
+	const plugins = registry.list().map((handle) => ({
+		id: handle.id,
+		name: handle.manifest.name ?? handle.id,
+		enabled: true,
+		ui: handle.manifest.ui,
+		settingsSchema: handle.manifest.Config?.describe(),
+		settingsValue: handle.config,
+	}));
+	for (const [id, def] of pluginDefs) {
+		if (!registry.has(id)) {
+			plugins.push({
+				id,
+				name: def.manifest.name ?? id,
+				enabled: false,
+				ui: def.manifest.ui,
+				settingsSchema: def.manifest.Config?.describe(),
+				settingsValue: def.defaultConfig,
+			});
+		}
+	}
+	postMessageToHost({
+		id: uid(),
+		type: AgentMessageType.PluginList,
+		payload: { plugins },
+	});
 }
 
 async function startup(): Promise<void> {
@@ -175,6 +234,7 @@ async function startup(): Promise<void> {
 		logger.info(`Started (PID: ${process.pid})`);
 		if (process.env.ROBOPI_DUMP_PLUGINS === "1") dumpPlugins();
 		sendUIManifest();
+		sendPluginList();
 	} catch (err) {
 		const message = err instanceof Error ? err.message : String(err);
 		logger.error("Failed to initialize", message);
@@ -209,7 +269,7 @@ function registerMessageHandlers(): void {
 	});
 
 	// Model service — the AgentHost instance is available immediately.
-	registry.load(
+	registerCorePlugin(
 		{
 			id: "core:model",
 			provide: ["model"],
@@ -223,7 +283,7 @@ function registerMessageHandlers(): void {
 	);
 
 	// Route inbound protocol messages to typed `ipc:<type>` events.
-	registry.load({ id: "core:ipc-router" }, (ctx) => {
+	registerCorePlugin({ id: "core:ipc-router" }, (ctx) => {
 		ctx.on("transport:message", (raw) => {
 			const msg = raw as AgentMessage;
 			if (!msg?.type || !isValidMessageType(msg.type)) {
@@ -236,7 +296,7 @@ function registerMessageHandlers(): void {
 	});
 
 	// One listener per protocol message type.
-	registry.load({ id: "core:ipc-handlers" }, (ctx) => {
+	registerCorePlugin({ id: "core:ipc-handlers" }, (ctx) => {
 		ctx.on(`ipc:${AgentMessageType.ChatSend}`, handleChatSend);
 		ctx.on(`ipc:${AgentMessageType.ChatCancel}`, () => handleChatCancel());
 		ctx.on(`ipc:${AgentMessageType.AgentStatus}`, (msg) => handleAgentStatus(msg.id));
@@ -252,6 +312,7 @@ function registerMessageHandlers(): void {
 		ctx.on(`ipc:${AgentMessageType.ModelSetApiKey}`, (msg) => void handleModelSetApiKey(msg));
 		ctx.on(`ipc:${AgentMessageType.PluginConfig}`, (msg) => void handlePluginConfig(msg));
 		ctx.on(`ipc:${AgentMessageType.PluginUnload}`, (msg) => void handlePluginUnload(msg));
+		ctx.on(`ipc:${AgentMessageType.PluginLoad}`, (msg) => handlePluginLoad(msg));
 	});
 }
 
