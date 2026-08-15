@@ -74,25 +74,29 @@ const C = {
 		color: "placeholder:text-base-content/30",
 	}),
 	optionsList: cstyle({
+		display: "flex flex-col",
 		sizing: "max-h-66 overflow-y-auto",
 		spacing: "p-1 pt-0",
+		interaction: "rounded-b-lg",
+		color: "bg-base-200",
 	}),
 	groupLabel: cstyle({
 		display: "sticky top-0 z-10 flex items-center",
 		spacing: "px-3 py-1.5 gap-1.5",
 		text: "text-[11px] font-semibold uppercase tracking-wider",
-		color: "bg-base-300 text-base-content/60",
+		interaction: "border-b",
+		color: "bg-base-200 border-base-300 text-base-content/60",
 	}),
 	option: cstyle({
 		display: "flex items-center justify-between",
 		sizing: "w-full",
 		spacing: "px-3 py-2",
 		text: "text-sm",
-		interaction: "transition-colors",
+		interaction: "transition-colors rounded-md",
 		variants: {
 			selected: {
 				true: "bg-primary/10 text-primary",
-				false: "hover:bg-base-200 text-base-content",
+				false: "hover:bg-base-300 text-base-content",
 			},
 		},
 	}),
@@ -248,7 +252,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
 					<div class={C.optionsList()}>
 						<For each={grouped()}>
 							{(group) => (
-								<div>
+								<>
 									<Show when={group.label}>
 										<div class={C.groupLabel()}>
 											<span class="inline-flex -translate-y-px">{group.icon}</span>
@@ -261,7 +265,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
 												type="button"
 												data-option-index={index}
 												class={`${C.option({ selected: props.value === opt.id })} ${
-													highlightedIndex() === index ? "bg-base-200" : ""
+													highlightedIndex() === index ? "bg-base-300" : ""
 												}`}
 												onMouseEnter={() => {
 													if (suppressHover) return;
@@ -280,7 +284,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
 											</button>
 										)}
 									</For>
-								</div>
+								</>
 							)}
 						</For>
 					</div>
