@@ -13,6 +13,8 @@ interface TimelineMark {
 
 interface ChatOutlineProps {
 	messages: ChatBubbleProps[];
+	/** Called when a mark is clicked; may scroll asynchronously (e.g. after mounting the target). */
+	onJump?: (msgId: string) => void;
 }
 
 // ── Styles ──
@@ -204,17 +206,20 @@ const ChatOutline: Component<ChatOutlineProps> = (props) => {
 	}
 
 	function jumpTo(msgId: string) {
-		const el = document.getElementById(msgId);
-		const container = getScrollContainer();
-		if (!el || !container) return;
-
-		const elTop = el.getBoundingClientRect().top;
-		const containerTop = container.getBoundingClientRect().top;
-		const target = container.scrollTop + elTop - containerTop - SCROLL_OFFSET;
-
-		container.scrollTo({ top: target, behavior: "auto" });
 		manualJump = true;
 		setActiveId(msgId);
+		if (props.onJump) {
+			props.onJump(msgId);
+		} else {
+			const el = document.getElementById(msgId);
+			const container = getScrollContainer();
+			if (el && container) {
+				const elTop = el.getBoundingClientRect().top;
+				const containerTop = container.getBoundingClientRect().top;
+				const target = container.scrollTop + elTop - containerTop - SCROLL_OFFSET;
+				container.scrollTo({ top: target, behavior: "auto" });
+			}
+		}
 		setTimeout(() => {
 			manualJump = false;
 		}, 500);

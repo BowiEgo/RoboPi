@@ -189,6 +189,31 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 		}
 	});
 
+	// ── Outline jump ──
+	// Jumping to a not-yet-rendered message first expands the window to
+	// include it, then scrolls to it once mounted.
+	const [revealRequest, setRevealRequest] = createSignal<{ id: string } | null>(null);
+
+	function revealMessage(domId: string) {
+		const all = displayMessages();
+		const idx = all.findIndex((m) => `msg-${m.id}` === domId);
+		if (idx < 0) return;
+		setVisibleCount((c) => Math.max(c, all.length - idx));
+		setRevealRequest({ id: domId });
+	}
+
+	createEffect(() => {
+		const req = revealRequest();
+		if (!req || !scrollEl) return;
+		const el = document.getElementById(req.id);
+		if (!el) return;
+		setRevealRequest(null);
+		const SCROLL_OFFSET = 80;
+		const elTop = el.getBoundingClientRect().top;
+		const containerTop = scrollEl.getBoundingClientRect().top;
+		scrollEl.scrollTo({ top: scrollEl.scrollTop + elTop - containerTop - SCROLL_OFFSET, behavior: "auto" });
+	});
+
 	function setRef(el: HTMLElement) {
 		scrollEl = el;
 		autoScroll.setScrollEl(el);
@@ -231,7 +256,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 
 	return (
 		<div class={C.root()}>
-			<ChatOutline messages={displayMessages()} />
+			<ChatOutline messages={displayMessages()} onJump={revealMessage} />
 			<header class={C.header()}>
 				{props.header}
 				{props.tags && props.tags.length > 0 && (
