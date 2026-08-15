@@ -328,6 +328,7 @@ if (agent && !_storeReady) {
 	// Init: request session list + agent config
 	agent.send({ id: "init-list", type: AgentMessageType.SessionList, payload: {} });
 	agent.send({ id: "init-config", type: AgentMessageType.AgentConfig, payload: {} });
+	agent.send({ id: "init-plugins", type: AgentMessageType.PluginList, payload: {} });
 }
 
 // ════════════════════════════════════════════════════════════════

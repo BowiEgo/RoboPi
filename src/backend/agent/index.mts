@@ -316,6 +316,8 @@ function registerMessageHandlers(): void {
 		ctx.on(`ipc:${AgentMessageType.PluginConfig}`, (msg) => void handlePluginConfig(msg));
 		ctx.on(`ipc:${AgentMessageType.PluginUnload}`, (msg) => void handlePluginUnload(msg));
 		ctx.on(`ipc:${AgentMessageType.PluginLoad}`, (msg) => handlePluginLoad(msg));
+		// Request for the plugin inventory (renderer pulls on init).
+		ctx.on(`ipc:${AgentMessageType.PluginList}`, () => sendPluginList());
 	});
 }
 
