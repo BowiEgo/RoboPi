@@ -1,7 +1,7 @@
 /**
  * Built-in view: theme mode + theme switch.
  *
- * Declared by the core:theme plugin via ui { settings:section, theme-switcher }.
+ * Declared by the builtin:theme plugin via ui { settings:section, theme-switcher }.
  * A renderer-local feature — theme state lives in ThemeContext, no Agent Host
  * round-trip — exposed as a plugin view so it can be disabled/replaced like
  * any other settings section.

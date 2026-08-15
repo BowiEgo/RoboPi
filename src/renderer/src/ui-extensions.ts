@@ -20,9 +20,9 @@ interface LocalPlugin {
 /** Renderer built-in UI plugins. Add a local plugin by appending here. */
 const LOCAL_PLUGINS: LocalPlugin[] = [
 	{
-		id: "core:theme",
+		id: "builtin:theme",
 		name: "Theme",
-		ui: { pluginId: "core:theme", slots: ["settings:section"], view: "theme-switcher" },
+		ui: { pluginId: "builtin:theme", slots: ["settings:section"], view: "theme-switcher" },
 	},
 ];
 
