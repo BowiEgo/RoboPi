@@ -31,20 +31,34 @@ const C = {
 			active: { true: "btn-primary btn-active" },
 		},
 	}),
-	grid: cstyle({
-		display: "flex flex-wrap",
+	currentRow: cstyle({ display: "flex items-center", spacing: "gap-3" }),
+	currentLabel: cstyle({ text: "text-xs", color: "text-base-content/50" }),
+	currentCard: cstyle({
+		display: "flex items-center",
+		spacing: "gap-2 px-3 py-2",
+		text: "text-sm",
+		interaction: "rounded-lg border",
+		color: "border-primary bg-primary/10 text-primary",
+	}),
+	scroll: cstyle({
+		display: "flex flex-col",
 		spacing: "gap-2 p-2",
-		sizing: "h-72 overflow-y-auto content-start",
+		sizing: "h-72 overflow-y-auto",
 		interaction: "rounded-lg",
 		color: "bg-base-200",
 	}),
+	groupLabel: cstyle({
+		text: "font-mono text-[11px] font-medium uppercase tracking-wider",
+		color: "text-base-content/50",
+	}),
+	grid: cstyle({ display: "flex flex-wrap", spacing: "gap-2" }),
 	card: cstyle({
 		display: "flex items-center",
 		spacing: "gap-2 px-3 py-2",
 		sizing: "w-[calc(25%-6px)]",
 		text: "text-sm",
 		interaction: "rounded-lg border transition-colors",
-		color: "border-base-300 bg-base-200/50 hover:border-base-content/30",
+		color: "border-base-300 bg-base-100 hover:border-base-content/30",
 		variants: {
 			active: { true: "border-primary bg-primary/10 text-primary", false: "text-base-content" },
 		},
@@ -74,13 +88,8 @@ const ThemeSwitcher: Component = () => {
 	const { t } = useLocale();
 	const { theme, setTheme, mode, setMode } = useTheme();
 
-	// Sort light themes first.
-	const sortedThemes = () =>
-		[...THEMES].sort((a, b) => {
-			const da = isDarkTheme(a) ? 1 : 0;
-			const db = isDarkTheme(b) ? 1 : 0;
-			return da - db;
-		});
+	const lightThemes = () => [...THEMES].filter((id) => !isDarkTheme(id));
+	const darkThemes = () => [...THEMES].filter((id) => isDarkTheme(id));
 
 	return (
 		<>
@@ -104,20 +113,39 @@ const ThemeSwitcher: Component = () => {
 
 			<section class={C.section()}>
 				<h2 class={C.sectionTitle()}>{t("theme.switch")}</h2>
-				<div class={C.grid()}>
-					<For each={sortedThemes()}>
-						{(id) => (
-							<button
-								type="button"
-								class={C.card({ active: theme() === id })}
-								onClick={() => setTheme(id)}
-								data-theme={id}
-							>
-								<ThemeSwatch themeId={id} />
-								<span class="truncate">{id}</span>
-							</button>
-						)}
-					</For>
+
+				<div class={C.currentRow()}>
+					<span class={C.currentLabel()}>{t("theme.current")}</span>
+					<div class={C.currentCard()}>
+						<ThemeSwatch themeId={theme()} />
+						<span>{theme()}</span>
+					</div>
+				</div>
+
+				<div class={C.scroll()}>
+					<div class={C.groupLabel()}>{t("theme.modeLight")}</div>
+					<div class={C.grid()}>
+						<For each={lightThemes()}>
+							{(id) => (
+								<button type="button" class={C.card({ active: theme() === id })} onClick={() => setTheme(id)} data-theme={id}>
+									<ThemeSwatch themeId={id} />
+									<span class="truncate">{id}</span>
+								</button>
+							)}
+						</For>
+					</div>
+
+					<div class={C.groupLabel()}>{t("theme.modeDark")}</div>
+					<div class={C.grid()}>
+						<For each={darkThemes()}>
+							{(id) => (
+								<button type="button" class={C.card({ active: theme() === id })} onClick={() => setTheme(id)} data-theme={id}>
+									<ThemeSwatch themeId={id} />
+									<span class="truncate">{id}</span>
+								</button>
+							)}
+						</For>
+					</div>
 				</div>
 			</section>
 		</>

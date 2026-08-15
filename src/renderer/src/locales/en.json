@@ -105,6 +105,7 @@
 	"settings.pluginsEmpty": "No plugins",
 
 	"theme.mode": "Appearance",
+	"theme.current": "Current",
 	"theme.modeDark": "Dark",
 	"theme.modeLight": "Light",
 	"theme.modeSystem": "System",

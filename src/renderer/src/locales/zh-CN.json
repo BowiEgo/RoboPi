@@ -105,6 +105,7 @@
 	"settings.pluginsEmpty": "暂无插件",
 
 	"theme.mode": "外观",
+	"theme.current": "当前",
 	"theme.modeDark": "深色",
 	"theme.modeLight": "浅色",
 	"theme.modeSystem": "跟随系统",
