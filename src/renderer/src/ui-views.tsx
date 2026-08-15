@@ -111,7 +111,7 @@ const C = {
 	cardInfo: cstyle({ display: "flex flex-col", sizing: "min-w-0" }),
 	name: cstyle({ text: "text-sm font-medium truncate", color: "text-base-content" }),
 	meta: cstyle({ text: "text-xs truncate", color: "text-base-content/40" }),
-	toggle: cstyle({ display: "toggle toggle-sm" }),
+	toggle: cstyle({ display: "toggle toggle-primary toggle-sm" }),
 	empty: cstyle({ text: "text-sm", color: "text-base-content/40" }),
 };
 
