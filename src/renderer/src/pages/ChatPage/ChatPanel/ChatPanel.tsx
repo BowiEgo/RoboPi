@@ -1,6 +1,7 @@
 import { Plus } from "lucide-solid";
 import { type Component, createEffect, createMemo, createSignal, For, type JSX, Show } from "solid-js";
 
+import type { SessionOutlineItem } from "@shared/agent-types";
 import ChatOutline from "@/components/ChatOutline/ChatOutline";
 import { useAutoScroll } from "@/hooks/useAutoScroll";
 
@@ -22,6 +23,7 @@ interface ChatPanelProps {
 	sessionId?: string;
 	initialMessages?: ChatBubbleProps[];
 	hasMoreHistory?: boolean;
+	outline?: SessionOutlineItem[];
 	resetKey?: string;
 	agentConfig?: AgentConfig;
 	onSend?: (text: string) => Promise<unknown> | undefined;
@@ -214,28 +216,45 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 	});
 
 	// ── Outline jump ──
-	// Jumping to a not-yet-rendered message first expands the window to
-	// include it, then scrolls to it once mounted.
+	// Jumping to a not-yet-rendered (or not-yet-loaded) message first loads
+	// history until the target is present, then scrolls to it once mounted.
 	const [revealRequest, setRevealRequest] = createSignal<{ id: string } | null>(null);
 
 	function revealMessage(domId: string) {
-		const all = displayMessages();
-		const idx = all.findIndex((m) => `msg-${m.id}` === domId);
-		if (idx < 0) return;
-		setVisibleCount((c) => Math.max(c, all.length - idx));
 		setRevealRequest({ id: domId });
 	}
 
 	createEffect(() => {
 		const req = revealRequest();
 		if (!req || !scrollEl) return;
+
+		const all = displayMessages();
+		const idx = all.findIndex((m) => `msg-${m.id}` === req.id);
+
+		if (idx < 0) {
+			// Target hasn't been loaded yet — pull an older history page.
+			if (props.hasMoreHistory) {
+				pendingScrollAnchor = scrollEl.scrollHeight - scrollEl.scrollTop;
+				props.onLoadMoreHistory?.();
+			} else {
+				setRevealRequest(null);
+			}
+			return;
+		}
+
+		// Ensure the target is inside the mounted window.
+		if (all.length - idx > visibleCount()) {
+			setVisibleCount(Math.max(visibleCount(), all.length - idx));
+		}
+
 		const el = document.getElementById(req.id);
-		if (!el) return;
-		setRevealRequest(null);
-		const SCROLL_OFFSET = 80;
-		const elTop = el.getBoundingClientRect().top;
-		const containerTop = scrollEl.getBoundingClientRect().top;
-		scrollEl.scrollTo({ top: scrollEl.scrollTop + elTop - containerTop - SCROLL_OFFSET, behavior: "auto" });
+		if (el) {
+			setRevealRequest(null);
+			const SCROLL_OFFSET = 80;
+			const elTop = el.getBoundingClientRect().top;
+			const containerTop = scrollEl.getBoundingClientRect().top;
+			scrollEl.scrollTo({ top: scrollEl.scrollTop + elTop - containerTop - SCROLL_OFFSET, behavior: "auto" });
+		}
 	});
 
 	function setRef(el: HTMLElement) {
@@ -280,7 +299,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 
 	return (
 		<div class={C.root()}>
-			<ChatOutline messages={displayMessages()} onJump={revealMessage} />
+			<ChatOutline messages={displayMessages()} outline={props.outline} onJump={revealMessage} />
 			<header class={C.header()}>
 				{props.header}
 				{props.tags && props.tags.length > 0 && (

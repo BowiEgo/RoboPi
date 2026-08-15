@@ -305,6 +305,8 @@ export interface SessionSwitchedPayload {
 	messages: SessionMessagePayload[];
 	/** True when there are messages older than the returned window. */
 	hasMore?: boolean;
+	/** Lightweight outline of every user message (for the timeline navigator). */
+	outline?: SessionOutlineItem[];
 	model?: string;
 	thinkingLevel?: string;
 	availableThinkingLevels?: string[];
@@ -428,6 +430,12 @@ export interface SessionMessagePayload {
 	thinking?: string;
 	timestamp: string;
 	streaming?: boolean;
+}
+
+/** Lightweight user-message marker for the outline navigator. */
+export interface SessionOutlineItem {
+	id: string;
+	text: string;
 }
 
 // ============================================================================

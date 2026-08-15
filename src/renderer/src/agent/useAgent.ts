@@ -22,6 +22,7 @@ import {
 	isValidMessageType,
 	type PluginDescriptor,
 	type SessionInfoPayload,
+	type SessionOutlineItem,
 	type SessionStatsPayload,
 } from "@shared/agent-types";
 import { createMemo, createSignal } from "solid-js";
@@ -46,6 +47,7 @@ const [activeId, setActiveId] = createSignal<string | null>(null);
 const [activeName, setActiveName] = createSignal<string>("");
 const [messages, setMessages] = createSignal<ChatBubbleProps[]>([]);
 const [hasMoreHistory, setHasMoreHistory] = createSignal(false);
+const [outline, setOutline] = createSignal<SessionOutlineItem[]>([]);
 const [resetKey, setResetKey] = createSignal("");
 const [loading, setLoading] = createSignal(false);
 const [agentConfig, setAgentConfig] = createSignal<AgentConfig>({});
@@ -116,12 +118,14 @@ if (agent && !_storeReady) {
 					name: string;
 					messages: ChatBubbleProps[];
 					hasMore?: boolean;
+					outline?: SessionOutlineItem[];
 					model?: string;
 					thinkingLevel?: string;
 					availableThinkingLevels?: string[];
 				};
 				setActiveId(p.sessionId);
 				setActiveName(p.name);
+				setOutline(p.outline ?? []);
 				setAgentConfig((prev) => ({
 					...prev,
 					model: p.model ?? prev.model,
@@ -546,6 +550,7 @@ export function useAgent() {
 		activeName,
 		messages,
 		hasMoreHistory,
+		outline,
 		resetKey,
 		loading,
 		agentConfig,

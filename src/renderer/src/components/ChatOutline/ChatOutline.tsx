@@ -13,6 +13,8 @@ interface TimelineMark {
 
 interface ChatOutlineProps {
 	messages: ChatBubbleProps[];
+	/** Full-session outline (id + short text) — shown even before messages load. */
+	outline?: Array<{ id: string; text: string }>;
 	/** Called when a mark is clicked; may scroll asynchronously (e.g. after mounting the target). */
 	onJump?: (msgId: string) => void;
 }
@@ -80,6 +82,16 @@ const ChatOutline: Component<ChatOutlineProps> = (props) => {
 	const [hovered, setHovered] = createSignal(false);
 
 	createEffect(() => {
+		const outline = props.outline;
+		if (outline && outline.length > 0) {
+			const items: TimelineMark[] = outline.map((o) => ({
+				msgId: `msg-${o.id}`,
+				userText: o.text,
+			}));
+			setMarks(items);
+			return;
+		}
+		// Fallback: derive from the loaded messages.
 		const msgs = props.messages;
 		void msgs.length;
 		const items: TimelineMark[] = [];

@@ -17,12 +17,12 @@ import {
 	type SettingsManager,
 } from "@earendil-works/pi-coding-agent";
 
-import { AgentMessageType, type SessionInfoPayload, type SessionMessagePayload } from "../../../shared/agent-types.ts";
+import { AgentMessageType, type SessionInfoPayload, type SessionMessagePayload, type SessionOutlineItem } from "../../../shared/agent-types.ts";
 import { createLogger } from "../../../shared/logger/index.ts";
 import { getSessionsDir } from "../config.ts";
 import { DEFAULT_SESSION_NAME, ErrorCode, HISTORY_PAGE_SIZE, type ThinkingLevel } from "../constants.ts";
 import { postMessageToHost, uid } from "../ipc.ts";
-import { extractLastUserText, loadMessagesFromSession, type LoadedMessages } from "./message-loader.ts";
+import { extractLastUserText, loadMessagesFromSession, loadSessionOutline, type LoadedMessages } from "./message-loader.ts";
 import { TitleGenerator } from "./title-generator.ts";
 
 // ============================================================================
@@ -244,7 +244,13 @@ export class SessionHost {
 				const loaded = this.currentSessionManager
 					? loadMessagesFromSession(this.currentSessionManager, { limit: HISTORY_PAGE_SIZE })
 					: { messages: [], hasMore: false };
-				this.respondSwitched(msgId, targetId, this.currentSessionName ?? DEFAULT_SESSION_NAME, loaded);
+				this.respondSwitched(
+					msgId,
+					targetId,
+					this.currentSessionName ?? DEFAULT_SESSION_NAME,
+					loaded,
+					this.currentSessionManager ? loadSessionOutline(this.currentSessionManager) : [],
+				);
 				return;
 			}
 
@@ -264,7 +270,13 @@ export class SessionHost {
 				if (this.agentModelRef) this.agentModelRef.value = this.session.model?.id;
 				if (this.thinkingLevelRef) this.thinkingLevelRef.value = this.session.thinkingLevel;
 
-				this.respondSwitched(msgId, targetId, bg.name, loadMessagesFromSession(bg.manager, { limit: HISTORY_PAGE_SIZE }));
+				this.respondSwitched(
+					msgId,
+					targetId,
+					bg.name,
+					loadMessagesFromSession(bg.manager, { limit: HISTORY_PAGE_SIZE }),
+					loadSessionOutline(bg.manager),
+				);
 				logger.info(`Brought to foreground: ${targetId} (${bg.name})`);
 				return;
 			}
@@ -298,8 +310,9 @@ export class SessionHost {
 			this.subscribeToSession(this.session, this.currentSessionId);
 
 			const loaded = loadMessagesFromSession(sm, { limit: HISTORY_PAGE_SIZE });
+			const outline = loadSessionOutline(sm);
 			const t4 = performance.now();
-			this.respondSwitched(msgId, this.currentSessionId, this.currentSessionName, loaded);
+			this.respondSwitched(msgId, this.currentSessionId, this.currentSessionName, loaded, outline);
 			logger.info(
 				`Session switched: ${this.currentSessionId} (${this.currentSessionName}) — list=${(t1 - t0).toFixed(0)}ms open=${(t2 - t1).toFixed(0)}ms agent=${(t3 - t2).toFixed(0)}ms load=${(t4 - t3).toFixed(0)}ms msgs=${loaded.messages.length}`,
 			);
@@ -453,6 +466,7 @@ export class SessionHost {
 		sessionId: string,
 		name: string,
 		loaded: LoadedMessages,
+		outline: SessionOutlineItem[],
 	): void {
 		postMessageToHost({
 			id: msgId,
@@ -462,6 +476,7 @@ export class SessionHost {
 				name,
 				messages: loaded.messages,
 				hasMore: loaded.hasMore,
+				outline,
 				model: this.getCurrentModel(),
 				thinkingLevel: this.session?.thinkingLevel ?? this.thinkingLevelRef.value,
 				availableThinkingLevels: this.getAvailableThinkingLevels(),

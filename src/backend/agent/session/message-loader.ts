@@ -7,7 +7,7 @@
 
 import type { SessionManager } from "@earendil-works/pi-coding-agent";
 
-import type { SessionMessagePayload } from "../../../shared/agent-types.ts";
+import type { SessionMessagePayload, SessionOutlineItem } from "../../../shared/agent-types.ts";
 
 function fmtTimestamp(ms: number): string {
 	return new Date(ms).toLocaleTimeString("zh-CN", {
@@ -99,6 +99,26 @@ export function loadMessagesFromSession(
 	}
 
 	return { messages, hasMore };
+}
+
+/** Build a lightweight outline of every user message (id + short text). */
+export function loadSessionOutline(sm: ReturnType<typeof SessionManager.open>): SessionOutlineItem[] {
+	const entries = sm.getBranch();
+	const outline: SessionOutlineItem[] = [];
+	for (const entry of entries) {
+		const e = entry as {
+			type: string;
+			id?: string;
+			message?: { role: string; content: unknown };
+		};
+		if (e.type !== "message") continue;
+		if (e.message?.role !== "user") continue;
+		outline.push({
+			id: e.id ?? "",
+			text: extractText(e.message.content).slice(0, 50),
+		});
+	}
+	return outline;
 }
 
 /** Extract concatenated text blocks from a message content. */
