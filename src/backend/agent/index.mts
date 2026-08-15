@@ -9,6 +9,7 @@
 import { type AgentMessage, AgentMessageType, isValidMessageType } from "../../shared/agent-types.ts";
 import { createLogger } from "../../shared/logger/index.ts";
 import { AgentHost } from "./agent-host.ts";
+import type { SessionHost } from "./session/session-host.ts";
 import { AGENT_READY_ID, AGENT_VERSION, DEFAULT_SESSION_NAME, ErrorCode } from "./constants.ts";
 import {
 	isChatSendPayload,
@@ -25,6 +26,7 @@ import type { CoreEvents, CoreServices } from "./plugin-types.ts";
 import { ChildProcessTransport } from "./transport/child-process.ts";
 import { WebSocketTransport } from "./transport/websocket.ts";
 import { PluginRegistry } from "../../shared/plugin/registry.ts";
+import { PluginError } from "../../shared/plugin/types.ts";
 import { respondError, respondNotReady } from "./respond.ts";
 
 // ============================================================================
@@ -35,9 +37,14 @@ const agentHost = new AgentHost();
 const logger = createLogger("AgentHost");
 const registry = new PluginRegistry<CoreEvents, CoreServices>();
 
-/** Accessor — returns null until initialize() completes. Handlers must check. */
-function sh() {
-	return agentHost.sessionHost;
+/** Accessor — the session service from the plugin registry. */
+function sh(): SessionHost | null {
+	return registry.root.get("session") ?? null;
+}
+
+/** Accessor — the model service from the plugin registry. */
+function model(): AgentHost {
+	return registry.root.require("model");
 }
 
 /** Select and start the host transport based on `ROBOPI_TRANSPORT`. */
@@ -54,9 +61,23 @@ async function startTransport(): Promise<void> {
 	}
 }
 
+/** Register the session service once the Agent Host has initialized. */
+function registerSessionService(): void {
+	registry.load(
+		{ id: "core:session", provide: ["session"], inject: ["model"] },
+		(ctx) => {
+			const model = ctx.require("model");
+			const session = model.sessionHost;
+			if (!session) throw new PluginError("SessionHost not initialized");
+			ctx.provide("session", session);
+		},
+	);
+}
+
 async function startup(): Promise<void> {
 	try {
 		await agentHost.initialize();
+		registerSessionService();
 		const host = sh();
 		if (!host) throw new Error("SessionHost failed to initialize");
 
@@ -121,6 +142,11 @@ function registerMessageHandlers(): void {
 	// Bridge: inbound transport messages → the plugin event bus.
 	onHostMessage((raw) => {
 		registry.root.emit("transport:message", raw as AgentMessage);
+	});
+
+	// Model service — the AgentHost instance is available immediately.
+	registry.load({ id: "core:model", provide: ["model"] }, (ctx) => {
+		ctx.provide("model", agentHost);
 	});
 
 	// Route inbound protocol messages to typed `ipc:<type>` events.
@@ -229,12 +255,12 @@ async function handleAgentConfig(msg: AgentMessage): Promise<void> {
 		id: msg.id,
 		type: AgentMessageType.AgentConfig,
 		payload: {
-			model: host.getCurrentModel() ?? agentHost.modelRef.value,
-			thinkingLevel: agentHost.thinkingLevelRef.value,
+			model: host.getCurrentModel() ?? model().modelRef.value,
+			thinkingLevel: model().thinkingLevelRef.value,
 			availableThinkingLevels: host.getAvailableThinkingLevels(),
-			availableModels: agentHost.getAvailableModels(),
-			configuredModels: agentHost.getConfiguredModels(),
-			providerList: agentHost.getProviderList(),
+			availableModels: model().getAvailableModels(),
+			configuredModels: model().getConfiguredModels(),
+			providerList: model().getProviderList(),
 			status: host.session?.isStreaming ? "responding" : "idle",
 		},
 	});
@@ -335,8 +361,8 @@ function respondModelRefreshed(msgId: string): void {
 		id: msgId,
 		type: AgentMessageType.ModelRefreshed,
 		payload: {
-			models: agentHost.getConfiguredModels(),
-			availableModels: agentHost.getAvailableModels(),
+			models: model().getConfiguredModels(),
+			availableModels: model().getAvailableModels(),
 		},
 	});
 }
@@ -346,7 +372,7 @@ async function handleModelSetApiKey(msg: AgentMessage): Promise<void> {
 		respondError(msg.id, ErrorCode.INVALID_PAYLOAD, "Invalid API key payload");
 		return;
 	}
-	await agentHost.setApiKey(msg.payload.provider, msg.payload.apiKey);
+	await model().setApiKey(msg.payload.provider, msg.payload.apiKey);
 	respondModelRefreshed(msg.id);
 }
 
@@ -356,7 +382,7 @@ async function handleModelRefresh(msg: AgentMessage): Promise<void> {
 		return;
 	}
 	try {
-		await agentHost.refreshModels(msg.payload.force);
+		await model().refreshModels(msg.payload.force);
 		respondModelRefreshed(msg.id);
 	} catch (err) {
 		logger.error("Model refresh failed", err);
