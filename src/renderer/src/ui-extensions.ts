@@ -53,6 +53,8 @@ export interface InventoryItem {
 	name: string;
 	enabled: boolean;
 	local: boolean;
+	/** Core plugins cannot be disabled. */
+	core?: boolean;
 	settingsSchema?: import("@shared/plugin/schema").SerializableSchema;
 	settingsValue?: unknown;
 }
@@ -70,6 +72,7 @@ export const pluginInventory = createMemo<InventoryItem[]>(() => [
 		name: p.name,
 		enabled: p.enabled,
 		local: false,
+		core: p.core,
 		settingsSchema: p.settingsSchema,
 		settingsValue: p.settingsValue,
 	})),

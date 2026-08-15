@@ -373,6 +373,8 @@ export interface PluginDescriptor {
 	id: string;
 	name: string;
 	enabled: boolean;
+	/** Core plugins cannot be disabled. */
+	core?: boolean;
 	ui?: UIExtension;
 	settingsSchema?: SerializableSchema;
 	settingsValue?: unknown;

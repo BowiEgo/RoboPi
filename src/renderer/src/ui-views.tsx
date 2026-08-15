@@ -32,12 +32,16 @@ const PluginListView: Component = () => {
 						<div class={C.row()}>
 							<span class={C.name()}>{item.name}</span>
 							<span class={C.meta()}>{item.id}</span>
-							<input
-								type="checkbox"
-								class={C.toggle()}
-								checked={item.enabled}
-								onChange={() => onToggle(item)}
-							/>
+							<Show when={item.core} fallback={
+								<input
+									type="checkbox"
+									class={C.toggle()}
+									checked={item.enabled}
+									onChange={() => onToggle(item)}
+								/>
+							}>
+								<span class={C.meta()}>core</span>
+							</Show>
 						</div>
 						<Show when={item.enabled && item.settingsSchema}>
 							<SchemaForm

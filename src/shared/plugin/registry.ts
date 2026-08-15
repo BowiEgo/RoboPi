@@ -51,6 +51,8 @@ export interface PluginManifest<S extends object = PluginServices, C = unknown> 
 	Config?: Schema<C>;
 	/** Declarative UI contribution (see shared/ui-types.ts). */
 	ui?: UIExtension;
+	/** Core plugins cannot be disabled — they are listed but not toggleable. */
+	core?: boolean;
 }
 
 /**
