@@ -7,6 +7,10 @@
  * every connected client, which is what makes multi-frontend support possible
  * later.
  *
+ * Future multi-downstream: a WebSocket can multiplex several named streams
+ * over one connection (see stream.ts). When that lands, this transport
+ * implements `StreamableTransport` and tags each frame with its stream id.
+ *
  * Authentication is intentionally out of scope here: the server binds to
  * 127.0.0.1 only, and a token layer comes in a later phase.
  */
