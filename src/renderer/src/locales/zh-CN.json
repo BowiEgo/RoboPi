@@ -98,6 +98,9 @@
 	"settings.cancel": "取消",
 	"settings.save": "保存",
 	"settings.deleteProvider": "删除供应商",
+	"settings.plugins": "插件",
+	"settings.pluginsSearch": "搜索插件...",
+	"settings.pluginsEmpty": "暂无插件",
 
 	"theme.mode": "外观",
 	"theme.modeDark": "深色",

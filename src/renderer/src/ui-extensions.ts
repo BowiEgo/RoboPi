@@ -7,9 +7,8 @@
  *   2. remote — backend plugins' inventory, shipped via plugin:list.
  */
 
-import { createMemo, createSignal } from "solid-js";
-
 import type { PluginDescriptor, UIExtensionDescriptor } from "@shared/agent-types";
+import { createMemo, createSignal } from "solid-js";
 
 interface LocalPlugin {
 	id: string;

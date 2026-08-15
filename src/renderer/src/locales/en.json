@@ -98,6 +98,9 @@
 	"settings.cancel": "Cancel",
 	"settings.save": "Save",
 	"settings.deleteProvider": "Delete provider",
+	"settings.plugins": "Plugins",
+	"settings.pluginsSearch": "Search plugins...",
+	"settings.pluginsEmpty": "No plugins",
 
 	"theme.mode": "Appearance",
 	"theme.modeDark": "Dark",
