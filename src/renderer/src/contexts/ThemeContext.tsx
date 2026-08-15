@@ -64,6 +64,8 @@ const ThemeCtx = createContext<ThemeContextValue>();
 
 const STORAGE_KEY = "robo-pi-theme";
 const MODE_KEY = "robo-pi-theme-mode";
+const LIGHT_KEY = "robo-pi-light-theme";
+const DARK_KEY = "robo-pi-dark-theme";
 
 // Dark theme list — light's own dark variant + daisyUI built-in dark themes.
 const DARK_THEMES = [
@@ -103,16 +105,37 @@ function getInitialMode(): ThemeMode {
 	return saved === "light" || saved === "dark" || saved === "system" ? saved : "system";
 }
 
+function getInitialLight(): string {
+	const saved = localStorage.getItem(LIGHT_KEY);
+	return saved && (THEMES as readonly string[]).includes(saved) ? saved : "light";
+}
+
+function getInitialDark(): string {
+	const saved = localStorage.getItem(DARK_KEY);
+	return saved && (THEMES as readonly string[]).includes(saved) ? saved : "dark";
+}
+
 export const ThemeProvider: Component<{ children: JSX.Element }> = (props) => {
 	const [theme, setThemeSignal] = createSignal(getInitialTheme());
 	const [isDark, setIsDark] = createSignal(DARK_THEMES.includes(getInitialTheme()));
 	const [mode, setModeSignal] = createSignal<ThemeMode>(getInitialMode());
+	// Last light/dark theme the user picked, so toggling mode restores it.
+	const [lightTheme, setLightTheme] = createSignal(getInitialLight());
+	const [darkTheme, setDarkTheme] = createSignal(getInitialDark());
 
 	const setTheme = (id: string) => {
 		setThemeSignal(id);
 		setIsDark(DARK_THEMES.includes(id));
 		document.documentElement.setAttribute("data-theme", id);
 		localStorage.setItem(STORAGE_KEY, id);
+		// Remember the last pick per brightness.
+		if (DARK_THEMES.includes(id)) {
+			localStorage.setItem(DARK_KEY, id);
+			setDarkTheme(id);
+		} else {
+			localStorage.setItem(LIGHT_KEY, id);
+			setLightTheme(id);
+		}
 	};
 
 	const toggleDark = () => {
@@ -128,9 +151,9 @@ export const ThemeProvider: Component<{ children: JSX.Element }> = (props) => {
 		localStorage.setItem(MODE_KEY, m);
 		if (m === "system") {
 			const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-			setTheme(dark ? "dark" : "light");
+			setTheme(dark ? darkTheme() : lightTheme());
 		} else {
-			setTheme(m === "dark" ? "dark" : "light");
+			setTheme(m === "dark" ? darkTheme() : lightTheme());
 		}
 	};
 
@@ -138,7 +161,7 @@ export const ThemeProvider: Component<{ children: JSX.Element }> = (props) => {
 	createEffect(() => {
 		if (mode() !== "system") return;
 		const mq = window.matchMedia("(prefers-color-scheme: dark)");
-		const handler = () => setTheme(mq.matches ? "dark" : "light");
+		const handler = () => setTheme(mq.matches ? darkTheme() : lightTheme());
 		mq.addEventListener("change", handler);
 		return () => mq.removeEventListener("change", handler);
 	});

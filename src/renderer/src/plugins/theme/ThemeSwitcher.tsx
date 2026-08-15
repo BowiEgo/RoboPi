@@ -1,19 +1,17 @@
 /**
- * Built-in view: theme mode + theme switch.
+ * Built-in view: appearance mode + theme cards.
  *
- * Declared by the builtin:theme plugin via ui { settings:section, theme-switcher }.
+ * Declared by the builtin:theme plugin via ui { settings:general, theme-switcher }.
  * A renderer-local feature — theme state lives in ThemeContext, no Agent Host
  * round-trip — exposed as a plugin view so it can be disabled/replaced like
  * any other settings section.
  */
 
 import { Monitor, Moon, Sun } from "lucide-solid";
-import { type Component } from "solid-js";
+import { type Component, For } from "solid-js";
 
 import { useLocale } from "@/contexts/LocaleContext";
 import { isDarkTheme, THEMES, useTheme } from "@/contexts/ThemeContext";
-
-import Dropdown, { type DropdownOption } from "@/components/Dropdown/Dropdown";
 
 import { cstyle } from "@/utils/cstyle";
 
@@ -31,6 +29,18 @@ const C = {
 		spacing: "gap-2",
 		variants: {
 			active: { true: "btn-primary btn-active" },
+		},
+	}),
+	grid: cstyle({ display: "flex flex-wrap", spacing: "gap-2" }),
+	card: cstyle({
+		display: "flex items-center",
+		spacing: "gap-2 px-3 py-2",
+		sizing: "w-[calc(25%-6px)]",
+		text: "text-sm",
+		interaction: "rounded-lg border transition-colors",
+		color: "border-base-300 bg-base-200/50 hover:border-base-content/30",
+		variants: {
+			active: { true: "border-primary bg-primary/10 text-primary", false: "text-base-content" },
 		},
 	}),
 };
@@ -58,31 +68,13 @@ const ThemeSwitcher: Component = () => {
 	const { t } = useLocale();
 	const { theme, setTheme, mode, setMode } = useTheme();
 
-	const themeOptions = (): DropdownOption[] => {
-		// Sort light themes first so consecutive items group cleanly.
-		const sorted = [...THEMES].sort((a, b) => {
+	// Sort light themes first.
+	const sortedThemes = () =>
+		[...THEMES].sort((a, b) => {
 			const da = isDarkTheme(a) ? 1 : 0;
 			const db = isDarkTheme(b) ? 1 : 0;
 			return da - db;
 		});
-		return sorted.map((id) => ({
-			id,
-			name: id,
-			group: isDarkTheme(id) ? t("theme.modeDark") : t("theme.modeLight"),
-			groupSearch: isDarkTheme(id) ? "dark" : "light",
-			icon: <ThemeSwatch themeId={id} />,
-		}));
-	};
-
-	// Temporarily switch the visible theme while browsing (no persistence).
-	function previewTheme(id: string) {
-		document.documentElement.setAttribute("data-theme", id);
-	}
-
-	// Restore the committed theme when the menu closes without selecting.
-	function restoreTheme() {
-		document.documentElement.setAttribute("data-theme", theme());
-	}
 
 	return (
 		<>
@@ -104,17 +96,23 @@ const ThemeSwitcher: Component = () => {
 				</div>
 			</section>
 
-			<section class={`${C.section()} max-w-[12rem]`}>
+			<section class={C.section()}>
 				<h2 class={C.sectionTitle()}>{t("theme.switch")}</h2>
-				<Dropdown
-					value={theme()}
-					options={themeOptions()}
-					direction="up"
-					placeholder={t("theme.switch")}
-					onPreview={previewTheme}
-					onClose={restoreTheme}
-					onChange={setTheme}
-				/>
+				<div class={C.grid()}>
+					<For each={sortedThemes()}>
+						{(id) => (
+							<button
+								type="button"
+								class={C.card({ active: theme() === id })}
+								onClick={() => setTheme(id)}
+								data-theme={id}
+							>
+								<ThemeSwatch themeId={id} />
+								<span class="truncate">{id}</span>
+							</button>
+						)}
+					</For>
+				</div>
 			</section>
 		</>
 	);
