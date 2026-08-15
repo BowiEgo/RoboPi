@@ -9,6 +9,7 @@
 import { type Component, For } from "solid-js";
 
 import { useAgent } from "@/agent/useAgent";
+import ThemeSwitcher from "@/views/ThemeSwitcher";
 import { cstyle } from "@/utils/cstyle";
 
 /** Built-in view: lists the UI extensions currently registered. */
@@ -42,6 +43,7 @@ const C = {
 /** Built-in views, keyed by the string plugins declare in `ui.view`. */
 export const BUILTIN_VIEWS: Record<string, Component> = {
 	"plugin-list": PluginListView,
+	"theme-switcher": ThemeSwitcher,
 };
 
 /** Resolve a plugin's view string to a built-in component, if one exists. */

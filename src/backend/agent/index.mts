@@ -195,6 +195,13 @@ function registerMessageHandlers(): void {
 		},
 	);
 
+	// Theme UI — a renderer-local feature exposed as a plugin so it can be
+	// disabled or replaced like any other settings section.
+	registry.load(
+		{ id: "core:theme", ui: { slots: ["settings:section"], view: "theme-switcher" } },
+		() => {},
+	);
+
 	// Route inbound protocol messages to typed `ipc:<type>` events.
 	registry.load({ id: "core:ipc-router" }, (ctx) => {
 		ctx.on("transport:message", (raw) => {
