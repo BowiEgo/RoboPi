@@ -6,9 +6,9 @@
  * schemastery, ...) can be adapted with a three-line wrapper later.
  *
  * A `Schema<T>` describes how to validate a plugin's config before its entry
- * function runs. Keep it minimal on purpose: the kernel only needs
- * `validate()`, and richer validators can be plugged in without touching
- * the kernel.
+ * function runs. Each schema also exposes `describe()` — a serializable
+ * description the renderer uses to auto-generate a settings form (the
+ * schema-form part of the UI plugin framework).
  */
 
 /** One validation failure, addressed by a property path. */
@@ -22,9 +22,23 @@ export interface SchemaIssue {
 /** Result of a validation: either the validated value or the issues. */
 export type SchemaResult<T> = { value: T } | { issues: SchemaIssue[] };
 
+/**
+ * A serializable description of a schema, shippable over the wire. The
+ * renderer renders a form from this; the host validates with the live schema.
+ */
+export type SerializableSchema =
+	| { type: "string" }
+	| { type: "number" }
+	| { type: "boolean" }
+	| { type: "passthrough" }
+	| { type: "optional"; inner: SerializableSchema }
+	| { type: "object"; fields: Record<string, SerializableSchema> };
+
 /** Minimal standard-schema-compatible validator. */
 export interface Schema<T = unknown> {
 	validate(value: unknown): SchemaResult<T>;
+	/** Serializable description for auto-generated forms. */
+	describe(): SerializableSchema;
 }
 
 /** Thrown when plugin config fails schema validation. */
@@ -52,6 +66,9 @@ export function passthrough<T = unknown>(): Schema<T> {
 		validate(value: unknown): SchemaResult<T> {
 			return { value: value as T };
 		},
+		describe(): SerializableSchema {
+			return { type: "passthrough" };
+		},
 	};
 }
 
@@ -60,6 +77,9 @@ export function string(): Schema<string> {
 	return {
 		validate(value: unknown): SchemaResult<string> {
 			return typeof value === "string" ? { value } : { issues: [{ path: [], message: "expected a string" }] };
+		},
+		describe(): SerializableSchema {
+			return { type: "string" };
 		},
 	};
 }
@@ -72,6 +92,9 @@ export function number(): Schema<number> {
 				? { value }
 				: { issues: [{ path: [], message: "expected a finite number" }] };
 		},
+		describe(): SerializableSchema {
+			return { type: "number" };
+		},
 	};
 }
 
@@ -80,6 +103,9 @@ export function boolean(): Schema<boolean> {
 	return {
 		validate(value: unknown): SchemaResult<boolean> {
 			return typeof value === "boolean" ? { value } : { issues: [{ path: [], message: "expected a boolean" }] };
+		},
+		describe(): SerializableSchema {
+			return { type: "boolean" };
 		},
 	};
 }
@@ -93,6 +119,9 @@ export function optional<T>(schema: Schema<T>): Schema<T | undefined> {
 		validate(value: unknown): SchemaResult<T | undefined> {
 			if (value === undefined) return { value: undefined };
 			return schema.validate(value);
+		},
+		describe(): SerializableSchema {
+			return { type: "optional", inner: schema.describe() };
 		},
 	};
 }
@@ -124,6 +153,13 @@ export function object<S extends Record<string, Schema<unknown>>>(
 			}
 			if (issues.length) return { issues };
 			return { value: result as { [K in keyof S]: S[K] extends Schema<infer T> ? T : never } };
+		},
+		describe(): SerializableSchema {
+			const fields: Record<string, SerializableSchema> = {};
+			for (const [key, sub] of Object.entries(shape)) {
+				fields[key] = sub.describe();
+			}
+			return { type: "object", fields };
 		},
 	};
 }

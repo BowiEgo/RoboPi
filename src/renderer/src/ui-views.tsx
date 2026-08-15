@@ -6,21 +6,31 @@
  * exists here. Add a built-in view by registering one entry.
  */
 
-import { type Component, For } from "solid-js";
+import { type Component, For, Show } from "solid-js";
 
 import { uiExtensions } from "@/ui-extensions";
-import ThemeSwitcher from "@/views/ThemeSwitcher";
+import SchemaForm from "@/components/SchemaForm/SchemaForm";
 import { cstyle } from "@/utils/cstyle";
+import ThemeSwitcher from "@/views/ThemeSwitcher";
 
-/** Built-in view: lists the UI extensions currently registered. */
+/** Built-in view: lists the UI extensions and renders their config forms. */
 const PluginListView: Component = () => {
 	return (
 		<ul class={C.list()}>
 			<For each={uiExtensions()}>
 				{(ext) => (
-					<li>
-						<span class={C.name()}>{ext.view}</span>
-						<span class={C.meta()}>by {ext.pluginId}</span>
+					<li class={C.item()}>
+						<div class={C.header()}>
+							<span class={C.name()}>{ext.view}</span>
+							<span class={C.meta()}>by {ext.pluginId}</span>
+						</div>
+						<Show when={ext.settingsSchema}>
+							<SchemaForm
+								schema={ext.settingsSchema!}
+								value={ext.settingsValue}
+								onChange={(v) => console.log("[config]", ext.pluginId, v)}
+							/>
+						</Show>
 					</li>
 				)}
 			</For>
@@ -31,9 +41,11 @@ const PluginListView: Component = () => {
 const C = {
 	list: cstyle({
 		display: "flex flex-col",
-		spacing: "gap-1",
+		spacing: "gap-3",
 		text: "text-sm",
 	}),
+	item: cstyle({ display: "flex flex-col", spacing: "gap-2" }),
+	header: cstyle({ display: "flex items-center", spacing: "gap-2" }),
 	name: cstyle({ color: "text-base-content" }),
 	meta: cstyle({ text: "text-xs", color: "text-base-content/40" }),
 };

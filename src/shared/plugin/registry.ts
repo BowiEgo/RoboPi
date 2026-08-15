@@ -69,6 +69,8 @@ export interface PluginHandle<E extends object = PluginEvents, S extends object 
 	readonly manifest: PluginManifest<S>;
 	readonly ctx: PluginContext<E, S>;
 	readonly state: PluginState;
+	/** The config the plugin was loaded with (validated). */
+	readonly config: unknown;
 	/** Resolves once active; rejects once failed or disposed while pending. */
 	ready(): Promise<void>;
 	/** Unload the plugin: unwind every effect, remove its services. */

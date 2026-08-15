@@ -8,6 +8,8 @@
  * schema (scheme B, the schema-form part).
  */
 
+import type { SerializableSchema } from "./plugin/schema.ts";
+
 /** UI insertion points across the renderer. */
 export type UISlot =
 	| "chat:sidebar" //  侧边栏（会话列表下方）
@@ -32,4 +34,8 @@ export interface UIExtensionDescriptor {
 	slots: UISlot[];
 	view: string;
 	viewConfig?: unknown;
+	/** Serialized Config schema (from manifest.Config.describe()), for auto forms. */
+	settingsSchema?: SerializableSchema;
+	/** Current config value, used to initialize the settings form. */
+	settingsValue?: unknown;
 }
