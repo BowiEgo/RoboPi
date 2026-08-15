@@ -6,9 +6,8 @@
  * resolved against the built-in registry. Views own their layout.
  */
 
-import { type Component, For } from "solid-js";
-
 import type { UISlot } from "@shared/ui-types";
+import { type Component, For } from "solid-js";
 
 import { uiExtensions } from "@/ui-extensions";
 import { resolveView } from "@/ui-views";

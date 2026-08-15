@@ -29,7 +29,7 @@ const C = {
 	navItem: cstyle({
 		display: "btn btn-ghost btn-sm justify-start",
 		spacing: "gap-2",
-		text: "font-normal",
+		text: "text-[1rem] font-normal",
 		interaction: "rounded-lg",
 		variants: {
 			active: { true: "btn-active bg-base-200", false: "" },
@@ -152,7 +152,11 @@ const SettingPanel: Component = () => {
 						<h2 class={C.sectionTitle()}>{t("settings.locale")}</h2>
 						<div class={C.localeRow()}>
 							{LOCALES.map((l) => (
-								<button type="button" class={C.localeBtn({ active: locale() === l.id })} onClick={() => setLocale(l.id)}>
+								<button
+									type="button"
+									class={C.localeBtn({ active: locale() === l.id })}
+									onClick={() => setLocale(l.id)}
+								>
 									{t(l.labelKey)}
 								</button>
 							))}

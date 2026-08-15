@@ -6,9 +6,8 @@
  * onChange as a plain object; the host validates against the live schema.
  */
 
-import { type Component, For } from "solid-js";
-
 import type { SerializableSchema } from "@shared/plugin/schema";
+import { type Component, For } from "solid-js";
 
 import { cstyle } from "@/utils/cstyle";
 
@@ -74,11 +73,7 @@ const SchemaForm: Component<SchemaFormProps> = (props) => {
 					{([key, sub]) => (
 						<div class={C.field()}>
 							<span class={C.label()}>{key}</span>
-							<SchemaForm
-								schema={sub}
-								value={record[key]}
-								onChange={(v) => onChange({ ...record, [key]: v })}
-							/>
+							<SchemaForm schema={sub} value={record[key]} onChange={(v) => onChange({ ...record, [key]: v })} />
 						</div>
 					)}
 				</For>

@@ -10,11 +10,13 @@ import { type Component, createSignal, For, Show } from "solid-js";
 
 import { useAgent } from "@/agent/useAgent";
 import { useLocale } from "@/contexts/LocaleContext";
-import { pluginInventory, toggleLocalPlugin, type InventoryItem } from "@/ui-extensions";
-import SearchInput from "@/components/SearchInput/SearchInput";
+
 import SchemaForm from "@/components/SchemaForm/SchemaForm";
-import { cstyle } from "@/utils/cstyle";
+import SearchInput from "@/components/SearchInput/SearchInput";
+
 import ThemeSwitcher from "@/plugins/theme/ThemeSwitcher";
+import { type InventoryItem, pluginInventory, toggleLocalPlugin } from "@/ui-extensions";
+import { cstyle } from "@/utils/cstyle";
 
 /** Built-in view: the plugin management list with enable/disable toggles. */
 const PluginListView: Component = () => {
@@ -56,12 +58,7 @@ const PluginListView: Component = () => {
 								<Show
 									when={item.core}
 									fallback={
-										<input
-											type="checkbox"
-											class={C.toggle()}
-											checked={item.enabled}
-											onChange={() => onToggle(item)}
-										/>
+										<input type="checkbox" class={C.toggle()} checked={item.enabled} onChange={() => onToggle(item)} />
 									}
 								>
 									<input type="checkbox" class={C.toggle()} checked disabled title="core" />

@@ -60,7 +60,8 @@ const AppContent: Component = () => {
 				open={settingsOpen()}
 				onClose={() => setSettingsOpen(false)}
 				title={t("settings.title")}
-				minWidth="66rem"
+				minWidth="56rem"
+				height="46rem"
 				backdropBlur={true}
 			>
 				<SettingPanel />

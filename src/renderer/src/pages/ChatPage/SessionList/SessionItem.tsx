@@ -30,8 +30,8 @@ const C = {
 		interaction: "cursor-pointer rounded-md transition-colors",
 		variants: {
 			active: {
-				true: "bg-primary text-primary-content",
-				false: "hover:bg-base-200 text-base-content/70",
+				true: "bg-base-300",
+				false: "hover:bg-base-200",
 			},
 		},
 	}),
@@ -47,42 +47,24 @@ const C = {
 		text: "text-sm font-medium truncate",
 		variants: {
 			active: {
-				true: "text-primary-content",
+				true: "text-base-content/70",
 				false: "text-base-content/80",
 			},
 		},
 	}),
 	timeText: cstyle({
-		text: "text-[10px]",
+		text: "text-[10px] text-base-content/60",
 		spacing: "ml-auto",
-		variants: {
-			active: {
-				true: "text-primary-content/60",
-				false: "text-base-content/40",
-			},
-		},
 	}),
 	subtitleText: cstyle({
-		text: "list-col-wrap text-xs",
-		variants: {
-			active: {
-				true: "text-primary-content/60",
-				false: "text-base-content/50",
-			},
-		},
+		text: "list-col-wrap text-xs text-base-content/60",
 	}),
 	ellipsisWrapper: cstyle({
 		display: "relative",
 		sizing: "shrink-0 self-center",
 	}),
 	ellipsisBtn: cstyle({
-		display: "btn btn-ghost btn-xs btn-square",
-		variants: {
-			active: {
-				true: "text-primary-content/60 hover:bg-primary/75",
-				false: "text-base-content/40",
-			},
-		},
+		display: "btn btn-ghost btn-xs btn-square text-base-content/60 hover:bg-base-100",
 	}),
 	menuDropdown: cstyle({
 		display: "absolute right-0 top-full z-50 flex flex-col",
