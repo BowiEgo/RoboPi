@@ -34,7 +34,7 @@ import {
 	type PluginEvents,
 	type PluginInternalEvents,
 	type PluginServices,
-} from "./types";
+} from "./types.ts";
 
 // ============================================================================
 // Event bus

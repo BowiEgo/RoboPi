@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import type { PluginContext } from "./context";
-import { type PluginManifest, PluginRegistry } from "./registry";
-import { number, object } from "./schema";
-import type { Disposer, PluginInternalEvents, PluginServices } from "./types";
+import type { PluginContext } from "./context.ts";
+import { type PluginManifest, PluginRegistry } from "./registry.ts";
+import { number, object } from "./schema.ts";
+import type { Disposer, PluginInternalEvents, PluginServices } from "./types.ts";
 
 interface TestServices extends PluginServices {
 	config: { theme: string };

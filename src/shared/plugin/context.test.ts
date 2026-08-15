@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { EventBus, isBailed, PluginContext } from "./context";
-import type { Next } from "./types";
+import { EventBus, isBailed, PluginContext } from "./context.ts";
+import type { Next } from "./types.ts";
 
 interface TestEvents {
 	"user/joined": (name: string) => void;

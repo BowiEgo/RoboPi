@@ -23,8 +23,8 @@
  * This file is isomorphic (no Node imports).
  */
 
-import { EventBus, PluginContext } from "./context";
-import { type Schema, ValidationError } from "./schema";
+import { EventBus, PluginContext } from "./context.ts";
+import { type Schema, ValidationError } from "./schema.ts";
 import {
 	type Disposer,
 	PluginError,
@@ -32,7 +32,7 @@ import {
 	type PluginInternalEvents,
 	type PluginServices,
 	type PluginState,
-} from "./types";
+} from "./types.ts";
 
 /** Declarative description of one plugin. */
 export interface PluginManifest<S extends object = PluginServices, C = unknown> {

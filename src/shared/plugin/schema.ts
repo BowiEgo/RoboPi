@@ -29,7 +29,9 @@ export interface Schema<T = unknown> {
 
 /** Thrown when plugin config fails schema validation. */
 export class ValidationError extends TypeError {
-	constructor(public readonly issues: SchemaIssue[]) {
+	readonly issues: SchemaIssue[];
+
+	constructor(issues: SchemaIssue[]) {
 		super(
 			`invalid config:\n` +
 				issues
@@ -39,6 +41,7 @@ export class ValidationError extends TypeError {
 					})
 					.join("\n"),
 		);
+		this.issues = issues;
 		this.name = "ValidationError";
 	}
 }

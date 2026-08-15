@@ -26,14 +26,14 @@ export {
 	PluginContext,
 	type SerialListener,
 	type WaterfallListener,
-} from "./context";
+} from "./context.ts";
 export {
 	type PluginEntry,
 	type PluginHandle,
 	type PluginManifest,
 	PluginRegistry,
 	type PluginRegistryOptions,
-} from "./registry";
+} from "./registry.ts";
 export {
 	boolean,
 	number,
@@ -45,7 +45,7 @@ export {
 	type SchemaResult,
 	string,
 	ValidationError,
-} from "./schema";
+} from "./schema.ts";
 export {
 	type Disposer,
 	type EventMap,
@@ -56,4 +56,4 @@ export {
 	type PluginServices,
 	type PluginState,
 	type ServiceMap,
-} from "./types";
+} from "./types.ts";

@@ -10,6 +10,7 @@
 	"compilerOptions": {
 		"composite": true,
 		"jsxImportSource": "solid-js",
+		"allowImportingTsExtensions": true,
 		"paths": {
 			"@/*": ["./src/renderer/src/*"],
 			"@shared/*": ["./src/shared/*"]
