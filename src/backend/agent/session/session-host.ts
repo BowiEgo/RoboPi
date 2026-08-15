@@ -298,13 +298,13 @@ export class SessionHost {
 
 			const sm = SessionManager.open(target.path);
 			const t2 = performance.now();
-			const sessionEntry = sm.getEntries().find((e) => (e as { type: string }).type === "session_info") as
-				| { name?: string }
-				| undefined;
 
 			this.currentSessionManager = sm;
 			this.currentSessionId = sm.getSessionId();
-			this.currentSessionName = sessionEntry?.name ?? DEFAULT_SESSION_NAME;
+			// Prefer listAll's resolved name (latest session_info / title), which
+			// knows the auto-generated title; a naive first-entry scan finds the
+			// stale "Untitled" marker.
+			this.currentSessionName = target.name ?? DEFAULT_SESSION_NAME;
 			this.session = await this.createAgentSessionFor(sm);
 			const t3 = performance.now();
 			this.subscribeToSession(this.session, this.currentSessionId);
