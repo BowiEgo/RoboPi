@@ -3,7 +3,9 @@ import { type Component, createEffect, createMemo, createSignal, For, type JSX, 
 
 import type { SessionOutlineItem } from "@shared/agent-types";
 import ChatOutline from "@/components/ChatOutline/ChatOutline";
+import SlotRenderer from "@/components/SlotRenderer/SlotRenderer";
 import { useAutoScroll } from "@/hooks/useAutoScroll";
+import { isTestMode } from "@/test-mode";
 
 import Composer, { type AgentConfig } from "../Composer/Composer";
 import ChatBubble, { type ChatBubbleProps } from "./ChatBubble";
@@ -54,11 +56,6 @@ const C = {
 		interaction: "border rounded",
 		text: "font-mono text-[11px] leading-snug whitespace-nowrap",
 		color: "border-base-300 bg-base-200 text-base-content/70",
-	}),
-	testBtn: cstyle({
-		display: "btn btn-xs",
-		spacing: "ml-auto",
-		variants: { active: { true: "btn-primary", false: "btn-outline" } },
 	}),
 	messages: cstyle({
 		display: "flex flex-col",
@@ -144,12 +141,6 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 			timestamp: "14:32",
 		},
 	];
-
-	const [isTestMode, setIsTestMode] = createSignal(false);
-
-	function toggleTestMessages() {
-		setIsTestMode((v) => !v);
-	}
 
 	const displayMessages = createMemo(() => (isTestMode() ? TEST_MESSAGES : messages()));
 
@@ -318,9 +309,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 						</For>
 					</div>
 				)}
-				<button type="button" class={C.testBtn({ active: isTestMode() })} onClick={toggleTestMessages}>
-					🧪 {isTestMode() ? "Clear" : "Test"}
-				</button>
+				<SlotRenderer slot="chat:header" />
 			</header>
 
 			<main

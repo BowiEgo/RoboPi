@@ -25,6 +25,11 @@ const LOCAL_PLUGINS: LocalPlugin[] = [
 		name: "Theme",
 		ui: { pluginId: "builtin:theme", slots: ["settings:general"], view: "theme-switcher", title: "Theme" },
 	},
+	{
+		id: "builtin:test",
+		name: "Test Messages",
+		ui: { pluginId: "builtin:test", slots: ["chat:header"], view: "test-button", title: "Test" },
+	},
 ];
 
 /** Ids of locally-disabled plugins. */

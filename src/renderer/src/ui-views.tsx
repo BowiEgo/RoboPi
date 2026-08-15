@@ -16,6 +16,7 @@ import SearchInput from "@/components/SearchInput/SearchInput";
 
 import ThemeSwitcher from "@/plugins/theme/ThemeSwitcher";
 import { type InventoryItem, pluginInventory, toggleLocalPlugin } from "@/ui-extensions";
+import { isTestMode, toggleTestMode } from "@/test-mode";
 import { cstyle } from "@/utils/cstyle";
 
 /** Built-in view: the plugin management list with enable/disable toggles. */
@@ -112,10 +113,28 @@ const C = {
 	empty: cstyle({ text: "text-sm", color: "text-base-content/40" }),
 };
 
+/** Built-in view: the chat test-message toggle (a UI plugin). */
+const TestButton: Component = () => {
+	return (
+		<button
+			type="button"
+			class={cstyle({
+				display: "btn btn-xs",
+				spacing: "ml-auto",
+				variants: { active: { true: "btn-primary", false: "btn-outline" } },
+			})({ active: isTestMode() })}
+			onClick={toggleTestMode}
+		>
+			🧪 {isTestMode() ? "Clear" : "Test"}
+		</button>
+	);
+};
+
 /** Built-in views, keyed by the string plugins declare in `ui.view`. */
 export const BUILTIN_VIEWS: Record<string, Component> = {
 	"plugin-list": PluginListView,
 	"theme-switcher": ThemeSwitcher,
+	"test-button": TestButton,
 };
 
 /** Resolve a plugin's view string to a built-in component, if one exists. */

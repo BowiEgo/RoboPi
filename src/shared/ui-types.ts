@@ -13,6 +13,7 @@ import type { SerializableSchema } from "./plugin/schema.ts";
 /** UI insertion points across the renderer. */
 export type UISlot =
 	| "chat:sidebar" //  侧边栏（会话列表下方）
+	| "chat:header" //   ChatPanel 标题栏操作区
 	| "chat:composer" //  Composer 工具栏
 	| "chat:message-menu" // 消息操作菜单
 	| "chat:status" //    底部状态栏

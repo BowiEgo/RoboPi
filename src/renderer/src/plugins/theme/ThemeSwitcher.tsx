@@ -34,7 +34,7 @@ const C = {
 	scroll: cstyle({
 		display: "flex flex-col",
 		spacing: "gap-2 p-2",
-		sizing: "h-72 overflow-y-auto",
+		sizing: "w-[75%] h-72 overflow-y-auto",
 		interaction: "rounded-lg",
 		color: "bg-base-200",
 	}),
@@ -46,7 +46,7 @@ const C = {
 	card: cstyle({
 		display: "flex items-center",
 		spacing: "gap-2 px-3 py-2",
-		sizing: "w-[calc(25%-6px)]",
+		sizing: "w-[calc(33%-6px)]",
 		text: "text-sm",
 		interaction: "rounded-lg border transition-colors",
 		color: "border-base-300 bg-base-100 hover:border-base-content/30",
@@ -99,7 +99,12 @@ const ThemeSwitcher: Component = () => {
 				<div class={C.grid()}>
 					<For each={lightThemes()}>
 						{(id) => (
-							<button type="button" class={C.card({ active: theme() === id })} onClick={() => setTheme(id)} data-theme={id}>
+							<button
+								type="button"
+								class={C.card({ active: theme() === id })}
+								onClick={() => setTheme(id)}
+								data-theme={id}
+							>
 								<ThemeSwatch themeId={id} />
 								<span class="truncate">{id}</span>
 							</button>
@@ -111,7 +116,12 @@ const ThemeSwitcher: Component = () => {
 				<div class={C.grid()}>
 					<For each={darkThemes()}>
 						{(id) => (
-							<button type="button" class={C.card({ active: theme() === id })} onClick={() => setTheme(id)} data-theme={id}>
+							<button
+								type="button"
+								class={C.card({ active: theme() === id })}
+								onClick={() => setTheme(id)}
+								data-theme={id}
+							>
 								<ThemeSwatch themeId={id} />
 								<span class="truncate">{id}</span>
 							</button>
