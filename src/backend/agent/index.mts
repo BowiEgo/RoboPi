@@ -9,7 +9,6 @@
 import { type AgentMessage, AgentMessageType, isValidMessageType } from "../../shared/agent-types.ts";
 import { createLogger } from "../../shared/logger/index.ts";
 import { type PluginEntry, type PluginManifest, PluginRegistry } from "../../shared/plugin/registry.ts";
-import { boolean, object } from "../../shared/plugin/schema.ts";
 import { PluginError } from "../../shared/plugin/types.ts";
 import { AgentHost } from "./agent-host.ts";
 import { AGENT_READY_ID, AGENT_VERSION, DEFAULT_SESSION_NAME, ErrorCode } from "./constants.ts";
@@ -276,13 +275,11 @@ function registerMessageHandlers(): void {
 		{
 			id: "core:model",
 			provide: ["model"],
-			Config: object({ autoRefresh: boolean() }),
 			ui: { slots: ["settings:plugins"], view: "plugin-list", title: "Plugins" },
 		},
 		(ctx) => {
 			ctx.provide("model", agentHost);
 		},
-		{ autoRefresh: false },
 	);
 
 	// Route inbound protocol messages to typed `ipc:<type>` events.
