@@ -276,7 +276,7 @@ function registerMessageHandlers(): void {
 			id: "core:model",
 			provide: ["model"],
 			Config: object({ autoRefresh: boolean() }),
-			ui: { slots: ["settings:section"], view: "plugin-list" },
+			ui: { slots: ["settings:section"], view: "plugin-list", title: "Plugins" },
 		},
 		(ctx) => {
 			ctx.provide("model", agentHost);

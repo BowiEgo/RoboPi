@@ -26,6 +26,8 @@ export interface UIExtension {
 	view: string;
 	/** Initial config passed to the built-in view component. */
 	viewConfig?: unknown;
+	/** Navigation title, used when the extension renders as a settings section. */
+	title?: string;
 }
 
 /** A UI extension plus its owning plugin id, sent to the renderer. */
@@ -34,6 +36,8 @@ export interface UIExtensionDescriptor {
 	slots: UISlot[];
 	view: string;
 	viewConfig?: unknown;
+	/** Navigation title for settings sections. */
+	title?: string;
 	/** Serialized Config schema (from manifest.Config.describe()), for auto forms. */
 	settingsSchema?: SerializableSchema;
 	/** Current config value, used to initialize the settings form. */

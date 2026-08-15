@@ -21,7 +21,7 @@ const LOCAL_PLUGINS: LocalPlugin[] = [
 	{
 		id: "builtin:theme",
 		name: "Theme",
-		ui: { pluginId: "builtin:theme", slots: ["settings:section"], view: "theme-switcher" },
+		ui: { pluginId: "builtin:theme", slots: ["settings:section"], view: "theme-switcher", title: "Theme" },
 	},
 ];
 
@@ -41,6 +41,7 @@ export const uiExtensions = createMemo<UIExtensionDescriptor[]>(() => [
 			slots: p.ui!.slots,
 			view: p.ui!.view,
 			viewConfig: p.ui!.viewConfig,
+			title: p.ui!.title,
 			settingsSchema: p.settingsSchema,
 			settingsValue: p.settingsValue,
 		})),
