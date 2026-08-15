@@ -22,7 +22,7 @@ import {
 	isSessionRenamePayload,
 	isThinkingLevel,
 } from "./guards.ts";
-import { onHostMessage, postMessageToHost, setTransport, uid } from "./ipc.ts";
+import { onHostMessage, postMessageToHost, replayState, setTransport, uid } from "./ipc.ts";
 import type { CoreEvents, CoreServices } from "./plugin-types.ts";
 import { respondError, respondNotReady } from "./respond.ts";
 import type { SessionHost } from "./session/session-host.ts";
@@ -53,7 +53,9 @@ async function startTransport(): Promise<void> {
 	const mode = process.env.ROBOPI_TRANSPORT ?? "ipc";
 	if (mode === "ws") {
 		const port = Number(process.env.ROBOPI_PORT ?? 9241);
-		const transport = new WebSocketTransport(port);
+		const transport = new WebSocketTransport(port, (send) => {
+			replayState((msg) => send(JSON.stringify(msg)));
+		});
 		setTransport(transport);
 		await transport.start();
 		logger.info(`WebSocket transport listening on ws://127.0.0.1:${port}`);

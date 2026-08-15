@@ -25,9 +25,11 @@ export class WebSocketTransport implements Transport {
 	private readonly sockets = new Set<WebSocket>();
 	private readonly listeners = new Set<(msg: AgentMessage) => void>();
 	private readonly port: number;
+	private readonly onConnect?: (send: (data: string) => void) => void;
 
-	constructor(port: number) {
+	constructor(port: number, onConnect?: (send: (data: string) => void) => void) {
 		this.port = port;
+		this.onConnect = onConnect;
 	}
 
 	async start(): Promise<void> {
@@ -35,6 +37,8 @@ export class WebSocketTransport implements Transport {
 
 		this.wss.on("connection", (socket) => {
 			this.sockets.add(socket);
+			// Let the host replay state to this freshly connected client.
+			this.onConnect?.(socket.send.bind(socket));
 			socket.on("message", (raw) => {
 				let msg: AgentMessage;
 				try {
