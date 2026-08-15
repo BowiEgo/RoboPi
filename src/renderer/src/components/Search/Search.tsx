@@ -1,7 +1,8 @@
 import { Search as SearchIcon } from "lucide-solid";
-import { type Component, createSignal } from "solid-js";
+import { type Component } from "solid-js";
 
 import { useLocale } from "@/contexts/LocaleContext";
+import { sessionSearchQuery, setSessionSearchQuery } from "@/session-search";
 
 import { cstyle } from "@/utils/cstyle";
 
@@ -42,14 +43,8 @@ const C = {
 
 const Search: Component = () => {
 	const { t } = useLocale();
-	const [value, setValue] = createSignal("");
 
 	let inputRef: HTMLInputElement | undefined;
-
-	const handleInput = (e: Event) => {
-		const target = e.target as HTMLInputElement;
-		setValue(target.value);
-	};
 
 	return (
 		<label class={`${C.wrapper()} group`}>
@@ -60,8 +55,8 @@ const Search: Component = () => {
 				type="search"
 				class={C.input()}
 				ref={inputRef}
-				value={value()}
-				onInput={handleInput}
+				value={sessionSearchQuery()}
+				onInput={(e) => setSessionSearchQuery(e.currentTarget.value)}
 				placeholder={t("search.placeholder")}
 				aria-label={t("search.label")}
 			/>

@@ -14,6 +14,7 @@
 	"chat.drawerLabel": "对话侧边栏",
 	"chat.sessions": "会话列表",
 	"chat.noSessions": "暂无会话",
+	"chat.noSearchResults": "未找到匹配的会话",
 	"chat.rename": "重命名",
 	"chat.delete": "删除",
 	"chat.deleteConfirm": "确认删除",

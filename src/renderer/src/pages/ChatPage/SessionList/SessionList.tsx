@@ -1,8 +1,9 @@
 import { Ellipsis, MessageCircle, Plus, Trash2 } from "lucide-solid";
-import { type Component, createSignal, For, Show } from "solid-js";
+import { type Component, createMemo, createSignal, For, Show } from "solid-js";
 
 import { useAgent } from "@/agent/useAgent";
 import { useLocale } from "@/contexts/LocaleContext";
+import { sessionSearchQuery } from "@/session-search";
 
 import SessionItem, { type SessionItemProps } from "./SessionItem";
 import { cstyle } from "@/utils/cstyle";
@@ -69,6 +70,16 @@ const SessionList: Component = () => {
 	const [selected, setSelected] = createSignal<Set<string>>(new Set());
 	const [menuOpen, setMenuOpen] = createSignal(false);
 	let menuRef: HTMLDivElement | undefined;
+
+	// Filter rows by the shared search query (title + last-message preview).
+	const filteredSessions = createMemo(() => {
+		const q = sessionSearchQuery().trim().toLowerCase();
+		const items = sessions();
+		if (!q) return items;
+		return items.filter(
+			(item) => item.label.toLowerCase().includes(q) || (item.subtitle?.toLowerCase().includes(q) ?? false),
+		);
+	});
 
 	function handleDelete(id: string) {
 		if (confirmDelete() === id) {
@@ -157,8 +168,11 @@ const SessionList: Component = () => {
 			</header>
 
 			<div class={C.list()} role="tablist">
-				<Show when={sessions().length > 0} fallback={<div class={C.empty()}>{t("chat.noSessions")}</div>}>
-					<For each={sessions()}>
+				<Show
+					when={filteredSessions().length > 0}
+					fallback={<div class={C.empty()}>{sessionSearchQuery() ? t("chat.noSearchResults") : t("chat.noSessions")}</div>}
+				>
+					<For each={filteredSessions()}>
 						{(item: SessionItemProps) => (
 							<SessionItem
 								id={item.id}
