@@ -41,7 +41,7 @@ const C = {
 		color: "bg-app border-card",
 	}),
 	list: cstyle({
-		display: "list",
+		display: "flex flex-col",
 		interaction: "rounded-box",
 	}),
 	empty: cstyle({

@@ -25,7 +25,7 @@ export interface SessionItemProps {
 
 const C = {
 	row: cstyle({
-		display: "list-row items-center",
+		display: "flex items-center",
 		spacing: "gap-2 px-3 py-2 mb-2",
 		interaction: "cursor-pointer rounded-md transition-colors",
 		variants: {
@@ -36,7 +36,7 @@ const C = {
 		},
 	}),
 	content: cstyle({
-		display: "list-col-grow flex flex-col",
+		display: "flex flex-col flex-1",
 		sizing: "min-w-0",
 	}),
 	titleRow: cstyle({
@@ -57,7 +57,7 @@ const C = {
 		spacing: "ml-auto",
 	}),
 	subtitleText: cstyle({
-		text: "list-col-wrap text-xs text-base-content/60",
+		text: "text-xs text-base-content/60",
 	}),
 	ellipsisWrapper: cstyle({
 		display: "relative",
