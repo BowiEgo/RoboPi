@@ -1,5 +1,5 @@
 import { Plus } from "lucide-solid";
-import { type Component, createMemo, createSignal, For, type JSX, Show } from "solid-js";
+import { type Component, createEffect, createMemo, createSignal, For, type JSX, Show } from "solid-js";
 
 import ChatOutline from "@/components/ChatOutline/ChatOutline";
 import { useAutoScroll } from "@/hooks/useAutoScroll";
@@ -89,7 +89,7 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 	// No local state — the store is the single source of truth.
 	const messages = () => props.initialMessages ?? [];
 
-	const { setScrollEl, onScroll } = useAutoScroll(messages);
+	const autoScroll = useAutoScroll(messages);
 
 	// ── Test data ──
 	const TEST_MESSAGES: ChatBubbleProps[] = [
@@ -149,6 +149,57 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 
 	const displayMessages = createMemo(() => (isTestMode() ? TEST_MESSAGES : messages()));
 
+	// ── Incremental render ──
+	// Only the most recent PAGE_SIZE messages are mounted; scrolling to the
+	// top reveals earlier ones. Markdown rendering is the main source of
+	// switch latency on long sessions, so we keep the mounted set small.
+	const PAGE_SIZE = 40;
+	const [visibleCount, setVisibleCount] = createSignal(PAGE_SIZE);
+	let scrollEl: HTMLElement | undefined;
+
+	const visibleMessages = createMemo(() => {
+		const all = displayMessages();
+		if (all.length <= visibleCount()) return all;
+		return all.slice(all.length - visibleCount());
+	});
+
+	const hasMore = createMemo(() => visibleMessages().length < displayMessages().length);
+
+	// Reset the window when switching sessions.
+	createEffect(() => {
+		props.resetKey;
+		setVisibleCount(PAGE_SIZE);
+	});
+
+	let pendingScrollAnchor = 0;
+	function loadMore() {
+		if (!scrollEl || !hasMore()) return;
+		// Anchor the viewport to the content bottom so earlier messages appear
+		// above without shifting what the user is currently reading.
+		pendingScrollAnchor = scrollEl.scrollHeight - scrollEl.scrollTop;
+		setVisibleCount((c) => Math.min(c + PAGE_SIZE, displayMessages().length));
+	}
+
+	// Restore the anchor after the longer list has rendered.
+	createEffect(() => {
+		visibleCount();
+		if (pendingScrollAnchor && scrollEl) {
+			scrollEl.scrollTop = scrollEl.scrollHeight - pendingScrollAnchor;
+			pendingScrollAnchor = 0;
+		}
+	});
+
+	function setRef(el: HTMLElement) {
+		scrollEl = el;
+		autoScroll.setScrollEl(el);
+	}
+
+	function handleScroll(e: Event) {
+		autoScroll.onScroll();
+		const el = e.currentTarget as HTMLElement;
+		if (el.scrollTop < 160) loadMore();
+	}
+
 	const hasStreaming = createMemo(() => displayMessages().some((m) => m.role === "agent" && m.streaming));
 
 	// Retryable user messages: last user msg whose agent response failed or is missing
@@ -205,15 +256,15 @@ const ChatPanel: Component<ChatPanelProps> = (props) => {
 			</header>
 
 			<main
-				ref={setScrollEl}
+				ref={setRef}
 				class={C.messages()}
 				style="scroll-behavior: auto; scroll-padding-top: 64px; scroll-padding-bottom: 96px"
-				onScroll={onScroll}
+				onScroll={handleScroll}
 			>
 				<Show when={displayMessages().length === 0} fallback={null}>
 					{props.children ?? <div class={C.empty()}>Send a message to start</div>}
 				</Show>
-				<For each={displayMessages()}>
+				<For each={visibleMessages()}>
 					{(msg) => (
 						<div data-role={msg.role} id={`msg-${msg.id}`}>
 							<ChatBubble
