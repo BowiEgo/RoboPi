@@ -123,19 +123,29 @@ export const ThemeProvider: Component<{ children: JSX.Element }> = (props) => {
 	const [lightTheme, setLightTheme] = createSignal(getInitialLight());
 	const [darkTheme, setDarkTheme] = createSignal(getInitialDark());
 
-	const setTheme = (id: string) => {
+	// Apply a theme without touching the light/dark mode (used internally by
+	// setMode and the system-follow effect).
+	function applyTheme(id: string): void {
 		setThemeSignal(id);
-		setIsDark(DARK_THEMES.includes(id));
+		const dark = DARK_THEMES.includes(id);
+		setIsDark(dark);
 		document.documentElement.setAttribute("data-theme", id);
 		localStorage.setItem(STORAGE_KEY, id);
-		// Remember the last pick per brightness.
-		if (DARK_THEMES.includes(id)) {
+		if (dark) {
 			localStorage.setItem(DARK_KEY, id);
 			setDarkTheme(id);
 		} else {
 			localStorage.setItem(LIGHT_KEY, id);
 			setLightTheme(id);
 		}
+	}
+
+	const setTheme = (id: string) => {
+		applyTheme(id);
+		// Picking a theme explicitly also sets the light/dark mode to match.
+		const dark = DARK_THEMES.includes(id);
+		setModeSignal(dark ? "dark" : "light");
+		localStorage.setItem(MODE_KEY, dark ? "dark" : "light");
 	};
 
 	const toggleDark = () => {
@@ -151,9 +161,9 @@ export const ThemeProvider: Component<{ children: JSX.Element }> = (props) => {
 		localStorage.setItem(MODE_KEY, m);
 		if (m === "system") {
 			const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-			setTheme(dark ? darkTheme() : lightTheme());
+			applyTheme(dark ? darkTheme() : lightTheme());
 		} else {
-			setTheme(m === "dark" ? darkTheme() : lightTheme());
+			applyTheme(m === "dark" ? darkTheme() : lightTheme());
 		}
 	};
 
@@ -161,7 +171,7 @@ export const ThemeProvider: Component<{ children: JSX.Element }> = (props) => {
 	createEffect(() => {
 		if (mode() !== "system") return;
 		const mq = window.matchMedia("(prefers-color-scheme: dark)");
-		const handler = () => setTheme(mq.matches ? darkTheme() : lightTheme());
+		const handler = () => applyTheme(mq.matches ? darkTheme() : lightTheme());
 		mq.addEventListener("change", handler);
 		return () => mq.removeEventListener("change", handler);
 	});
