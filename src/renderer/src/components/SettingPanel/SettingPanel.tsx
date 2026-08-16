@@ -3,8 +3,8 @@ import { type Component, createSignal, For, onMount, Show } from "solid-js";
 
 import { type LocaleId, useLocale } from "@/contexts/LocaleContext";
 
-import ModelManager, { type SavedModel } from "@/components/ModelManager/ModelManager";
 import AppearanceMode from "@/components/AppearanceMode/AppearanceMode";
+import ModelManager, { type SavedModel } from "@/components/ModelManager/ModelManager";
 import SlotRenderer from "@/components/SlotRenderer/SlotRenderer";
 import Versions from "@/components/Versions/Versions";
 
@@ -136,21 +136,6 @@ const SettingPanel: Component = () => {
 			<div class={C.content()}>
 				<Show when={active() === "general"}>
 					<section class={C.section()}>
-						<h2 class={C.sectionTitle()}>{t("settings.storage")}</h2>
-						<div class={C.storageList()}>
-							<div class={C.storageRow()}>
-								<span class={C.storageLabel()}>{t("settings.configDir")}</span>
-								<code class={C.storageValue()}>{info()?.configDir ?? "—"}</code>
-							</div>
-							<div class={C.storageRow()}>
-								<span class={C.storageLabel()}>{t("settings.sessionsDir")}</span>
-								<code class={C.storageValue()}>{info()?.sessionsDir ?? "—"}</code>
-							</div>
-							<p class={C.hint()}>{t("settings.configDirHint", { env: "ROBOPI_HOME" })}</p>
-						</div>
-					</section>
-
-					<section class={C.section()}>
 						<h2 class={C.sectionTitle()}>{t("settings.locale")}</h2>
 						<div class={C.localeRow()}>
 							{LOCALES.map((l) => (
@@ -168,6 +153,21 @@ const SettingPanel: Component = () => {
 					<AppearanceMode />
 
 					<SlotRenderer slot="settings:general" />
+
+					<section class={C.section()}>
+						<h2 class={C.sectionTitle()}>{t("settings.storage")}</h2>
+						<div class={C.storageList()}>
+							<div class={C.storageRow()}>
+								<span class={C.storageLabel()}>{t("settings.configDir")}</span>
+								<code class={C.storageValue()}>{info()?.configDir ?? "—"}</code>
+							</div>
+							<div class={C.storageRow()}>
+								<span class={C.storageLabel()}>{t("settings.sessionsDir")}</span>
+								<code class={C.storageValue()}>{info()?.sessionsDir ?? "—"}</code>
+							</div>
+							<p class={C.hint()}>{t("settings.configDirHint", { env: "ROBOPI_HOME" })}</p>
+						</div>
+					</section>
 				</Show>
 
 				<Show when={active() === "models"}>

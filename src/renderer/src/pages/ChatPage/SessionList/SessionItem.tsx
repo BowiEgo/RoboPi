@@ -30,7 +30,7 @@ const C = {
 		interaction: "cursor-pointer rounded-md transition-colors",
 		variants: {
 			active: {
-				true: "bg-base-300",
+				true: "bg-primary/50",
 				false: "hover:bg-base-200",
 			},
 		},
