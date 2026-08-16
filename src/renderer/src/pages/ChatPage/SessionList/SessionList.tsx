@@ -1,5 +1,5 @@
-import { ChevronDown, ChevronRight, Ellipsis, Folder, Plus } from "lucide-solid";
-import { type Component, createEffect, createMemo, createSignal, For, onCleanup, Show } from "solid-js";
+import { ChevronDown, ChevronRight, Ellipsis, Folder, FolderOpen, Plus } from "lucide-solid";
+import { type Component, createMemo, createSignal, For, onCleanup, Show } from "solid-js";
 
 import { useAgent } from "@/agent/useAgent";
 import { useLocale } from "@/contexts/LocaleContext";
@@ -130,13 +130,8 @@ const WorkspaceList: Component = () => {
 
 	onCleanup(() => clearTimeout(tooltipTimer));
 
-	// Close the workspace menu on any outside click.
-	createEffect(() => {
-		if (menuId() === null) return;
-		const handler = () => setMenuId(null);
-		document.addEventListener("click", handler);
-		return () => document.removeEventListener("click", handler);
-	});
+	// Menu closing is handled by a transparent backdrop rendered while a menu
+	// is open (see JSX) — no document listeners, so no event-order races.
 
 	const filteredSessions = createMemo(() => {
 		const q = sessionSearchQuery().trim().toLowerCase();
@@ -248,7 +243,11 @@ const WorkspaceList: Component = () => {
 									when={editingId() === ws.id}
 									fallback={
 										<span class={C.wsName()} onClick={() => toggleCollapse(ws.id)}>
-											<Folder class="w-3.5 h-3.5 inline-block mr-1.5 -translate-y-px text-base-content/40" />
+											{collapsed().has(ws.id) ? (
+												<Folder class="w-3.5 h-3.5 inline-block mr-1.5 -translate-y-px text-base-content/40" />
+											) : (
+												<FolderOpen class="w-3.5 h-3.5 inline-block mr-1.5 -translate-y-px text-base-content/60" />
+											)}
 											{wsName(ws.id, ws.name)}
 										</span>
 									}
@@ -285,15 +284,12 @@ const WorkspaceList: Component = () => {
 										type="button"
 										class={C.wsAction()}
 										aria-label={t("chat.workspaceMenu")}
-										onClick={(e) => {
-											e.stopPropagation();
-											setMenuId((v) => (v === ws.id ? null : ws.id));
-										}}
+										onClick={() => setMenuId((v) => (v === ws.id ? null : ws.id))}
 									>
 										<Ellipsis class="w-3.5 h-3.5" />
 									</button>
 									<Show when={menuId() === ws.id}>
-										<div class={C.menuDropdown()}>
+										<div class={C.menuDropdown()} data-ws-menu>
 											<button
 												type="button"
 												class={C.menuBtn()}
@@ -379,6 +375,11 @@ const WorkspaceList: Component = () => {
 						<span class={C.tooltipTime()}>{fmtTime(tooltipWs()?.createdAt ?? 0)}</span>
 					</div>
 				)}
+			</Show>
+
+			{/* Transparent backdrop: any click outside the open menu closes it. */}
+			<Show when={menuId() !== null}>
+				<div class="fixed inset-0 z-40" onClick={() => setMenuId(null)} />
 			</Show>
 		</section>
 	);
