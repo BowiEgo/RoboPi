@@ -34,13 +34,17 @@ const C = {
 	}),
 	// ── Workspace row ──
 	wsRow: cstyle({
-		display: "flex items-center",
+		display: "group flex items-center",
 		spacing: "gap-1 pr-1 pl-0.5 py-1.5",
 		interaction: "rounded-md",
 		color: "hover:bg-base-200/60",
 	}),
 	wsToggle: cstyle({
-		display: "btn btn-ghost btn-xs btn-square",
+		display: "btn btn-ghost btn-xs btn-square hidden group-hover:inline-flex",
+		color: "text-base-content/40",
+	}),
+	wsFolder: cstyle({
+		display: "inline-flex group-hover:hidden",
 		color: "text-base-content/40",
 	}),
 	wsName: cstyle({
@@ -50,7 +54,7 @@ const C = {
 	}),
 	wsCount: cstyle({ text: "text-[10px]", color: "text-base-content/30" }),
 	wsAction: cstyle({
-		display: "btn btn-ghost btn-xs btn-square",
+		display: "btn btn-ghost btn-xs btn-square hidden group-hover:inline-flex",
 		color: "text-base-content/40 hover:text-base-content",
 	}),
 	wsInput: cstyle({
@@ -84,7 +88,7 @@ const C = {
 	tooltipDir: cstyle({ text: "font-mono text-[11px]", color: "text-base-content/70" }),
 	tooltipTime: cstyle({ text: "text-[11px]", color: "text-base-content/50" }),
 	// ── Menus ──
-	menuWrap: cstyle({ display: "relative" }),
+	menuWrap: cstyle({ display: "relative hidden group-hover:block" }),
 	menuDropdown: cstyle({
 		display: "absolute right-0 top-full z-50 flex flex-col",
 		spacing: "mt-1 py-1",
@@ -239,15 +243,19 @@ const WorkspaceList: Component = () => {
 									{collapsed().has(ws.id) ? <ChevronRight class="w-3.5 h-3.5" /> : <ChevronDown class="w-3.5 h-3.5" />}
 								</button>
 
+								{/* File icon (visible until hover replaces it with the chevron). */}
+								<span class={C.wsFolder()}>
+									{collapsed().has(ws.id) ? (
+										<Folder class="w-3.5 h-3.5" />
+									) : (
+										<FolderOpen class="w-3.5 h-3.5" />
+									)}
+								</span>
+
 								<Show
 									when={editingId() === ws.id}
 									fallback={
 										<span class={C.wsName()} onClick={() => toggleCollapse(ws.id)}>
-											{collapsed().has(ws.id) ? (
-												<Folder class="w-3.5 h-3.5 inline-block mr-1.5 -translate-y-px text-base-content/40" />
-											) : (
-												<FolderOpen class="w-3.5 h-3.5 inline-block mr-1.5 -translate-y-px text-base-content/60" />
-											)}
 											{wsName(ws.id, ws.name)}
 										</span>
 									}

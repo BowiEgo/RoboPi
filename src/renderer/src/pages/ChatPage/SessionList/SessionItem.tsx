@@ -25,7 +25,7 @@ export interface SessionItemProps {
 
 const C = {
 	row: cstyle({
-		display: "flex items-center",
+		display: "group flex items-center",
 		spacing: "gap-2 px-3 py-2",
 		interaction: "cursor-pointer rounded-md transition-colors",
 		variants: {
@@ -64,7 +64,10 @@ const C = {
 		sizing: "shrink-0 self-center",
 	}),
 	ellipsisBtn: cstyle({
-		display: "btn btn-ghost btn-xs btn-square text-base-content/60 hover:bg-base-100",
+		display: "btn btn-ghost btn-xs btn-square text-base-content/60 hover:bg-base-100 opacity-0 group-hover:opacity-100 transition-opacity",
+		variants: {
+			active: { true: "opacity-100" },
+		},
 	}),
 	menuDropdown: cstyle({
 		display: "absolute right-0 top-full z-50 flex flex-col",
