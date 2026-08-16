@@ -1,7 +1,7 @@
 import { join } from "node:path";
 
 import { electronApp, is, optimizer } from "@electron-toolkit/utils";
-import { app, BrowserWindow, ipcMain, Menu, shell } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from "electron";
 
 import icon from "../../resources/icon.png?asset";
 import { setupAgentHost } from "./agent-host-manager";
@@ -43,6 +43,16 @@ function createWindow(): void {
 	});
 	ipcMain.on("window:close", () => {
 		mainWindow?.close();
+	});
+
+	// Directory picker for workspace creation.
+	ipcMain.handle("dialog:select-directory", async () => {
+		const result = await dialog.showOpenDialog(mainWindow, {
+			title: "Select workspace directory",
+			properties: ["openDirectory", "createDirectory"],
+		});
+		if (result.canceled || result.filePaths.length === 0) return null;
+		return result.filePaths[0];
 	});
 
 	// Load the remote URL for development or the local html file for production.

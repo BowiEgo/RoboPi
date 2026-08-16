@@ -10,6 +10,9 @@ import { createSignal } from "solid-js";
 export interface Workspace {
 	id: string;
 	name: string;
+	/** Shell working directory for sessions in this workspace. */
+	directory?: string;
+	createdAt: number;
 }
 
 export const DEFAULT_WORKSPACE_ID = "default";
@@ -23,7 +26,7 @@ interface StoredState {
 
 function load(): StoredState {
 	const fallback: StoredState = {
-		workspaces: [{ id: DEFAULT_WORKSPACE_ID, name: "" }],
+		workspaces: [{ id: DEFAULT_WORKSPACE_ID, name: "", createdAt: 0 }],
 		sessionWorkspace: {},
 	};
 	try {
@@ -32,7 +35,7 @@ function load(): StoredState {
 		const parsed = JSON.parse(saved) as Partial<StoredState>;
 		const workspaces = Array.isArray(parsed.workspaces) ? (parsed.workspaces as Workspace[]) : [];
 		if (!workspaces.some((w) => w.id === DEFAULT_WORKSPACE_ID)) {
-			workspaces.unshift({ id: DEFAULT_WORKSPACE_ID, name: "" });
+			workspaces.unshift({ id: DEFAULT_WORKSPACE_ID, name: "", createdAt: 0 });
 		}
 		return {
 			workspaces,
@@ -63,8 +66,19 @@ function uid(): string {
 	return `ws-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export function createWorkspace(name: string): Workspace {
-	const ws: Workspace = { id: uid(), name: name.trim() };
+/** Last path segment (directory name), cross-platform. */
+function dirName(path: string): string {
+	const parts = path.split(/[\\/]/).filter(Boolean);
+	return parts[parts.length - 1] ?? path;
+}
+
+export function createWorkspace(directory: string, name?: string): Workspace {
+	const ws: Workspace = {
+		id: uid(),
+		name: (name ?? dirName(directory)).trim(),
+		directory,
+		createdAt: Date.now(),
+	};
 	setWorkspaces((prev) => [...prev, ws]);
 	persist();
 	return ws;
@@ -100,6 +114,11 @@ export function getSessionWorkspace(sessionId: string): string {
 
 export function workspaceName(id: string): string {
 	return workspaces().find((w) => w.id === id)?.name ?? "";
+}
+
+/** Shell working directory for a workspace (undefined for the default/ungrouped workspace). */
+export function workspaceDirectory(id: string): string | undefined {
+	return workspaces().find((w) => w.id === id)?.directory;
 }
 
 export { workspaces };

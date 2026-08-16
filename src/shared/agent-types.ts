@@ -257,6 +257,8 @@ export interface ModelSetApiKeyPayload {
 /** Create a new session. */
 export interface SessionCreatePayload {
 	name?: string;
+	/** Shell working directory for the session (defaults to the host cwd). */
+	cwd?: string;
 }
 
 /** Request session list. */

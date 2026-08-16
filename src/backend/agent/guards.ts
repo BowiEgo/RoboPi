@@ -44,11 +44,16 @@ export function isSessionIdPayload(v: unknown): v is SessionIdPayload {
 
 export interface SessionCreatePayload {
 	name?: string;
+	cwd?: string;
 }
 
 export function isSessionCreatePayload(v: unknown): v is SessionCreatePayload {
 	if (v === undefined || v === null || (isRecord(v) && Object.keys(v).length === 0)) return true;
-	return isRecord(v) && (v.name === undefined || isString(v.name));
+	return (
+		isRecord(v) &&
+		(v.name === undefined || isString(v.name)) &&
+		(v.cwd === undefined || isString(v.cwd))
+	);
 }
 
 export interface SessionRenamePayload {

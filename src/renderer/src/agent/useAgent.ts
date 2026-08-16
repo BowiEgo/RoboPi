@@ -34,7 +34,7 @@ import { getAgentIpc } from "@/ipc/index";
 import { setRemotePluginsList } from "@/ui-extensions";
 import { fail, settle, track } from "@/utils/promise-tracker";
 import { sessionToItem } from "@/utils/session-mapper";
-import { assignSessionToWorkspace, DEFAULT_WORKSPACE_ID } from "@/workspace-store";
+import { assignSessionToWorkspace, DEFAULT_WORKSPACE_ID, workspaceDirectory } from "@/workspace-store";
 
 // ════════════════════════════════════════════════════════════════
 //  Module-level reactive state + IPC listener
@@ -469,7 +469,9 @@ async function handleSend(text: string): Promise<{ sessionId: string }> {
 	pendingMessage = text;
 	const id = `create-${Date.now()}`;
 	const promise = track<{ sessionId: string; name: string; createdAt: number }>(id);
-	agent.send({ id, type: AgentMessageType.SessionCreate, payload: {} });
+	// Create the session in the workspace's shell working directory.
+	const cwd = workspaceDirectory(pendingWorkspaceId);
+	agent.send({ id, type: AgentMessageType.SessionCreate, payload: cwd ? { cwd } : {} });
 	return promise;
 }
 

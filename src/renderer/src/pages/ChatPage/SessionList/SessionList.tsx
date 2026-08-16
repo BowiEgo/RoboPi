@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight, Ellipsis, FolderPlus, Plus } from "lucide-solid";
-import { type Component, createEffect, createMemo, createSignal, For, Show } from "solid-js";
+import { type Component, createEffect, createMemo, createSignal, For, onCleanup, Show } from "solid-js";
 
 import { useAgent } from "@/agent/useAgent";
 import { useLocale } from "@/contexts/LocaleContext";
@@ -11,6 +11,7 @@ import {
 	getSessionWorkspace,
 	renameWorkspace,
 	workspaces,
+	type Workspace,
 } from "@/workspace-store";
 
 import SessionItem, { type SessionItemProps } from "./SessionItem";
@@ -70,6 +71,25 @@ const C = {
 		display: "flex flex-col",
 		spacing: "pl-4",
 	}),
+	// ── Delete confirmation banner ──
+	confirmBanner: cstyle({
+		display: "flex flex-col",
+		spacing: "gap-2 px-3 py-2 my-0.5 ml-4",
+		interaction: "rounded-md",
+		color: "bg-card-hover",
+	}),
+	confirmText: cstyle({ text: "text-xs text-card-subtitle" }),
+	confirmActions: cstyle({ display: "flex items-center", spacing: "gap-1" }),
+	// ── Tooltip ──
+	tooltip: cstyle({
+		display: "fixed z-50 flex flex-col",
+		spacing: "gap-1 px-3 py-2",
+		interaction: "rounded-md shadow-lg pointer-events-none",
+		text: "text-xs",
+		color: "bg-base-300 text-base-content",
+	}),
+	tooltipDir: cstyle({ text: "font-mono text-[11px]", color: "text-base-content/70" }),
+	tooltipTime: cstyle({ text: "text-[11px]", color: "text-base-content/50" }),
 	// ── Menus ──
 	menuWrap: cstyle({ display: "relative" }),
 	menuDropdown: cstyle({
@@ -84,6 +104,21 @@ const C = {
 	}),
 };
 
+// ── Helpers ──
+
+async function selectDirectory(promptText: string): Promise<string | null> {
+	if (window.api) {
+		return (await window.api.invoke("dialog:select-directory")) as string | null;
+	}
+	// Web fallback (no Electron dialog).
+	return window.prompt(promptText) ?? null;
+}
+
+function fmtTime(ms: number): string {
+	if (!ms) return "—";
+	return new Date(ms).toLocaleString();
+}
+
 // ── Component ──
 
 const WorkspaceList: Component = () => {
@@ -91,13 +126,15 @@ const WorkspaceList: Component = () => {
 	const { sessions, activeId, createSession, switchSession, deleteSession, renameSession } = useAgent();
 
 	const [collapsed, setCollapsed] = createSignal<Set<string>>(new Set());
-	const [adding, setAdding] = createSignal(false);
-	const [newName, setNewName] = createSignal("");
 	const [editingId, setEditingId] = createSignal<string | null>(null);
 	const [editingName, setEditingName] = createSignal("");
 	const [menuId, setMenuId] = createSignal<string | null>(null);
 	const [confirmDeleteWs, setConfirmDeleteWs] = createSignal<string | null>(null);
 	const [confirmDelete, setConfirmDelete] = createSignal<string | null>(null);
+	const [tooltip, setTooltip] = createSignal<{ id: string; x: number; y: number } | null>(null);
+	let tooltipTimer: ReturnType<typeof setTimeout> | undefined;
+
+	onCleanup(() => clearTimeout(tooltipTimer));
 
 	// Close the workspace menu on any outside click.
 	createEffect(() => {
@@ -135,11 +172,9 @@ const WorkspaceList: Component = () => {
 		});
 	}
 
-	function commitAddWorkspace() {
-		const name = newName().trim();
-		setAdding(false);
-		setNewName("");
-		if (name) createWorkspace(name);
+	async function addWorkspace() {
+		const directory = await selectDirectory(t("chat.selectDirectory"));
+		if (directory) createWorkspace(directory);
 	}
 
 	function commitRenameWorkspace(id: string) {
@@ -147,19 +182,6 @@ const WorkspaceList: Component = () => {
 		if (name) renameWorkspace(id, name);
 		setEditingId(null);
 		setEditingName("");
-	}
-
-	function handleDeleteWorkspace(id: string) {
-		setMenuId(null);
-		if (confirmDeleteWs() === id) {
-			deleteWorkspace(id);
-			setConfirmDeleteWs(null);
-		} else {
-			setConfirmDeleteWs(id);
-			setTimeout(() => {
-				if (confirmDeleteWs() === id) setConfirmDeleteWs(null);
-			}, 3000);
-		}
 	}
 
 	function handleDeleteSession(id: string) {
@@ -174,7 +196,26 @@ const WorkspaceList: Component = () => {
 		}
 	}
 
+	function onWsMouseEnter(e: MouseEvent, ws: Workspace) {
+		if (!ws.directory) return;
+		clearTimeout(tooltipTimer);
+		tooltipTimer = setTimeout(() => {
+			setTooltip({ id: ws.id, x: e.clientX, y: e.clientY });
+		}, 1000);
+	}
+
+	function onWsMouseLeave() {
+		clearTimeout(tooltipTimer);
+		setTooltip(null);
+	}
+
 	const wsName = (id: string, name: string) => (id === DEFAULT_WORKSPACE_ID && !name ? t("chat.defaultWorkspace") : name);
+
+	const tooltipWs = () => {
+		const tp = tooltip();
+		if (!tp) return null;
+		return workspaces().find((w) => w.id === tp.id) ?? null;
+	};
 
 	return (
 		<section class={C.root()}>
@@ -188,37 +229,13 @@ const WorkspaceList: Component = () => {
 					type="button"
 					class="btn btn-ghost btn-sm btn-square text-base-content/50"
 					aria-label={t("chat.addWorkspace")}
-					onClick={() => {
-						setAdding(true);
-						setNewName("");
-					}}
+					onClick={() => void addWorkspace()}
 				>
 					<Plus class="scale-75" />
 				</button>
 			</header>
 
 			<div class={C.list()}>
-				<Show when={adding()}>
-					<div class={C.wsRow()}>
-						<input
-							type="text"
-							class={C.wsInput()}
-							placeholder={t("chat.workspaceName")}
-							value={newName()}
-							ref={(el) => queueMicrotask(() => el.focus())}
-							onInput={(e) => setNewName(e.currentTarget.value)}
-							onKeyDown={(e) => {
-								if (e.key === "Enter") commitAddWorkspace();
-								if (e.key === "Escape") {
-									setAdding(false);
-									setNewName("");
-								}
-							}}
-							onBlur={commitAddWorkspace}
-						/>
-					</div>
-				</Show>
-
 				<Show when={grouped().length === 0} fallback={null}>
 					<div class={C.empty()}>{sessionSearchQuery() ? t("chat.noSearchResults") : t("chat.noSessions")}</div>
 				</Show>
@@ -226,7 +243,7 @@ const WorkspaceList: Component = () => {
 				<For each={grouped()}>
 					{({ ws, items }) => (
 						<div>
-							<div class={C.wsRow()}>
+							<div class={C.wsRow()} onMouseEnter={(e) => onWsMouseEnter(e, ws)} onMouseLeave={onWsMouseLeave}>
 								<button
 									type="button"
 									class={C.wsToggle()}
@@ -299,15 +316,41 @@ const WorkspaceList: Component = () => {
 												<button
 													type="button"
 													class={`${C.menuBtn()} text-error`}
-													onClick={() => handleDeleteWorkspace(ws.id)}
+													onClick={() => {
+														setMenuId(null);
+														setConfirmDeleteWs(ws.id);
+													}}
 												>
-													{confirmDeleteWs() === ws.id ? t("chat.deleteConfirm") : t("chat.delete")}
+													{t("chat.delete")}
 												</button>
 											</Show>
 										</div>
 									</Show>
 								</div>
 							</div>
+
+							<Show when={confirmDeleteWs() === ws.id}>
+								<div class={C.confirmBanner()}>
+									<span class={C.confirmText()}>
+										{t("chat.deleteWorkspaceHint", { name: wsName(ws.id, ws.name), ungrouped: t("chat.defaultWorkspace") })}
+									</span>
+									<div class={C.confirmActions()}>
+										<button
+											type="button"
+											class="btn btn-error btn-xs"
+											onClick={() => {
+												deleteWorkspace(ws.id);
+												setConfirmDeleteWs(null);
+											}}
+										>
+											{t("chat.delete")}
+										</button>
+										<button type="button" class="btn btn-ghost btn-xs" onClick={() => setConfirmDeleteWs(null)}>
+											{t("chat.cancel")}
+										</button>
+									</div>
+								</div>
+							</Show>
 
 							<Show when={!collapsed().has(ws.id) && items.length > 0}>
 								<div class={C.wsChildren()}>
@@ -334,6 +377,15 @@ const WorkspaceList: Component = () => {
 					)}
 				</For>
 			</div>
+
+			<Show when={tooltip()} keyed>
+				{(tp) => (
+					<div class={C.tooltip()} style={{ left: `${tp.x + 12}px`, top: `${tp.y + 12}px` }}>
+						<span class={C.tooltipDir()}>{tooltipWs()?.directory}</span>
+						<span class={C.tooltipTime()}>{fmtTime(tooltipWs()?.createdAt ?? 0)}</span>
+					</div>
+				)}
+			</Show>
 		</section>
 	);
 };

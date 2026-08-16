@@ -190,11 +190,12 @@ export class SessionHost {
 
 	// ---- IPC Handlers ----
 
-	async createSession(msgId: string, payload: { name?: string }): Promise<void> {
+	async createSession(msgId: string, payload: { name?: string; cwd?: string }): Promise<void> {
 		try {
 			await this.closeCurrentSession();
 			const dir = await this.getSessionsDir();
-			const sm = SessionManager.create(process.cwd(), dir);
+			const cwd = payload.cwd?.trim() || process.cwd();
+			const sm = SessionManager.create(cwd, dir);
 
 			const name = payload.name?.trim() || DEFAULT_SESSION_NAME;
 			sm.appendSessionInfo(name);
