@@ -13,7 +13,7 @@ import { createLogger } from "../../shared/logger/index.ts";
 import { type PluginEntry, type PluginManifest, PluginRegistry } from "../../shared/plugin/registry.ts";
 import { PluginError } from "../../shared/plugin/types.ts";
 import { AgentHost } from "./agent-host.ts";
-import { getDisabledPluginsPath } from "./config.ts";
+import { getDisabledPluginsPath, getWorkspacesPath } from "./config.ts";
 import { AGENT_READY_ID, AGENT_VERSION, DEFAULT_SESSION_NAME, ErrorCode } from "./constants.ts";
 import {
 	isChatSendPayload,
@@ -29,6 +29,7 @@ import { onHostMessage, postMessageToHost, replayState, setTransport, uid } from
 import type { CoreEvents, CoreServices } from "./plugin-types.ts";
 import { respondError, respondNotReady } from "./respond.ts";
 import type { SessionHost } from "./session/session-host.ts";
+import { WorkspaceStore } from "./workspace-store.ts";
 import { ChildProcessTransport } from "./transport/child-process.ts";
 import { StdioTransport } from "./transport/stdio.ts";
 import { WebSocketTransport } from "./transport/websocket.ts";
@@ -40,6 +41,7 @@ import { WebSocketTransport } from "./transport/websocket.ts";
 const agentHost = new AgentHost();
 const logger = createLogger("AgentHost");
 const registry = new PluginRegistry<CoreEvents, CoreServices>();
+const workspaceStore = new WorkspaceStore(getWorkspacesPath());
 
 // ── Disabled plugins persistence ──
 // Unloaded plugins are remembered across restarts so their off state survives.
@@ -200,6 +202,74 @@ function handlePluginLoad(msg: AgentMessage): void {
 	sendUIManifest();
 }
 
+// ============================================================================
+// Workspace handlers
+// ============================================================================
+
+function handleWorkspaceList(msgId: string): void {
+	postMessageToHost({
+		id: msgId,
+		type: AgentMessageType.WorkspaceListResult,
+		payload: { workspaces: workspaceStore.list(), sessionWorkspace: workspaceStore.listMap() },
+	});
+}
+
+function handleWorkspaceCreate(msg: AgentMessage): void {
+	const payload = msg.payload as { directory?: string; name?: string };
+	if (!payload.directory?.trim()) {
+		respondError(msg.id, ErrorCode.INVALID_PAYLOAD, "Missing workspace directory");
+		return;
+	}
+	const workspace = workspaceStore.create(payload.directory, payload.name);
+	postMessageToHost({
+		id: msg.id,
+		type: AgentMessageType.WorkspaceCreated,
+		payload: { workspace },
+	});
+}
+
+function handleWorkspaceRename(msg: AgentMessage): void {
+	const payload = msg.payload as { id?: string; name?: string };
+	if (!payload.id || !payload.name?.trim()) {
+		respondError(msg.id, ErrorCode.INVALID_PAYLOAD, "Missing workspace id or name");
+		return;
+	}
+	workspaceStore.rename(payload.id, payload.name);
+	postMessageToHost({
+		id: msg.id,
+		type: AgentMessageType.WorkspaceRenamed,
+		payload: { id: payload.id, name: payload.name.trim() },
+	});
+}
+
+function handleWorkspaceDelete(msg: AgentMessage): void {
+	const payload = msg.payload as { id?: string };
+	if (!payload.id) {
+		respondError(msg.id, ErrorCode.INVALID_PAYLOAD, "Missing workspace id");
+		return;
+	}
+	workspaceStore.remove(payload.id);
+	postMessageToHost({
+		id: msg.id,
+		type: AgentMessageType.WorkspaceDeleted,
+		payload: { id: payload.id },
+	});
+}
+
+function handleWorkspaceAssign(msg: AgentMessage): void {
+	const payload = msg.payload as { sessionId?: string; workspaceId?: string };
+	if (!payload.sessionId || !payload.workspaceId) {
+		respondError(msg.id, ErrorCode.INVALID_PAYLOAD, "Missing session or workspace id");
+		return;
+	}
+	workspaceStore.assign(payload.sessionId, payload.workspaceId);
+	postMessageToHost({
+		id: msg.id,
+		type: AgentMessageType.WorkspaceListResult,
+		payload: { workspaces: workspaceStore.list(), sessionWorkspace: workspaceStore.listMap() },
+	});
+}
+
 /** Send the full plugin inventory (enabled + disabled) to the renderer. */
 function sendPluginList(): void {
 	const plugins = registry.list().map((handle) => ({
@@ -349,6 +419,12 @@ function registerMessageHandlers(): void {
 		ctx.on(`ipc:${AgentMessageType.PluginLoad}`, (msg) => handlePluginLoad(msg));
 		// Request for the plugin inventory (renderer pulls on init).
 		ctx.on(`ipc:${AgentMessageType.PluginList}`, () => sendPluginList());
+		// Workspace management.
+		ctx.on(`ipc:${AgentMessageType.WorkspaceList}`, (msg) => handleWorkspaceList(msg.id));
+		ctx.on(`ipc:${AgentMessageType.WorkspaceCreate}`, handleWorkspaceCreate);
+		ctx.on(`ipc:${AgentMessageType.WorkspaceRename}`, handleWorkspaceRename);
+		ctx.on(`ipc:${AgentMessageType.WorkspaceDelete}`, handleWorkspaceDelete);
+		ctx.on(`ipc:${AgentMessageType.WorkspaceAssign}`, handleWorkspaceAssign);
 	});
 }
 

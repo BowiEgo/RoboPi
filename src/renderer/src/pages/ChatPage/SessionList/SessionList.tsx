@@ -4,15 +4,8 @@ import { type Component, createEffect, createMemo, createSignal, For, onCleanup,
 import { useAgent } from "@/agent/useAgent";
 import { useLocale } from "@/contexts/LocaleContext";
 import { sessionSearchQuery } from "@/session-search";
-import {
-	createWorkspace,
-	DEFAULT_WORKSPACE_ID,
-	deleteWorkspace,
-	getSessionWorkspace,
-	renameWorkspace,
-	workspaces,
-	type Workspace,
-} from "@/workspace-store";
+import { DEFAULT_WORKSPACE_ID, getSessionWorkspace, workspaces } from "@/workspace-store";
+import type { WorkspaceRecord } from "@shared/agent-types";
 
 import SessionItem, { type SessionItemProps } from "./SessionItem";
 import { cstyle } from "@/utils/cstyle";
@@ -123,7 +116,8 @@ function fmtTime(ms: number): string {
 
 const WorkspaceList: Component = () => {
 	const { t } = useLocale();
-	const { sessions, activeId, createSession, switchSession, deleteSession, renameSession } = useAgent();
+	const { sessions, activeId, createSession, switchSession, deleteSession, renameSession, createWorkspace, renameWorkspace, deleteWorkspace } =
+		useAgent();
 
 	const [collapsed, setCollapsed] = createSignal<Set<string>>(new Set());
 	const [editingId, setEditingId] = createSignal<string | null>(null);
@@ -174,12 +168,12 @@ const WorkspaceList: Component = () => {
 
 	async function addWorkspace() {
 		const directory = await selectDirectory(t("chat.selectDirectory"));
-		if (directory) createWorkspace(directory);
+		if (directory) void createWorkspace(directory);
 	}
 
 	function commitRenameWorkspace(id: string) {
 		const name = editingName().trim();
-		if (name) renameWorkspace(id, name);
+		if (name) void renameWorkspace(id, name);
 		setEditingId(null);
 		setEditingName("");
 	}
@@ -196,7 +190,7 @@ const WorkspaceList: Component = () => {
 		}
 	}
 
-	function onWsMouseEnter(e: MouseEvent, ws: Workspace) {
+	function onWsMouseEnter(e: MouseEvent, ws: WorkspaceRecord) {
 		if (!ws.directory) return;
 		clearTimeout(tooltipTimer);
 		tooltipTimer = setTimeout(() => {
@@ -339,7 +333,7 @@ const WorkspaceList: Component = () => {
 											type="button"
 											class="btn btn-error btn-xs"
 											onClick={() => {
-												deleteWorkspace(ws.id);
+												void deleteWorkspace(ws.id);
 												setConfirmDeleteWs(null);
 											}}
 										>

@@ -24,6 +24,7 @@ import {
 	type SessionInfoPayload,
 	type SessionOutlineItem,
 	type SessionStatsPayload,
+	type WorkspaceRecord,
 } from "@shared/agent-types";
 import { createMemo, createSignal } from "solid-js";
 
@@ -34,7 +35,7 @@ import { getAgentIpc } from "@/ipc/index";
 import { setRemotePluginsList } from "@/ui-extensions";
 import { fail, settle, track } from "@/utils/promise-tracker";
 import { sessionToItem } from "@/utils/session-mapper";
-import { assignSessionToWorkspace, DEFAULT_WORKSPACE_ID, workspaceDirectory } from "@/workspace-store";
+import { applyWorkspaceState, DEFAULT_WORKSPACE_ID, workspaceDirectory } from "@/workspace-store";
 
 // ════════════════════════════════════════════════════════════════
 //  Module-level reactive state + IPC listener
@@ -176,7 +177,11 @@ if (agent && !_storeReady) {
 				setActiveName(p.name);
 				setLoading(false);
 				// File the newly created session under the workspace it was created from.
-				assignSessionToWorkspace(p.sessionId, pendingWorkspaceId);
+				agent.send({
+					id: `ws-assign-${Date.now()}`,
+					type: AgentMessageType.WorkspaceAssign,
+					payload: { sessionId: p.sessionId, workspaceId: pendingWorkspaceId },
+				});
 
 				setSessions((prev) => {
 					if (prev.some((s) => s.id === p.sessionId)) return prev;
@@ -210,6 +215,21 @@ if (agent && !_storeReady) {
 				const p = msg.payload as { sessions: SessionInfoPayload[] };
 				if (p.sessions?.length) setSessions(p.sessions);
 				settle(msg.id, p);
+				break;
+			}
+
+			case AgentMessageType.WorkspaceListResult: {
+				const p = msg.payload as { workspaces: WorkspaceRecord[]; sessionWorkspace: Record<string, string> };
+				applyWorkspaceState(p.workspaces ?? [], p.sessionWorkspace ?? {});
+				settle(msg.id, p);
+				break;
+			}
+
+			case AgentMessageType.WorkspaceCreated:
+			case AgentMessageType.WorkspaceRenamed:
+			case AgentMessageType.WorkspaceDeleted: {
+				settle(msg.id, msg.payload);
+				refreshWorkspaces();
 				break;
 			}
 
@@ -356,6 +376,7 @@ if (agent && !_storeReady) {
 	agent.send({ id: "init-list", type: AgentMessageType.SessionList, payload: {} });
 	agent.send({ id: "init-config", type: AgentMessageType.AgentConfig, payload: {} });
 	agent.send({ id: "init-plugins", type: AgentMessageType.PluginList, payload: {} });
+	agent.send({ id: "init-workspaces", type: AgentMessageType.WorkspaceList, payload: {} });
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -433,6 +454,37 @@ function createSession(name?: string, workspaceId?: string) {
 	setResetKey(`new-${Date.now()}`);
 	setLoading(false);
 	setStats(null);
+}
+
+// ── Workspace operations (agent host is the source of truth) ──
+
+function refreshWorkspaces() {
+	if (!agent) return;
+	agent.send({ id: `ws-list-${Date.now()}`, type: AgentMessageType.WorkspaceList, payload: {} });
+}
+
+async function createWorkspace(directory: string, name?: string): Promise<WorkspaceRecord> {
+	if (!agent) throw new Error("Agent not ready");
+	const msgId = `ws-create-${Date.now()}`;
+	const promise = track<WorkspaceRecord>(msgId);
+	agent.send({ id: msgId, type: AgentMessageType.WorkspaceCreate, payload: { directory, name } });
+	return promise;
+}
+
+async function renameWorkspace(id: string, name: string): Promise<void> {
+	if (!agent) throw new Error("Agent not ready");
+	const msgId = `ws-rename-${Date.now()}`;
+	const promise = track<void>(msgId);
+	agent.send({ id: msgId, type: AgentMessageType.WorkspaceRename, payload: { id, name } });
+	return promise;
+}
+
+async function deleteWorkspace(id: string): Promise<void> {
+	if (!agent) throw new Error("Agent not ready");
+	const msgId = `ws-delete-${Date.now()}`;
+	const promise = track<void>(msgId);
+	agent.send({ id: msgId, type: AgentMessageType.WorkspaceDelete, payload: { id } });
+	return promise;
 }
 
 async function handleSend(text: string): Promise<{ sessionId: string }> {
@@ -585,6 +637,9 @@ export function useAgent() {
 		deleteSession,
 		renameSession,
 		loadMoreHistory,
+		createWorkspace,
+		renameWorkspace,
+		deleteWorkspace,
 		handleSend,
 	};
 }

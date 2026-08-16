@@ -65,6 +65,16 @@ export const AgentMessageType = {
 	SessionHistoryResult: "session:history_result",
 	SessionStats: "session:stats",
 	SessionError: "session:error",
+	// Workspace management
+	WorkspaceList: "workspace:list",
+	WorkspaceListResult: "workspace:list_result",
+	WorkspaceCreate: "workspace:create",
+	WorkspaceCreated: "workspace:created",
+	WorkspaceRename: "workspace:rename",
+	WorkspaceRenamed: "workspace:renamed",
+	WorkspaceDelete: "workspace:delete",
+	WorkspaceDeleted: "workspace:deleted",
+	WorkspaceAssign: "workspace:assign",
 	// UI plugins
 	UIManifest: "ui:manifest",
 	PluginConfig: "plugin:config",
@@ -110,6 +120,15 @@ export type AgentPayload =
 	| SessionHistoryResultPayload
 	| SessionStatsPayload
 	| SessionErrorPayload
+	| WorkspaceListPayload
+	| WorkspaceListResultPayload
+	| WorkspaceCreatePayload
+	| WorkspaceCreatedPayload
+	| WorkspaceRenamePayload
+	| WorkspaceRenamedPayload
+	| WorkspaceDeletePayload
+	| WorkspaceDeletedPayload
+	| WorkspaceAssignPayload
 	| UIManifestPayload
 	| PluginConfigPayload
 	| PluginUnloadPayload
@@ -355,6 +374,66 @@ export interface SessionStatsPayload {
 export interface SessionErrorPayload {
 	code: string;
 	message: string;
+}
+
+// ============================================================================
+// Workspace management
+// ============================================================================
+
+/** A workspace: a named grouping of sessions bound to a shell directory. */
+export interface WorkspaceRecord {
+	id: string;
+	name: string;
+	directory?: string;
+	createdAt: number;
+}
+
+/** Request the workspace list. */
+export type WorkspaceListPayload = Record<string, never>;
+
+/** Workspace list result. */
+export interface WorkspaceListResultPayload {
+	workspaces: WorkspaceRecord[];
+	sessionWorkspace: Record<string, string>;
+}
+
+/** Create a workspace bound to a directory. */
+export interface WorkspaceCreatePayload {
+	directory: string;
+	name?: string;
+}
+
+/** Workspace created successfully. */
+export interface WorkspaceCreatedPayload {
+	workspace: WorkspaceRecord;
+}
+
+/** Rename a workspace. */
+export interface WorkspaceRenamePayload {
+	id: string;
+	name: string;
+}
+
+/** Workspace renamed successfully. */
+export interface WorkspaceRenamedPayload {
+	id: string;
+	name: string;
+}
+
+/** Delete a workspace (its sessions move to the default workspace). */
+export interface WorkspaceDeletePayload {
+	id: string;
+}
+
+/** Workspace deleted successfully. */
+export interface WorkspaceDeletedPayload {
+	id: string;
+}
+
+/** Assign a session to a workspace. */
+export interface WorkspaceAssignPayload {
+	sessionId: string;
+	workspaceId: string;
 }
 
 /** UI plugin manifest sent to the renderer. */

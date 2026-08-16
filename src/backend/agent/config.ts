@@ -40,3 +40,7 @@ export function getModelsPath(): string {
 export function getDisabledPluginsPath(): string {
 	return join(getConfigDir(), "disabled-plugins.json");
 }
+
+export function getWorkspacesPath(): string {
+	return join(getConfigDir(), "workspaces.json");
+}
