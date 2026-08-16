@@ -34,6 +34,7 @@ import { getAgentIpc } from "@/ipc/index";
 import { setRemotePluginsList } from "@/ui-extensions";
 import { fail, settle, track } from "@/utils/promise-tracker";
 import { sessionToItem } from "@/utils/session-mapper";
+import { assignSessionToWorkspace, DEFAULT_WORKSPACE_ID } from "@/workspace-store";
 
 // ════════════════════════════════════════════════════════════════
 //  Module-level reactive state + IPC listener
@@ -59,6 +60,7 @@ const sessionMsgCache = new Map<string, ChatBubbleProps[]>();
 let pendingMessage: string | null = null;
 let _storeReady = false;
 let historyLoading = false;
+let pendingWorkspaceId = DEFAULT_WORKSPACE_ID;
 
 // ── IPC listener (registered once at module level) ──
 
@@ -173,6 +175,8 @@ if (agent && !_storeReady) {
 				setActiveId(p.sessionId);
 				setActiveName(p.name);
 				setLoading(false);
+				// File the newly created session under the workspace it was created from.
+				assignSessionToWorkspace(p.sessionId, pendingWorkspaceId);
 
 				setSessions((prev) => {
 					if (prev.some((s) => s.id === p.sessionId)) return prev;
@@ -420,8 +424,9 @@ function refreshSessions() {
 	});
 }
 
-function createSession(name?: string) {
+function createSession(name?: string, workspaceId?: string) {
 	pendingMessage = null;
+	pendingWorkspaceId = workspaceId ?? DEFAULT_WORKSPACE_ID;
 	setActiveId(null);
 	setActiveName(name ?? "");
 	setMessages([]);
