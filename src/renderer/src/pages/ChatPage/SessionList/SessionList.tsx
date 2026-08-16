@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, Ellipsis, FolderPlus, Plus } from "lucide-solid";
+import { ChevronDown, ChevronRight, Ellipsis, Folder, Plus } from "lucide-solid";
 import { type Component, createEffect, createMemo, createSignal, For, onCleanup, Show } from "solid-js";
 
 import { useAgent } from "@/agent/useAgent";
@@ -76,9 +76,9 @@ const C = {
 		display: "flex flex-col",
 		spacing: "gap-2 px-3 py-2 my-0.5 ml-4",
 		interaction: "rounded-md",
-		color: "bg-card-hover",
+		color: "bg-base-200",
 	}),
-	confirmText: cstyle({ text: "text-xs text-card-subtitle" }),
+	confirmText: cstyle({ text: "text-xs text-base-content/60" }),
 	confirmActions: cstyle({ display: "flex items-center", spacing: "gap-1" }),
 	// ── Tooltip ──
 	tooltip: cstyle({
@@ -97,10 +97,10 @@ const C = {
 		spacing: "mt-1 py-1",
 		sizing: "min-w-32",
 		interaction: "rounded-md shadow-lg border",
-		color: "bg-app border-card",
+		color: "bg-app border-base-300",
 	}),
 	menuBtn: cstyle({
-		display: "btn btn-ghost btn-sm justify-start rounded-none text-card-btn",
+		display: "btn btn-ghost btn-sm justify-start rounded-none text-base-content",
 	}),
 };
 
@@ -220,9 +220,6 @@ const WorkspaceList: Component = () => {
 	return (
 		<section class={C.root()}>
 			<header class={C.header()}>
-				<span class={C.headerIcon()}>
-					<FolderPlus />
-				</span>
 				<span class={C.headerTitle()}>{t("chat.workspaces")}</span>
 				<span class={C.headerCount()}>{workspaces().length}</span>
 				<button
@@ -257,6 +254,7 @@ const WorkspaceList: Component = () => {
 									when={editingId() === ws.id}
 									fallback={
 										<span class={C.wsName()} onClick={() => toggleCollapse(ws.id)}>
+											<Folder class="w-3.5 h-3.5 inline-block mr-1.5 -translate-y-px text-base-content/40" />
 											{wsName(ws.id, ws.name)}
 										</span>
 									}
@@ -287,7 +285,8 @@ const WorkspaceList: Component = () => {
 									<Plus class="w-3.5 h-3.5" />
 								</button>
 
-								<div class={C.menuWrap()}>
+								<Show when={ws.id !== DEFAULT_WORKSPACE_ID}>
+									<div class={C.menuWrap()}>
 									<button
 										type="button"
 										class={C.wsAction()}
@@ -327,6 +326,7 @@ const WorkspaceList: Component = () => {
 										</div>
 									</Show>
 								</div>
+								</Show>
 							</div>
 
 							<Show when={confirmDeleteWs() === ws.id}>
