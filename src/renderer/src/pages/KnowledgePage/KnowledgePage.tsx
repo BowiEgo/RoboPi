@@ -7,6 +7,8 @@ import Dropdown from "@/components/Dropdown/Dropdown";
 import Resizer from "@/components/Resizer/Resizer";
 import Search from "@/components/Search/Search";
 
+import CreateKnowledgeModal from "./CreateKnowledgeModal";
+
 import { cstyle } from "@/utils/cstyle";
 
 // ── Types ──
@@ -102,6 +104,7 @@ const KnowledgePage: Component = () => {
 	const [timeSort, setTimeSort] = createSignal("newest");
 	const [nameSort, setNameSort] = createSignal("nameAsc");
 	const [drawerWidth, setDrawerWidth] = createSignal(300);
+	const [createOpen, setCreateOpen] = createSignal(false);
 
 	const typeOptions = () => [
 		{ id: "all", name: t("knowledge.typeAll") },
@@ -192,13 +195,15 @@ const KnowledgePage: Component = () => {
 					</div>
 
 					<div class={C.content()}>
-						<button type="button" class={C.createBtn()}>
+						<button type="button" class={C.createBtn()} onClick={() => setCreateOpen(true)}>
 							<Plus class="w-5 h-5" />
 							<span>{t("knowledge.create")}</span>
 						</button>
 					</div>
 				</div>
 			</main>
+
+			<CreateKnowledgeModal open={createOpen()} onClose={() => setCreateOpen(false)} />
 		</div>
 	);
 };
