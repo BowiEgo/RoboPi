@@ -1,4 +1,4 @@
-import { BotMessageSquare, MessageCircle, Moon, Settings, Sun } from "lucide-solid";
+import { BotMessageSquare, Library, MessageCircle, Moon, Settings, Sun } from "lucide-solid";
 import { type Component, createSignal } from "solid-js";
 
 import { LocaleProvider, useLocale } from "@/contexts/LocaleContext";
@@ -6,6 +6,7 @@ import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
 
 import MainLayout, { type NavItem } from "@/layouts/MainLayout/MainLayout";
 import ChatPage from "@/pages/ChatPage/ChatPage";
+import KnowledgePage from "@/pages/KnowledgePage/KnowledgePage";
 import AppBanner from "@/components/AppBanner/AppBanner";
 import Modal from "@/components/Modal/Modal";
 import SettingPanel from "@/components/SettingPanel/SettingPanel";
@@ -16,7 +17,10 @@ const AppContent: Component = () => {
 	const { t } = useLocale();
 	const { isDark, toggleDark } = useTheme();
 
-	const topNav: NavItem[] = [{ id: "chat", icon: <MessageCircle />, label: t("nav.chat") }];
+	const topNav: NavItem[] = [
+		{ id: "chat", icon: <MessageCircle />, label: t("nav.chat") },
+		{ id: "knowledge", icon: <Library />, label: t("nav.knowledge") },
+	];
 
 	const bottomNav: NavItem[] = [
 		{
@@ -54,6 +58,7 @@ const AppContent: Component = () => {
 				navTop={<BotMessageSquare class="w-10 h-10 text-primary" />}
 			>
 				{activeNav() === "chat" && <ChatPage sidebarHeader={<AppBanner />} sidebarBottom={<div class="h-12" />} />}
+				{activeNav() === "knowledge" && <KnowledgePage />}
 			</MainLayout>
 
 			<Modal

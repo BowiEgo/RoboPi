@@ -1,5 +1,6 @@
 {
 	"nav.chat": "聊天",
+	"nav.knowledge": "知识库",
 	"nav.theme": "主题",
 	"nav.settings": "设置",
 	"nav.pageNav": "页面切换",
@@ -7,6 +8,23 @@
 
 	"banner.logo": "RoboPi",
 	"banner.desc": "AI助手",
+
+	"knowledge.title": "知识库",
+	"knowledge.search": "搜索知识库",
+	"knowledge.list": "知识库列表",
+	"knowledge.create": "创建知识库",
+	"knowledge.empty": "暂无知识库",
+	"knowledge.type": "类型",
+	"knowledge.typeAll": "全部",
+	"knowledge.typeDocument": "文档",
+	"knowledge.typeSheet": "表格",
+	"knowledge.typeImage": "图片",
+	"knowledge.sortTime": "创建时间",
+	"knowledge.sortName": "名称",
+	"knowledge.newest": "最新优先",
+	"knowledge.oldest": "最早优先",
+	"knowledge.nameAsc": "名称 A–Z",
+	"knowledge.nameDesc": "名称 Z–A",
 
 	"chat.sidebar": "对话侧边栏",
 	"chat.header": "对话",

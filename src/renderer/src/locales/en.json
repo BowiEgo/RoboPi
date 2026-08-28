@@ -1,5 +1,6 @@
 {
 	"nav.chat": "Chat",
+	"nav.knowledge": "Knowledge",
 	"nav.theme": "Theme",
 	"nav.settings": "Settings",
 	"nav.pageNav": "Page navigation",
@@ -7,6 +8,23 @@
 
 	"banner.logo": "RoboPi",
 	"banner.desc": "AI Agent",
+
+	"knowledge.title": "Knowledge Base",
+	"knowledge.search": "Search knowledge bases",
+	"knowledge.list": "Knowledge bases",
+	"knowledge.create": "Create knowledge base",
+	"knowledge.empty": "No knowledge bases yet",
+	"knowledge.type": "Type",
+	"knowledge.typeAll": "All",
+	"knowledge.typeDocument": "Documents",
+	"knowledge.typeSheet": "Sheets",
+	"knowledge.typeImage": "Images",
+	"knowledge.sortTime": "Created time",
+	"knowledge.sortName": "Name",
+	"knowledge.newest": "Newest first",
+	"knowledge.oldest": "Oldest first",
+	"knowledge.nameAsc": "Name A–Z",
+	"knowledge.nameDesc": "Name Z–A",
 
 	"chat.sidebar": "Chat sidebar",
 	"chat.header": "Chat",
