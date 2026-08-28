@@ -37,6 +37,14 @@ const PROCESS_SPEEDS: Record<string, number> = {
 	p3: 6,
 };
 
+/** Remaining time derived from progress (one tick = 200ms). */
+function remainingText(progress: number, speed: number): string {
+	const seconds = Math.ceil(((100 - progress) / speed) * 0.2);
+	const m = Math.floor(seconds / 60);
+	const s = seconds % 60;
+	return m > 0 ? `${m}分${String(s).padStart(2, "0")}秒` : `0分${String(s).padStart(2, "0")}秒`;
+}
+
 function mockPages(name: string, count: number): { page: number; content: string }[] {
 	return Array.from({ length: count }, (_, i) => ({
 		page: i + 1,
@@ -569,7 +577,8 @@ const KnowledgeUploadView: Component<KnowledgeUploadViewProps> = (props) => {
 												<span class={C.processSize()}>{item.size}</span>
 											</div>
 											<span class={C.processProgress()}>
-												{item.progress}%（{t("knowledge.remaining")}{item.remaining}）
+												{Math.round(item.progress)}%（{t("knowledge.remaining")}
+												{remainingText(item.progress, PROCESS_SPEEDS[item.id] ?? 2)}）
 											</span>
 										</div>
 									</div>
