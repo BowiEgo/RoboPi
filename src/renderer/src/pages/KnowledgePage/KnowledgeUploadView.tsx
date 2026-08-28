@@ -12,7 +12,7 @@ interface KnowledgeUploadViewProps {
 	onFiles?: (files: File[]) => void;
 }
 
-type Step = "upload" | "settings" | "preview";
+type Step = "upload" | "settings" | "preview" | "process";
 type ParseStrategy = "precise" | "fast";
 type SegmentStrategy = "auto" | "custom" | "hierarchy";
 
@@ -22,6 +22,12 @@ const MOCK_DOCS = [
 	{ id: "d1", name: "产品需求文档.pdf", pages: 6 },
 	{ id: "d2", name: "使用说明书.txt", pages: 4 },
 	{ id: "d3", name: "数据分析报告.docx", pages: 8 },
+];
+
+const MOCK_PROCESS = [
+	{ id: "p1", name: "产品需求文档.pdf", size: "2.4 MB", progress: 13, remaining: "0分32秒" },
+	{ id: "p2", name: "使用说明书.txt", size: "15.3 KB", progress: 45, remaining: "0分08秒" },
+	{ id: "p3", name: "数据分析报告.docx", size: "1.1 MB", progress: 78, remaining: "0分03秒" },
 ];
 
 function mockPages(name: string, count: number): { page: number; content: string }[] {
@@ -209,6 +215,32 @@ const C = {
 	}),
 	chunkTitle: cstyle({ text: "text-xs font-medium", color: "text-base-content" }),
 	chunkText: cstyle({ text: "text-xs leading-relaxed", color: "text-base-content/60" }),
+	// ── Process step ──
+	processBody: cstyle({
+		display: "flex flex-col",
+		spacing: "gap-3",
+		sizing: "w-full",
+	}),
+	processTitle: cstyle({ text: "text-sm font-medium", color: "text-base-content/70" }),
+	processList: cstyle({ display: "flex flex-col", spacing: "gap-2" }),
+	processBar: cstyle({
+		display: "relative",
+		sizing: "h-12",
+		interaction: "rounded-lg overflow-hidden",
+		color: "bg-base-200",
+	}),
+	processFill: cstyle({
+		display: "absolute inset-y-0 left-0",
+		interaction: "transition-[width] duration-300",
+		color: "bg-primary/20",
+	}),
+	processContent: cstyle({
+		display: "absolute inset-0 flex items-center",
+		spacing: "gap-2.5 px-3",
+	}),
+	processName: cstyle({ text: "text-sm truncate", color: "text-base-content" }),
+	processSize: cstyle({ text: "text-xs", color: "text-base-content/40" }),
+	processProgress: cstyle({ text: "text-xs ml-auto shrink-0", color: "text-base-content/60" }),
 	footer: cstyle({
 		display: "flex items-center justify-end",
 		spacing: "gap-2 px-6 py-4",
@@ -266,7 +298,7 @@ const KnowledgeUploadView: Component<KnowledgeUploadViewProps> = (props) => {
 				<li class="step step-primary">{t("knowledge.stepUpload")}</li>
 				<li class={`step ${step() !== "upload" ? "step-primary" : ""}`}>{t("knowledge.stepSettings")}</li>
 				<li class={`step ${step() === "preview" ? "step-primary" : ""}`}>{t("knowledge.stepPreview")}</li>
-				<li class="step">{t("knowledge.stepProcess")}</li>
+				<li class={`step ${step() === "process" ? "step-primary" : ""}`}>{t("knowledge.stepProcess")}</li>
 			</ul>
 
 			<div class={C.body()}>
@@ -497,9 +529,37 @@ const KnowledgeUploadView: Component<KnowledgeUploadViewProps> = (props) => {
 						</div>
 					</div>
 				</Show>
+
+				<Show when={step() === "process"}>
+					<div class={C.processBody()}>
+						<span class={C.processTitle()}>{t("knowledge.processing")}</span>
+						<div class={C.processList()}>
+							<For each={MOCK_PROCESS}>
+								{(item) => (
+									<div class={C.processBar()}>
+										<div class={C.processFill()} style={{ width: `${item.progress}%` }} />
+										<div class={C.processContent()}>
+											<FileText class="w-4 h-4 shrink-0 text-base-content/50" />
+											<div class="flex flex-col min-w-0 flex-1">
+												<span class={C.processName()}>{item.name}</span>
+												<span class={C.processSize()}>{item.size}</span>
+											</div>
+											<span class={C.processProgress()}>
+												{item.progress}%（{t("knowledge.remaining")}{item.remaining}）
+											</span>
+										</div>
+									</div>
+								)}
+							</For>
+						</div>
+					</div>
+				</Show>
 			</div>
 
 			<footer class={C.footer()}>
+				<Show when={step() === "process"}>
+					<span class="text-xs text-base-content/40 mr-auto">{t("knowledge.processHint")}</span>
+				</Show>
 				<Show when={step() !== "upload"}>
 					<button
 						type="button"
@@ -507,6 +567,7 @@ const KnowledgeUploadView: Component<KnowledgeUploadViewProps> = (props) => {
 						onClick={() => {
 							if (step() === "settings") setStep("upload");
 							else if (step() === "preview") setStep("settings");
+							else if (step() === "process") setStep("preview");
 						}}
 					>
 						{t("knowledge.prev")}
@@ -518,10 +579,11 @@ const KnowledgeUploadView: Component<KnowledgeUploadViewProps> = (props) => {
 					onClick={() => {
 						if (step() === "upload") setStep("settings");
 						else if (step() === "settings") setStep("preview");
+						else if (step() === "preview") setStep("process");
 						else props.onNext();
 					}}
 				>
-					{t("knowledge.next")}
+					{step() === "process" ? t("knowledge.confirm") : t("knowledge.next")}
 				</button>
 			</footer>
 		</div>

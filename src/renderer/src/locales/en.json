@@ -72,6 +72,10 @@
 	"knowledge.pagePreview": "Page preview",
 	"knowledge.chunkPreview": "Chunk preview",
 	"knowledge.pages": "pages",
+	"knowledge.processing": "Processing on server",
+	"knowledge.remaining": "remaining",
+	"knowledge.confirm": "Confirm",
+	"knowledge.processHint": "Confirming doesn't stop processing; you can reference it once done.",
 
 	"chat.sidebar": "Chat sidebar",
 	"chat.header": "Chat",

@@ -72,6 +72,10 @@
 	"knowledge.pagePreview": "按页预览",
 	"knowledge.chunkPreview": "分段预览",
 	"knowledge.pages": "页",
+	"knowledge.processing": "服务器处理中",
+	"knowledge.remaining": "剩余时间",
+	"knowledge.confirm": "确认",
+	"knowledge.processHint": "点击确认不影响数据处理，处理完毕后可进行引用",
 
 	"chat.sidebar": "对话侧边栏",
 	"chat.header": "对话",
