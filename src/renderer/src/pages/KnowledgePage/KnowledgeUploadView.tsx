@@ -114,17 +114,16 @@ const C = {
 	strategyTitle: cstyle({ text: "font-medium", color: "text-base-content" }),
 	strategyHint: cstyle({ text: "text-xs", color: "text-base-content/40" }),
 	extractRow: cstyle({
-		display: "flex items-center",
-		spacing: "gap-2",
+		display: "flex items-center flex-wrap",
+		spacing: "gap-3",
 		text: "text-xs",
 		color: "text-base-content/60",
 	}),
-	extractTag: cstyle({
-		display: "inline-flex items-center",
-		spacing: "px-2 py-0.5",
-		interaction: "rounded-full",
-		text: "text-xs",
-		color: "bg-base-200 text-base-content/70",
+	extractItem: cstyle({
+		display: "flex items-center",
+		spacing: "gap-1.5",
+		interaction: "cursor-pointer",
+		color: "text-base-content/70",
 	}),
 	filterField: cstyle({ display: "flex flex-col", spacing: "gap-1.5" }),
 	filterLabel: cstyle({ text: "text-xs", color: "text-base-content/60" }),
@@ -152,6 +151,11 @@ const KnowledgeUploadView: Component<KnowledgeUploadViewProps> = (props) => {
 	const [files, setFiles] = createSignal<File[]>([]);
 	const [parseStrategy, setParseStrategy] = createSignal<ParseStrategy>("precise");
 	const [segmentStrategy, setSegmentStrategy] = createSignal<SegmentStrategy>("auto");
+	const [extract, setExtract] = createSignal<{ image: boolean; ocr: boolean; table: boolean }>({
+		image: true,
+		ocr: true,
+		table: true,
+	});
 	const [parseCollapsed, setParseCollapsed] = createSignal(false);
 	const [segmentCollapsed, setSegmentCollapsed] = createSignal(false);
 	const [filter, setFilter] = createSignal("");
@@ -273,9 +277,33 @@ const KnowledgeUploadView: Component<KnowledgeUploadViewProps> = (props) => {
 									<Show when={parseStrategy() === "precise"}>
 										<div class={C.extractRow()}>
 											<span>{t("knowledge.extractContent")}：</span>
-											<span class={C.extractTag()}>{t("knowledge.extractImage")}</span>
-											<span class={C.extractTag()}>{t("knowledge.extractOcr")}</span>
-											<span class={C.extractTag()}>{t("knowledge.extractTable")}</span>
+											<label class={C.extractItem()}>
+												<input
+													type="checkbox"
+													class="checkbox checkbox-xs checkbox-primary"
+													checked={extract().image}
+													onChange={() => setExtract((p) => ({ ...p, image: !p.image }))}
+												/>
+												<span>{t("knowledge.extractImage")}</span>
+											</label>
+											<label class={C.extractItem()}>
+												<input
+													type="checkbox"
+													class="checkbox checkbox-xs checkbox-primary"
+													checked={extract().ocr}
+													onChange={() => setExtract((p) => ({ ...p, ocr: !p.ocr }))}
+												/>
+												<span>{t("knowledge.extractOcr")}</span>
+											</label>
+											<label class={C.extractItem()}>
+												<input
+													type="checkbox"
+													class="checkbox checkbox-xs checkbox-primary"
+													checked={extract().table}
+													onChange={() => setExtract((p) => ({ ...p, table: !p.table }))}
+												/>
+												<span>{t("knowledge.extractTable")}</span>
+											</label>
 										</div>
 										<div class={C.filterField()}>
 											<span class={C.filterLabel()}>{t("knowledge.contentFilter")}</span>
