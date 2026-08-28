@@ -1,4 +1,4 @@
-import { ArrowLeft, FileText, Upload } from "lucide-solid";
+import { ArrowLeft, ChevronDown, ChevronRight, FileText, Upload } from "lucide-solid";
 import { type Component, createSignal, For, Show } from "solid-js";
 
 import { useLocale } from "@/contexts/LocaleContext";
@@ -11,6 +11,10 @@ interface KnowledgeUploadViewProps {
 	onNext: () => void;
 	onFiles?: (files: File[]) => void;
 }
+
+type Step = "upload" | "settings";
+type ParseStrategy = "precise" | "fast";
+type SegmentStrategy = "auto" | "custom" | "hierarchy";
 
 const C = {
 	root: cstyle({ display: "relative flex flex-col", sizing: "h-full" }),
@@ -33,7 +37,7 @@ const C = {
 	}),
 	body: cstyle({
 		display: "flex flex-col flex-1 items-center",
-		spacing: "gap-8 px-8 py-6",
+		spacing: "gap-6 px-8 py-6",
 		sizing: "overflow-y-auto",
 	}),
 	dropzone: cstyle({
@@ -72,6 +76,66 @@ const C = {
 	}),
 	fileName: cstyle({ text: "text-sm truncate", color: "text-base-content" }),
 	fileSize: cstyle({ text: "text-xs", color: "text-base-content/40" }),
+	// ── Settings step ──
+	settingsBody: cstyle({
+		display: "flex flex-col",
+		spacing: "gap-4",
+		sizing: "w-full",
+	}),
+	collapseSection: cstyle({
+		display: "flex flex-col",
+		interaction: "rounded-lg border",
+		color: "border-base-200",
+	}),
+	collapseHeader: cstyle({
+		display: "flex items-center",
+		spacing: "gap-2 px-4 py-3",
+		text: "text-sm font-medium text-left",
+		interaction: "cursor-pointer",
+		color: "text-base-content hover:bg-base-200/50",
+	}),
+	collapseBody: cstyle({
+		display: "flex flex-col",
+		spacing: "gap-3 px-4 py-4",
+		interaction: "border-t",
+		color: "border-base-200",
+	}),
+	strategyRow: cstyle({ display: "flex", spacing: "gap-2" }),
+	strategyCard: cstyle({
+		display: "flex flex-col flex-1",
+		spacing: "gap-1 px-3 py-2.5",
+		text: "text-sm text-left",
+		interaction: "rounded-lg border transition-colors cursor-pointer",
+		color: "border-base-300 bg-base-100 hover:border-base-content/30",
+		variants: {
+			active: { true: "border-primary bg-primary/5" },
+		},
+	}),
+	strategyTitle: cstyle({ text: "font-medium", color: "text-base-content" }),
+	strategyHint: cstyle({ text: "text-xs", color: "text-base-content/40" }),
+	extractRow: cstyle({
+		display: "flex items-center",
+		spacing: "gap-2",
+		text: "text-xs",
+		color: "text-base-content/60",
+	}),
+	extractTag: cstyle({
+		display: "inline-flex items-center",
+		spacing: "px-2 py-0.5",
+		interaction: "rounded-full",
+		text: "text-xs",
+		color: "bg-base-200 text-base-content/70",
+	}),
+	filterField: cstyle({ display: "flex flex-col", spacing: "gap-1.5" }),
+	filterLabel: cstyle({ text: "text-xs", color: "text-base-content/60" }),
+	filterTextarea: cstyle({
+		display: "w-full resize-none",
+		text: "text-sm",
+		interaction: "border rounded-lg outline-none",
+		spacing: "px-3 py-2",
+		sizing: "min-h-20",
+		color: "bg-base-100 border-base-300 focus:border-primary/45",
+	}),
 	footer: cstyle({
 		display: "flex items-center justify-end",
 		spacing: "gap-2 px-6 py-4",
@@ -83,8 +147,14 @@ const C = {
 
 const KnowledgeUploadView: Component<KnowledgeUploadViewProps> = (props) => {
 	const { t } = useLocale();
+	const [step, setStep] = createSignal<Step>("upload");
 	const [dragging, setDragging] = createSignal(false);
 	const [files, setFiles] = createSignal<File[]>([]);
+	const [parseStrategy, setParseStrategy] = createSignal<ParseStrategy>("precise");
+	const [segmentStrategy, setSegmentStrategy] = createSignal<SegmentStrategy>("auto");
+	const [parseCollapsed, setParseCollapsed] = createSignal(false);
+	const [segmentCollapsed, setSegmentCollapsed] = createSignal(false);
+	const [filter, setFilter] = createSignal("");
 	let fileRef: HTMLInputElement | undefined;
 
 	function formatFileSize(bytes: number): string {
@@ -109,66 +179,172 @@ const KnowledgeUploadView: Component<KnowledgeUploadViewProps> = (props) => {
 				</button>
 			</header>
 
+			<ul class={C.steps()}>
+				<li class="step step-primary">{t("knowledge.stepUpload")}</li>
+				<li class={`step ${step() === "settings" ? "step-primary" : ""}`}>{t("knowledge.stepSettings")}</li>
+				<li class="step">{t("knowledge.stepPreview")}</li>
+				<li class="step">{t("knowledge.stepProcess")}</li>
+			</ul>
+
 			<div class={C.body()}>
-				<ul class={C.steps()}>
-					<li class="step step-primary">{t("knowledge.stepUpload")}</li>
-					<li class="step step-primary">{t("knowledge.stepSettings")}</li>
-					<li class="step">{t("knowledge.stepPreview")}</li>
-					<li class="step">{t("knowledge.stepProcess")}</li>
-				</ul>
+				<Show
+					when={step() === "settings"}
+					fallback={
+						<>
+							<div
+								class={C.dropzone({ dragging: dragging() })}
+								onClick={() => fileRef?.click()}
+								onDragOver={(e) => {
+									e.preventDefault();
+									setDragging(true);
+								}}
+								onDragLeave={() => setDragging(false)}
+								onDrop={(e) => {
+									e.preventDefault();
+									setDragging(false);
+									handleFiles(e.dataTransfer?.files ?? null);
+								}}
+							>
+								<span class={C.uploadIcon()}>
+									<Upload class="w-6 h-6" />
+								</span>
+								<p class={C.uploadHint()}>{t("knowledge.uploadHint")}</p>
+								<p class={C.uploadMeta()}>{t("knowledge.uploadMeta")}</p>
+							</div>
 
-				<div
-					class={C.dropzone({ dragging: dragging() })}
-					onClick={() => fileRef?.click()}
-					onDragOver={(e) => {
-						e.preventDefault();
-						setDragging(true);
-					}}
-					onDragLeave={() => setDragging(false)}
-					onDrop={(e) => {
-						e.preventDefault();
-						setDragging(false);
-						handleFiles(e.dataTransfer?.files ?? null);
-					}}
+							<input
+								ref={fileRef}
+								type="file"
+								multiple
+								accept=".pdf,.txt,.doc,.docx,.md"
+								class="hidden"
+								onChange={(e) => {
+									handleFiles(e.currentTarget.files);
+									e.currentTarget.value = "";
+								}}
+							/>
+
+							<Show when={files().length > 0}>
+								<div class={C.fileList()}>
+									<For each={files()}>
+										{(f) => (
+											<div class={C.fileItem()}>
+												<FileText class="w-4 h-4 shrink-0 text-base-content/50" />
+												<div class="flex flex-col min-w-0">
+													<span class={C.fileName()}>{f.name}</span>
+													<span class={C.fileSize()}>{formatFileSize(f.size)}</span>
+												</div>
+											</div>
+										)}
+									</For>
+								</div>
+							</Show>
+						</>
+					}
 				>
-					<span class={C.uploadIcon()}>
-						<Upload class="w-6 h-6" />
-					</span>
-					<p class={C.uploadHint()}>{t("knowledge.uploadHint")}</p>
-					<p class={C.uploadMeta()}>{t("knowledge.uploadMeta")}</p>
-				</div>
+					<div class={C.settingsBody()}>
+						{/* 文档解析策略 */}
+						<section class={C.collapseSection()}>
+							<button type="button" class={C.collapseHeader()} onClick={() => setParseCollapsed((v) => !v)}>
+								{parseCollapsed() ? <ChevronRight class="w-4 h-4" /> : <ChevronDown class="w-4 h-4" />}
+								<span>{t("knowledge.parseStrategy")}</span>
+							</button>
+							<Show when={!parseCollapsed()}>
+								<div class={C.collapseBody()}>
+									<div class={C.strategyRow()}>
+										<button
+											type="button"
+											class={C.strategyCard({ active: parseStrategy() === "precise" })}
+											onClick={() => setParseStrategy("precise")}
+										>
+											<span class={C.strategyTitle()}>{t("knowledge.parsePrecise")}</span>
+											<span class={C.strategyHint()}>{t("knowledge.parsePreciseHint")}</span>
+										</button>
+										<button
+											type="button"
+											class={C.strategyCard({ active: parseStrategy() === "fast" })}
+											onClick={() => setParseStrategy("fast")}
+										>
+											<span class={C.strategyTitle()}>{t("knowledge.parseFast")}</span>
+											<span class={C.strategyHint()}>{t("knowledge.parseFastHint")}</span>
+										</button>
+									</div>
 
-				<input
-					ref={fileRef}
-					type="file"
-					multiple
-					accept=".pdf,.txt,.doc,.docx,.md"
-					class="hidden"
-					onChange={(e) => {
-						handleFiles(e.currentTarget.files);
-						e.currentTarget.value = "";
-					}}
-				/>
+									<Show when={parseStrategy() === "precise"}>
+										<div class={C.extractRow()}>
+											<span>{t("knowledge.extractContent")}：</span>
+											<span class={C.extractTag()}>{t("knowledge.extractImage")}</span>
+											<span class={C.extractTag()}>{t("knowledge.extractOcr")}</span>
+											<span class={C.extractTag()}>{t("knowledge.extractTable")}</span>
+										</div>
+										<div class={C.filterField()}>
+											<span class={C.filterLabel()}>{t("knowledge.contentFilter")}</span>
+											<textarea
+												class={C.filterTextarea()}
+												placeholder={t("knowledge.filterPlaceholder")}
+												value={filter()}
+												onInput={(e) => setFilter(e.currentTarget.value)}
+											/>
+										</div>
+									</Show>
+								</div>
+							</Show>
+						</section>
 
-				<Show when={files().length > 0}>
-					<div class={C.fileList()}>
-						<For each={files()}>
-							{(f) => (
-								<div class={C.fileItem()}>
-									<FileText class="w-4 h-4 shrink-0 text-base-content/50" />
-									<div class="flex flex-col min-w-0">
-										<span class={C.fileName()}>{f.name}</span>
-										<span class={C.fileSize()}>{formatFileSize(f.size)}</span>
+						{/* 分段策略 */}
+						<section class={C.collapseSection()}>
+							<button
+								type="button"
+								class={C.collapseHeader()}
+								onClick={() => setSegmentCollapsed((v) => !v)}
+							>
+								{segmentCollapsed() ? <ChevronRight class="w-4 h-4" /> : <ChevronDown class="w-4 h-4" />}
+								<span>{t("knowledge.segmentStrategy")}</span>
+							</button>
+							<Show when={!segmentCollapsed()}>
+								<div class={C.collapseBody()}>
+									<div class={C.strategyRow()}>
+										<button
+											type="button"
+											class={C.strategyCard({ active: segmentStrategy() === "auto" })}
+											onClick={() => setSegmentStrategy("auto")}
+										>
+											<span class={C.strategyTitle()}>{t("knowledge.segmentAuto")}</span>
+											<span class={C.strategyHint()}>{t("knowledge.segmentAutoHint")}</span>
+										</button>
+										<button
+											type="button"
+											class={C.strategyCard({ active: segmentStrategy() === "custom" })}
+											onClick={() => setSegmentStrategy("custom")}
+										>
+											<span class={C.strategyTitle()}>{t("knowledge.segmentCustom")}</span>
+											<span class={C.strategyHint()}>{t("knowledge.segmentCustomHint")}</span>
+										</button>
+										<button
+											type="button"
+											class={C.strategyCard({ active: segmentStrategy() === "hierarchy" })}
+											onClick={() => setSegmentStrategy("hierarchy")}
+										>
+											<span class={C.strategyTitle()}>{t("knowledge.segmentHierarchy")}</span>
+											<span class={C.strategyHint()}>{t("knowledge.segmentHierarchyHint")}</span>
+										</button>
 									</div>
 								</div>
-							)}
-						</For>
+							</Show>
+						</section>
 					</div>
 				</Show>
 			</div>
 
 			<footer class={C.footer()}>
-				<button type="button" class="btn btn-primary" onClick={props.onNext}>
+				<button
+					type="button"
+					class="btn btn-primary"
+					onClick={() => {
+						if (step() === "upload") setStep("settings");
+						else props.onNext();
+					}}
+				>
 					{t("knowledge.next")}
 				</button>
 			</footer>
