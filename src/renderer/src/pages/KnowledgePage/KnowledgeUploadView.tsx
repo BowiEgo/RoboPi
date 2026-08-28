@@ -204,8 +204,8 @@ const C = {
 	chunkCard: cstyle({
 		display: "flex flex-col",
 		spacing: "gap-1 p-3",
-		interaction: "rounded-lg border",
-		color: "border-base-200 bg-base-100",
+		interaction: "rounded-lg",
+		color: "bg-base-200/70",
 	}),
 	chunkTitle: cstyle({ text: "text-xs font-medium", color: "text-base-content" }),
 	chunkText: cstyle({ text: "text-xs leading-relaxed", color: "text-base-content/60" }),
