@@ -74,8 +74,12 @@ const C = {
 		color: "bg-base-200 text-base-content/60",
 	}),
 	addBtn: cstyle({
+		display: "btn btn-sm btn-soft",
+		spacing: "gap-1.5",
+	}),
+	addToAgentBtn: cstyle({
 		display: "btn btn-sm btn-primary",
-		spacing: "ml-auto gap-1.5",
+		spacing: "gap-1.5",
 	}),
 	// ── Body ──
 	body: cstyle({ display: "flex", sizing: "flex-1 min-h-0" }),
@@ -202,9 +206,14 @@ const KnowledgePreview: Component<{ onClose: () => void }> = (props) => {
 						</span>
 					</div>
 				</div>
-				<button type="button" class={C.addBtn()}>
-					{t("knowledge.addContent")}
-				</button>
+				<div class="flex items-center gap-2 ml-auto">
+					<button type="button" class={C.addBtn()}>
+						{t("knowledge.addContent")}
+					</button>
+					<button type="button" class={C.addToAgentBtn()}>
+						{t("knowledge.addToAgent")}
+					</button>
+				</div>
 			</header>
 
 			<div class={C.body()}>

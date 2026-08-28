@@ -77,6 +77,7 @@
 	"knowledge.confirm": "确认",
 	"knowledge.processHint": "点击确认不影响数据处理，处理完毕后可进行引用",
 	"knowledge.addContent": "添加内容",
+	"knowledge.addToAgent": "添加到智能体",
 	"knowledge.docsLabel": "个文档",
 	"knowledge.chunksLabel": "分段",
 	"knowledge.hitsLabel": "命中",

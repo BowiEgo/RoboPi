@@ -77,6 +77,7 @@
 	"knowledge.confirm": "Confirm",
 	"knowledge.processHint": "Confirming doesn't stop processing; you can reference it once done.",
 	"knowledge.addContent": "Add content",
+	"knowledge.addToAgent": "Add to agent",
 	"knowledge.docsLabel": "docs",
 	"knowledge.chunksLabel": "chunks",
 	"knowledge.hitsLabel": "hits",
