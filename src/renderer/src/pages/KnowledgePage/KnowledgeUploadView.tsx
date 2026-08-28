@@ -271,6 +271,9 @@ const KnowledgeUploadView: Component<KnowledgeUploadViewProps> = (props) => {
 	const selectedDoc = () => MOCK_DOCS.find((d) => d.id === selectedDocId()) ?? MOCK_DOCS[0];
 	const pages = () => mockPages(selectedDoc().name, selectedDoc().pages);
 	const chunks = () => mockChunks(selectedDoc().name, Math.ceil(selectedDoc().pages / 2));
+	// Current step index (0-based) so step states accumulate and never break
+	// the connecting line between completed steps.
+	const stepIndex = () => ({ upload: 0, settings: 1, preview: 2, process: 3 })[step()];
 
 	function formatFileSize(bytes: number): string {
 		if (bytes < 1024) return `${bytes} B`;
@@ -295,10 +298,10 @@ const KnowledgeUploadView: Component<KnowledgeUploadViewProps> = (props) => {
 			</header>
 
 			<ul class={C.steps()}>
-				<li class="step step-primary">{t("knowledge.stepUpload")}</li>
-				<li class={`step ${step() !== "upload" ? "step-primary" : ""}`}>{t("knowledge.stepSettings")}</li>
-				<li class={`step ${step() === "preview" ? "step-primary" : ""}`}>{t("knowledge.stepPreview")}</li>
-				<li class={`step ${step() === "process" ? "step-primary" : ""}`}>{t("knowledge.stepProcess")}</li>
+				<li class={`step ${stepIndex() >= 0 ? "step-primary" : ""}`}>{t("knowledge.stepUpload")}</li>
+				<li class={`step ${stepIndex() >= 1 ? "step-primary" : ""}`}>{t("knowledge.stepSettings")}</li>
+				<li class={`step ${stepIndex() >= 2 ? "step-primary" : ""}`}>{t("knowledge.stepPreview")}</li>
+				<li class={`step ${stepIndex() >= 3 ? "step-primary" : ""}`}>{t("knowledge.stepProcess")}</li>
 			</ul>
 
 			<div class={C.body()}>
