@@ -49,6 +49,7 @@
 	"knowledge.uploadHint": "Click to upload or drag documents here",
 	"knowledge.uploadMeta": "Supports PDF, TXT, DOC, DOCX, MD. Up to 300 files, 100MB each, 500 pages per PDF.",
 	"knowledge.next": "Next",
+	"knowledge.prev": "Previous",
 	"knowledge.parseStrategy": "Parsing strategy",
 	"knowledge.parsePrecise": "Precise parsing",
 	"knowledge.parsePreciseHint": "Extracts images, tables and other elements from the document; takes longer.",

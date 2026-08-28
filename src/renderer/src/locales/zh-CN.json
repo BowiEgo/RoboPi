@@ -49,6 +49,7 @@
 	"knowledge.uploadHint": "点击上传或拖拽文档到这里",
 	"knowledge.uploadMeta": "支持PDF、TXT、DOC、DOCX、MD。最多可上传300个文件，每个文件不超过100MB，PDF最多500页",
 	"knowledge.next": "下一步",
+	"knowledge.prev": "上一步",
 	"knowledge.parseStrategy": "文档解析策略",
 	"knowledge.parsePrecise": "精准解析",
 	"knowledge.parsePreciseHint": "将从文档中提取图片、表格等元素，需要耗费更长时间",

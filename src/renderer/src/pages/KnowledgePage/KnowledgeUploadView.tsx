@@ -365,6 +365,11 @@ const KnowledgeUploadView: Component<KnowledgeUploadViewProps> = (props) => {
 			</div>
 
 			<footer class={C.footer()}>
+				<Show when={step() === "settings"}>
+					<button type="button" class="btn btn-ghost" onClick={() => setStep("upload")}>
+						{t("knowledge.prev")}
+					</button>
+				</Show>
 				<button
 					type="button"
 					class="btn btn-primary"
