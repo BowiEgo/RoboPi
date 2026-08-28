@@ -57,8 +57,12 @@ const AppContent: Component = () => {
 				onNavSelect={onNavSelect}
 				navTop={<BotMessageSquare class="w-10 h-10 text-primary" />}
 			>
-				{activeNav() === "chat" && <ChatPage sidebarHeader={<AppBanner />} sidebarBottom={<div class="h-12" />} />}
-				{activeNav() === "knowledge" && <KnowledgePage />}
+				<div class={activeNav() === "chat" ? "h-full" : "hidden"}>
+					<ChatPage sidebarHeader={<AppBanner />} sidebarBottom={<div class="h-12" />} />
+				</div>
+				<div class={activeNav() === "knowledge" ? "h-full" : "hidden"}>
+					<KnowledgePage />
+				</div>
 			</MainLayout>
 
 			<Modal
