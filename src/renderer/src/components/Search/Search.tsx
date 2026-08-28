@@ -41,10 +41,22 @@ const C = {
 
 // ── Component ──
 
-const Search: Component = () => {
+interface SearchProps {
+	/** Controlled value; defaults to the shared session search query. */
+	value?: string;
+	/** Controlled input; defaults to writing the session search query. */
+	onInput?: (value: string) => void;
+	/** Placeholder; defaults to the shared search placeholder. */
+	placeholder?: string;
+}
+
+const Search: Component<SearchProps> = (props) => {
 	const { t } = useLocale();
 
 	let inputRef: HTMLInputElement | undefined;
+
+	const value = () => props.value ?? sessionSearchQuery();
+	const onInput = (v: string) => (props.onInput ? props.onInput(v) : setSessionSearchQuery(v));
 
 	return (
 		<label class={`${C.wrapper()} group`}>
@@ -55,9 +67,9 @@ const Search: Component = () => {
 				type="search"
 				class={C.input()}
 				ref={inputRef}
-				value={sessionSearchQuery()}
-				onInput={(e) => setSessionSearchQuery(e.currentTarget.value)}
-				placeholder={t("search.placeholder")}
+				value={value()}
+				onInput={(e) => onInput(e.currentTarget.value)}
+				placeholder={props.placeholder ?? t("search.placeholder")}
 				aria-label={t("search.label")}
 			/>
 			<span class={C.shortcut()}>

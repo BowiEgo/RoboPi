@@ -5,7 +5,7 @@ import { useLocale } from "@/contexts/LocaleContext";
 
 import Dropdown from "@/components/Dropdown/Dropdown";
 import Resizer from "@/components/Resizer/Resizer";
-import SearchInput from "@/components/SearchInput/SearchInput";
+import Search from "@/components/Search/Search";
 
 import { cstyle } from "@/utils/cstyle";
 
@@ -43,13 +43,21 @@ const root = cstyle({ base: "flex h-full overflow-hidden" });
 const drawer = "relative shrink-0";
 const aside = "flex flex-col h-full pt-3 overflow-hidden select-none";
 const sidebarContent = "flex-1 p-3";
-const main = cstyle({ base: "flex-1 flex flex-col overflow-hidden p-8 pt-4 pl-5" });
+const main = cstyle({ base: "flex-1 flex flex-col overflow-hidden p-8 pt-0 pl-5" });
 
 const C = {
+	panel: cstyle({
+		display: "relative flex flex-col",
+		sizing: "h-full overflow-hidden",
+		interaction: "rounded-2xl shadow-xl",
+		color: "bg-app",
+	}),
 	filterBar: cstyle({
 		display: "flex items-center",
-		spacing: "gap-3",
+		spacing: "gap-3 px-6 py-4",
 		sizing: "shrink-0",
+		interaction: "border-b",
+		color: "border-base-200",
 	}),
 	content: cstyle({
 		display: "flex flex-1 items-center justify-center",
@@ -127,7 +135,7 @@ const KnowledgePage: Component = () => {
 			<div class={drawer} style={{ width: `${drawerWidth()}px` }}>
 				<aside class={`${aside} text-base-content`}>
 					<div class={`${sidebarContent} text-base-content`}>
-						<SearchInput value={search()} placeholder={t("knowledge.search")} onInput={setSearch} />
+						<Search value={search()} placeholder={t("knowledge.search")} onInput={setSearch} />
 						<div class={C.list()}>
 							<Show
 								when={filtered().length > 0}
@@ -155,38 +163,40 @@ const KnowledgePage: Component = () => {
 			</div>
 
 			<main class={`${main()} text-base-content`}>
-				<div class={C.filterBar()}>
-					<Dropdown
-						value={typeFilter()}
-						options={typeOptions()}
-						placeholder={t("knowledge.type")}
-						width="10rem"
-						searchable={false}
-						onChange={setTypeFilter}
-					/>
-					<Dropdown
-						value={timeSort()}
-						options={timeOptions()}
-						placeholder={t("knowledge.sortTime")}
-						width="10rem"
-						searchable={false}
-						onChange={setTimeSort}
-					/>
-					<Dropdown
-						value={nameSort()}
-						options={nameOptions()}
-						placeholder={t("knowledge.sortName")}
-						width="10rem"
-						searchable={false}
-						onChange={setNameSort}
-					/>
-				</div>
+				<div class={C.panel()}>
+					<div class={C.filterBar()}>
+						<Dropdown
+							value={typeFilter()}
+							options={typeOptions()}
+							placeholder={t("knowledge.type")}
+							width="10rem"
+							searchable={false}
+							onChange={setTypeFilter}
+						/>
+						<Dropdown
+							value={timeSort()}
+							options={timeOptions()}
+							placeholder={t("knowledge.sortTime")}
+							width="10rem"
+							searchable={false}
+							onChange={setTimeSort}
+						/>
+						<Dropdown
+							value={nameSort()}
+							options={nameOptions()}
+							placeholder={t("knowledge.sortName")}
+							width="10rem"
+							searchable={false}
+							onChange={setNameSort}
+						/>
+					</div>
 
-				<div class={C.content()}>
-					<button type="button" class={C.createBtn()}>
-						<Plus class="w-5 h-5" />
-						<span>{t("knowledge.create")}</span>
-					</button>
+					<div class={C.content()}>
+						<button type="button" class={C.createBtn()}>
+							<Plus class="w-5 h-5" />
+							<span>{t("knowledge.create")}</span>
+						</button>
+					</div>
 				</div>
 			</main>
 		</div>
