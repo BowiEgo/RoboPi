@@ -6,6 +6,7 @@ import { useLocale } from "@/contexts/LocaleContext";
 import Dropdown from "@/components/Dropdown/Dropdown";
 import Resizer from "@/components/Resizer/Resizer";
 import Search from "@/components/Search/Search";
+import AppBanner from "@/components/AppBanner/AppBanner";
 
 import CreateKnowledgeModal from "./CreateKnowledgeModal";
 import KnowledgePreview from "./KnowledgePreview";
@@ -190,6 +191,9 @@ const KnowledgePage: Component = () => {
 		<div class={`${root()} bg-app-raised`}>
 			<div class={drawer} style={{ width: `${drawerWidth()}px` }}>
 				<aside class={`${aside} text-base-content`}>
+					<div class="flex items-center gap-2 px-4 text-[15px] font-medium font-display shrink-0 text-base-content">
+						<AppBanner />
+					</div>
 					<div class={`${sidebarContent} text-base-content`}>
 						<Search value={search()} placeholder={t("knowledge.search")} onInput={setSearch} />
 						<button type="button" class={C.sidebarCreateBtn()} onClick={() => setCreateOpen(true)}>
