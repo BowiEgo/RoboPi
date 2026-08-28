@@ -101,7 +101,7 @@ const KnowledgePage: Component = () => {
 	const [typeFilter, setTypeFilter] = createSignal("all");
 	const [timeSort, setTimeSort] = createSignal("newest");
 	const [nameSort, setNameSort] = createSignal("nameAsc");
-	const [drawerWidth, setDrawerWidth] = createSignal(280);
+	const [drawerWidth, setDrawerWidth] = createSignal(300);
 
 	const typeOptions = () => [
 		{ id: "all", name: t("knowledge.typeAll") },
