@@ -1,5 +1,5 @@
 import { ArrowLeft, ChevronDown, ChevronRight, FileText, Upload } from "lucide-solid";
-import { type Component, createSignal, For, Show } from "solid-js";
+import { type Component, createSignal, For, onCleanup, onMount, Show } from "solid-js";
 
 import { useLocale } from "@/contexts/LocaleContext";
 
@@ -29,6 +29,13 @@ const MOCK_PROCESS = [
 	{ id: "p2", name: "使用说明书.txt", size: "15.3 KB", progress: 45, remaining: "0分08秒" },
 	{ id: "p3", name: "数据分析报告.docx", size: "1.1 MB", progress: 78, remaining: "0分03秒" },
 ];
+
+// Percent added per tick — each file progresses at a different speed.
+const PROCESS_SPEEDS: Record<string, number> = {
+	p1: 1.5,
+	p2: 3,
+	p3: 6,
+};
 
 function mockPages(name: string, count: number): { page: number; content: string }[] {
 	return Array.from({ length: count }, (_, i) => ({
@@ -266,7 +273,21 @@ const KnowledgeUploadView: Component<KnowledgeUploadViewProps> = (props) => {
 	const [segmentCollapsed, setSegmentCollapsed] = createSignal(false);
 	const [filter, setFilter] = createSignal("");
 	const [selectedDocId, setSelectedDocId] = createSignal(MOCK_DOCS[0].id);
+	const [processItems, setProcessItems] = createSignal(MOCK_PROCESS.map((p) => ({ ...p, progress: 0 })));
 	let fileRef: HTMLInputElement | undefined;
+
+	// Animate each file's progress at its own speed.
+	onMount(() => {
+		const timer = setInterval(() => {
+			setProcessItems((prev) =>
+				prev.map((item) => {
+					const speed = PROCESS_SPEEDS[item.id] ?? 2;
+					return { ...item, progress: Math.min(100, item.progress + speed) };
+				}),
+			);
+		}, 200);
+		onCleanup(() => clearInterval(timer));
+	});
 
 	const selectedDoc = () => MOCK_DOCS.find((d) => d.id === selectedDocId()) ?? MOCK_DOCS[0];
 	const pages = () => mockPages(selectedDoc().name, selectedDoc().pages);
@@ -537,7 +558,7 @@ const KnowledgeUploadView: Component<KnowledgeUploadViewProps> = (props) => {
 					<div class={C.processBody()}>
 						<span class={C.processTitle()}>{t("knowledge.processing")}</span>
 						<div class={C.processList()}>
-							<For each={MOCK_PROCESS}>
+							<For each={processItems()}>
 								{(item) => (
 									<div class={C.processBar()}>
 										<div class={C.processFill()} style={{ width: `${item.progress}%` }} />
@@ -561,16 +582,15 @@ const KnowledgeUploadView: Component<KnowledgeUploadViewProps> = (props) => {
 
 			<footer class={C.footer()}>
 				<Show when={step() === "process"}>
-					<span class="text-xs text-base-content/40 mr-auto">{t("knowledge.processHint")}</span>
+					<span class="text-xs text-base-content/40">{t("knowledge.processHint")}</span>
 				</Show>
-				<Show when={step() !== "upload"}>
+				<Show when={step() !== "upload" && step() !== "process"}>
 					<button
 						type="button"
 						class="btn btn-ghost"
 						onClick={() => {
 							if (step() === "settings") setStep("upload");
 							else if (step() === "preview") setStep("settings");
-							else if (step() === "process") setStep("preview");
 						}}
 					>
 						{t("knowledge.prev")}
