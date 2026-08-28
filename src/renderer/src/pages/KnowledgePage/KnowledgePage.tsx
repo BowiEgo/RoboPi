@@ -8,6 +8,7 @@ import Resizer from "@/components/Resizer/Resizer";
 import Search from "@/components/Search/Search";
 
 import CreateKnowledgeModal from "./CreateKnowledgeModal";
+import KnowledgePreview from "./KnowledgePreview";
 import KnowledgeUploadView from "./KnowledgeUploadView";
 
 import { cstyle } from "@/utils/cstyle";
@@ -106,7 +107,7 @@ const KnowledgePage: Component = () => {
 	const [nameSort, setNameSort] = createSignal("nameAsc");
 	const [drawerWidth, setDrawerWidth] = createSignal(300);
 	const [createOpen, setCreateOpen] = createSignal(false);
-	const [view, setView] = createSignal<"main" | "upload">("main");
+	const [view, setView] = createSignal<"main" | "upload" | "detail">("main");
 
 	const typeOptions = () => [
 		{ id: "all", name: t("knowledge.typeAll") },
@@ -169,10 +170,8 @@ const KnowledgePage: Component = () => {
 
 			<main class={`${main()} text-base-content`}>
 				<div class={C.panel()}>
-					<Show
-						when={view() === "upload"}
-						fallback={
-							<>
+					<Show when={view() === "main"}>
+						<>
 								<div class={C.filterBar()}>
 									<Dropdown
 										value={typeFilter()}
@@ -207,9 +206,14 @@ const KnowledgePage: Component = () => {
 									</button>
 								</div>
 							</>
-						}
-					>
-						<KnowledgeUploadView onBack={() => setView("main")} onNext={() => {}} />
+					</Show>
+
+					<Show when={view() === "upload"}>
+						<KnowledgeUploadView onBack={() => setView("main")} onNext={() => setView("detail")} />
+					</Show>
+
+					<Show when={view() === "detail"}>
+						<KnowledgePreview onClose={() => setView("main")} />
 					</Show>
 				</div>
 			</main>
