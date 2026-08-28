@@ -1,5 +1,5 @@
-import { ArrowLeft, Upload } from "lucide-solid";
-import { type Component, createSignal } from "solid-js";
+import { ArrowLeft, FileText, Upload } from "lucide-solid";
+import { type Component, createSignal, For, Show } from "solid-js";
 
 import { useLocale } from "@/contexts/LocaleContext";
 
@@ -59,6 +59,19 @@ const C = {
 		color: "text-base-content/40",
 		sizing: "max-w-md",
 	}),
+	fileList: cstyle({
+		display: "flex flex-col",
+		spacing: "gap-1",
+		sizing: "w-full",
+	}),
+	fileItem: cstyle({
+		display: "flex items-center",
+		spacing: "gap-2.5 px-3 py-2",
+		interaction: "rounded-lg border",
+		color: "border-base-200 bg-base-100",
+	}),
+	fileName: cstyle({ text: "text-sm truncate", color: "text-base-content" }),
+	fileSize: cstyle({ text: "text-xs", color: "text-base-content/40" }),
 	footer: cstyle({
 		display: "flex items-center justify-end",
 		spacing: "gap-2 px-6 py-4",
@@ -71,11 +84,20 @@ const C = {
 const KnowledgeUploadView: Component<KnowledgeUploadViewProps> = (props) => {
 	const { t } = useLocale();
 	const [dragging, setDragging] = createSignal(false);
+	const [files, setFiles] = createSignal<File[]>([]);
 	let fileRef: HTMLInputElement | undefined;
 
-	function handleFiles(files: FileList | null) {
-		if (!files || files.length === 0) return;
-		props.onFiles?.(Array.from(files));
+	function formatFileSize(bytes: number): string {
+		if (bytes < 1024) return `${bytes} B`;
+		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+		return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+	}
+
+	function handleFiles(list: FileList | null) {
+		if (!list || list.length === 0) return;
+		const added = Array.from(list);
+		setFiles((prev) => [...prev, ...added]);
+		props.onFiles?.(added);
 	}
 
 	return (
@@ -127,6 +149,22 @@ const KnowledgeUploadView: Component<KnowledgeUploadViewProps> = (props) => {
 						e.currentTarget.value = "";
 					}}
 				/>
+
+				<Show when={files().length > 0}>
+					<div class={C.fileList()}>
+						<For each={files()}>
+							{(f) => (
+								<div class={C.fileItem()}>
+									<FileText class="w-4 h-4 shrink-0 text-base-content/50" />
+									<div class="flex flex-col min-w-0">
+										<span class={C.fileName()}>{f.name}</span>
+										<span class={C.fileSize()}>{formatFileSize(f.size)}</span>
+									</div>
+								</div>
+							)}
+						</For>
+					</div>
+				</Show>
 			</div>
 
 			<footer class={C.footer()}>
