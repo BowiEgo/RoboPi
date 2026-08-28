@@ -68,6 +68,10 @@
 	"knowledge.segmentCustomHint": "Custom rules, segment length and preprocessing",
 	"knowledge.segmentHierarchy": "Hierarchical",
 	"knowledge.segmentHierarchyHint": "Segment by document hierarchy into a tree structure",
+	"knowledge.docList": "Documents",
+	"knowledge.pagePreview": "Page preview",
+	"knowledge.chunkPreview": "Chunk preview",
+	"knowledge.pages": "pages",
 
 	"chat.sidebar": "Chat sidebar",
 	"chat.header": "Chat",

@@ -68,6 +68,10 @@
 	"knowledge.segmentCustomHint": "自定义分段规则、分段长度及预处理规则",
 	"knowledge.segmentHierarchy": "按层级分段",
 	"knowledge.segmentHierarchyHint": "按照文档层级结构分段，将文档转化为有层级结构的树结构",
+	"knowledge.docList": "文档列表",
+	"knowledge.pagePreview": "按页预览",
+	"knowledge.chunkPreview": "分段预览",
+	"knowledge.pages": "页",
 
 	"chat.sidebar": "对话侧边栏",
 	"chat.header": "对话",
