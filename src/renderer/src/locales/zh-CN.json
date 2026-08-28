@@ -84,6 +84,9 @@
 	"knowledge.previewChunk": "预览分段文档",
 	"knowledge.editTitle": "编辑标题",
 	"knowledge.deleteDoc": "删除",
+	"knowledge.add": "添加",
+	"knowledge.remove": "移除",
+	"knowledge.noMore": "没有更多了",
 
 	"chat.sidebar": "对话侧边栏",
 	"chat.header": "对话",

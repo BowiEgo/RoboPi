@@ -22,6 +22,9 @@ interface KnowledgeBase {
 	name: string;
 	type: KnowledgeType;
 	createdAt: number;
+	docName: string;
+	size: string;
+	chunks: number;
 }
 
 const TYPE_ICONS: Record<KnowledgeType, typeof FileText> = {
@@ -32,13 +35,37 @@ const TYPE_ICONS: Record<KnowledgeType, typeof FileText> = {
 
 // Mock data (backend integration comes later).
 const MOCK_KNOWLEDGE: KnowledgeBase[] = [
-	{ id: "kb-1", name: "产品需求文档", type: "document", createdAt: Date.now() - 1000 * 60 * 60 * 24 * 3 },
-	{ id: "kb-2", name: "销售数据表格", type: "sheet", createdAt: Date.now() - 1000 * 60 * 60 * 24 * 7 },
-	{ id: "kb-3", name: "产品截图素材", type: "image", createdAt: Date.now() - 1000 * 60 * 60 * 24 * 12 },
+	{
+		id: "kb-1",
+		name: "产品需求文档",
+		type: "document",
+		createdAt: Date.now() - 1000 * 60 * 60 * 24 * 3,
+		docName: "产品需求文档.pdf",
+		size: "2.4 MB",
+		chunks: 45,
+	},
+	{
+		id: "kb-2",
+		name: "销售数据表格",
+		type: "sheet",
+		createdAt: Date.now() - 1000 * 60 * 60 * 24 * 7,
+		docName: "销售数据.xlsx",
+		size: "1.1 MB",
+		chunks: 18,
+	},
+	{
+		id: "kb-3",
+		name: "产品截图素材",
+		type: "image",
+		createdAt: Date.now() - 1000 * 60 * 60 * 24 * 12,
+		docName: "截图素材集.zip",
+		size: "8.7 MB",
+		chunks: 62,
+	},
 ];
 
 function fmtDate(ms: number): string {
-	return new Date(ms).toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
+	return new Date(ms).toLocaleDateString("zh-CN", { year: "numeric", month: "short", day: "numeric" });
 }
 
 // ── Styles ──
@@ -63,37 +90,50 @@ const C = {
 		interaction: "border-b",
 		color: "border-base-200",
 	}),
-	content: cstyle({
-		display: "flex flex-1 items-center justify-center",
+	// ── Sidebar ──
+	sidebarCreateBtn: cstyle({
+		display: "btn btn-primary btn-sm w-full",
+		spacing: "gap-1.5 mt-2",
 	}),
-	createBtn: cstyle({
-		display: "btn btn-primary btn-lg",
-		spacing: "gap-2",
+	// ── Knowledge list (main body) ──
+	listBody: cstyle({
+		display: "flex flex-col",
+		spacing: "gap-2 p-4",
+		sizing: "flex-1 overflow-y-auto",
 	}),
-	// ── Knowledge list ──
-	list: cstyle({ display: "flex flex-col", spacing: "gap-0.5 mt-2" }),
-	item: cstyle({
-		display: "group flex items-center",
-		spacing: "gap-2 px-3 py-2",
-		interaction: "cursor-pointer rounded-md transition-colors",
-		color: "hover:bg-base-200",
+	kbCard: cstyle({
+		display: "flex items-center",
+		spacing: "gap-3 p-3",
+		interaction: "rounded-lg border transition-colors",
+		color: "border-base-200 hover:border-base-300",
 	}),
-	itemIcon: cstyle({
+	kbIcon: cstyle({
 		display: "flex items-center justify-center",
-		sizing: "w-7 h-7 shrink-0",
-		interaction: "rounded-md",
+		sizing: "w-10 h-10 shrink-0",
+		interaction: "rounded-lg",
 		color: "bg-base-200 text-base-content/70",
 	}),
-	itemName: cstyle({
-		display: "flex-1 min-w-0",
-		text: "text-sm truncate",
-		color: "text-base-content/80",
+	kbInfo: cstyle({ display: "flex flex-col", sizing: "flex-1 min-w-0", spacing: "gap-0.5" }),
+	kbName: cstyle({ text: "text-sm font-medium truncate", color: "text-base-content" }),
+	kbDoc: cstyle({ text: "text-xs truncate", color: "text-base-content/40" }),
+	kbTags: cstyle({ display: "flex items-center flex-wrap", spacing: "gap-1.5 mt-1" }),
+	kbTag: cstyle({
+		display: "inline-flex items-center",
+		spacing: "px-1.5 py-0.5",
+		interaction: "rounded",
+		text: "text-[11px]",
+		color: "bg-base-200 text-base-content/50",
 	}),
-	itemTime: cstyle({ text: "text-[10px]", color: "text-base-content/30" }),
-	empty: cstyle({
+	kbAction: cstyle({
+		display: "btn btn-sm shrink-0",
+		variants: {
+			added: { true: "btn-ghost text-error", false: "btn-soft" },
+		},
+	}),
+	noMore: cstyle({
 		text: "text-xs text-center",
-		spacing: "px-1 py-4",
-		color: "text-base-content/40",
+		spacing: "py-3",
+		color: "text-base-content/30",
 	}),
 };
 
@@ -108,6 +148,7 @@ const KnowledgePage: Component = () => {
 	const [drawerWidth, setDrawerWidth] = createSignal(300);
 	const [createOpen, setCreateOpen] = createSignal(false);
 	const [view, setView] = createSignal<"main" | "upload" | "detail">("main");
+	const [addedIds, setAddedIds] = createSignal<Set<string>>(new Set());
 
 	const typeOptions = () => [
 		{ id: "all", name: t("knowledge.typeAll") },
@@ -136,33 +177,25 @@ const KnowledgePage: Component = () => {
 		return items;
 	});
 
+	function toggleAdd(id: string) {
+		setAddedIds((prev) => {
+			const next = new Set(prev);
+			if (next.has(id)) next.delete(id);
+			else next.add(id);
+			return next;
+		});
+	}
+
 	return (
 		<div class={`${root()} bg-app-raised`}>
 			<div class={drawer} style={{ width: `${drawerWidth()}px` }}>
 				<aside class={`${aside} text-base-content`}>
 					<div class={`${sidebarContent} text-base-content`}>
 						<Search value={search()} placeholder={t("knowledge.search")} onInput={setSearch} />
-						<div class={C.list()}>
-							<Show
-								when={filtered().length > 0}
-								fallback={<div class={C.empty()}>{t("knowledge.empty")}</div>}
-							>
-								<For each={filtered()}>
-									{(kb) => {
-										const Icon = TYPE_ICONS[kb.type];
-										return (
-											<div class={C.item()}>
-												<span class={C.itemIcon()}>
-													<Icon class="w-4 h-4" />
-												</span>
-												<span class={C.itemName()}>{kb.name}</span>
-												<span class={C.itemTime()}>{fmtDate(kb.createdAt)}</span>
-											</div>
-										);
-									}}
-								</For>
-							</Show>
-						</div>
+						<button type="button" class={C.sidebarCreateBtn()} onClick={() => setCreateOpen(true)}>
+							<Plus class="w-4 h-4" />
+							<span>{t("knowledge.create")}</span>
+						</button>
 					</div>
 				</aside>
 				<Resizer value={drawerWidth()} min={200} max={500} position="right" grip={false} onChange={(v) => setDrawerWidth(v)} />
@@ -172,40 +205,64 @@ const KnowledgePage: Component = () => {
 				<div class={C.panel()}>
 					<Show when={view() === "main"}>
 						<>
-								<div class={C.filterBar()}>
-									<Dropdown
-										value={typeFilter()}
-										options={typeOptions()}
-										placeholder={t("knowledge.type")}
-										width="10rem"
-										searchable={false}
-										onChange={setTypeFilter}
-									/>
-									<Dropdown
-										value={timeSort()}
-										options={timeOptions()}
-										placeholder={t("knowledge.sortTime")}
-										width="10rem"
-										searchable={false}
-										onChange={setTimeSort}
-									/>
-									<Dropdown
-										value={nameSort()}
-										options={nameOptions()}
-										placeholder={t("knowledge.sortName")}
-										width="10rem"
-										searchable={false}
-										onChange={setNameSort}
-									/>
-								</div>
+							<div class={C.filterBar()}>
+								<Dropdown
+									value={typeFilter()}
+									options={typeOptions()}
+									placeholder={t("knowledge.type")}
+									width="10rem"
+									searchable={false}
+									onChange={setTypeFilter}
+								/>
+								<Dropdown
+									value={timeSort()}
+									options={timeOptions()}
+									placeholder={t("knowledge.sortTime")}
+									width="10rem"
+									searchable={false}
+									onChange={setTimeSort}
+								/>
+								<Dropdown
+									value={nameSort()}
+									options={nameOptions()}
+									placeholder={t("knowledge.sortName")}
+									width="10rem"
+									searchable={false}
+									onChange={setNameSort}
+								/>
+							</div>
 
-								<div class={C.content()}>
-									<button type="button" class={C.createBtn()} onClick={() => setCreateOpen(true)}>
-										<Plus class="w-5 h-5" />
-										<span>{t("knowledge.create")}</span>
-									</button>
-								</div>
-							</>
+							<div class={C.listBody()}>
+								<For each={filtered()}>
+									{(kb) => {
+										const Icon = TYPE_ICONS[kb.type];
+										const added = () => addedIds().has(kb.id);
+										return (
+											<div class={C.kbCard()}>
+												<span class={C.kbIcon()}>
+													<Icon class="w-5 h-5" />
+												</span>
+												<div class={C.kbInfo()}>
+													<span class={C.kbName()}>{kb.name}</span>
+													<span class={C.kbDoc()}>{kb.docName}</span>
+													<div class={C.kbTags()}>
+														<span class={C.kbTag()}>{kb.size}</span>
+														<span class={C.kbTag()}>
+															{kb.chunks} {t("knowledge.chunksLabel")}
+														</span>
+														<span class={C.kbTag()}>{fmtDate(kb.createdAt)}</span>
+													</div>
+												</div>
+												<button type="button" class={C.kbAction({ added: added() })} onClick={() => toggleAdd(kb.id)}>
+													{added() ? t("knowledge.remove") : t("knowledge.add")}
+												</button>
+											</div>
+										);
+									}}
+								</For>
+								<div class={C.noMore()}>{t("knowledge.noMore")}</div>
+							</div>
+						</>
 					</Show>
 
 					<Show when={view() === "upload"}>

@@ -84,6 +84,9 @@
 	"knowledge.previewChunk": "Preview chunks",
 	"knowledge.editTitle": "Edit title",
 	"knowledge.deleteDoc": "Delete",
+	"knowledge.add": "Add",
+	"knowledge.remove": "Remove",
+	"knowledge.noMore": "No more",
 
 	"chat.sidebar": "Chat sidebar",
 	"chat.header": "Chat",
