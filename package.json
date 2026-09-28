@@ -27,7 +27,7 @@
 		"build:linux": "npm run build && electron-builder --linux"
 	},
 	"dependencies": {
-		"@earendil-works/pi-coding-agent": "^0.83.0",
+		"@earendil-works/pi-coding-agent": "^0.87.1",
 		"@electron-toolkit/preload": "^3.0.2",
 		"@electron-toolkit/utils": "^4.0.0",
 		"@fontsource/inter": "^5.3.0",
